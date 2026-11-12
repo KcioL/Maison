@@ -2,9 +2,17 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Maison</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#fdfbf7" data-sombre="#1b1714">
+    <link rel="icon" href="commun/logos/maison.ico" sizes="16x16 32x32 48x48">
+    <link rel="icon" type="image/png" sizes="32x32" href="commun/logos/maison-32.png">
+    <link rel="manifest" href="commun/manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="commun/logos/maison-apple-touch.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Maison">
     <script src="commun/theme.js"></script>
     <link rel="stylesheet" href="commun/base.css">
 </head>
@@ -13,7 +21,8 @@
     <div class="menu-tools" id="menu-tools"></div>
 
     <header class="menu-header">
-        <h1>👋 Salut !</h1>
+        <img class="menu-logo" src="commun/logos/maison-192.png" srcset="commun/logos/maison-512.png 2x" alt="Logo de la maison" width="120" height="120">
+        <h1>Salut !</h1>
         <p id="menu-date"></p>
         <p class="menu-subtitle">Quelle appli tu veux ouvrir ?</p>
     </header>
@@ -32,7 +41,13 @@
             tile.href = a.href;
             tile.style.setProperty("--tile-color", a.color);
             tile.innerHTML = `<span class="app-tile-icon"></span><span class="app-tile-name"></span><span class="app-tile-desc"></span><span class="app-tile-go">Ouvrir →</span>`;
-            tile.querySelector(".app-tile-icon").textContent = a.icon;
+            const ico = tile.querySelector(".app-tile-icon");
+            if (a.logo) {
+                ico.classList.add("avec-logo");
+                const img = document.createElement("img");
+                img.src = a.logo; img.alt = ""; img.width = 128; img.height = 128;
+                ico.appendChild(img);
+            } else ico.textContent = a.icon;
             tile.querySelector(".app-tile-name").textContent = a.name;
             tile.querySelector(".app-tile-desc").textContent = a.desc;
             grid.appendChild(tile);

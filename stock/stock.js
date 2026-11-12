@@ -397,7 +397,7 @@ function renderDetail() {
     const key = act && act.dataset && act.dataset.act ? [act.dataset.act, act.dataset.id] : null;
     const list = $("item-list");
     if (!its.length) {
-        list.innerHTML = `<div class="st-empty"><h3>Ce rangement est vide</h3><p>Ajoute ton premier produit avec le formulaire ci-dessus.</p></div>`;
+        list.innerHTML = `<div class="st-empty"><h3>Ce rangement est vide</h3><p>Ajoute ton premier produit avec « Ajouter un produit ».</p></div>`;
     } else {
         list.innerHTML = `<div class="st-items">${its.map(i => {
             const x = statusOf(i), q = qtyOf(i), by = nameOf(i.updatedBy);
@@ -412,9 +412,9 @@ function renderDetail() {
                     <span class="st-qty">${fmtQty(q)} <small>${esc(i.unit || "")}</small></span>
                     <button type="button" data-act="inc" data-id="${esc(i.id)}" aria-label="Ajouter">+</button></div>
                 <div class="st-item-actions">
-                    ${x.out || x.low ? `<button type="button" class="st-link" data-act="shop" data-id="${esc(i.id)}">🛒 Aux courses</button>` : ""}
-                    <button type="button" class="st-link" data-act="edit" data-id="${esc(i.id)}">Modifier</button>
-                    <button type="button" class="st-link ${conf ? "armed" : ""}" data-act="del" data-id="${esc(i.id)}">${conf ? "Confirmer" : "Supprimer"}</button></div>
+                    ${x.out || x.low ? `<button type="button" class="st-link st-act" data-act="shop" data-id="${esc(i.id)}" aria-label="Ajouter aux courses"><span aria-hidden="true">🛒</span><span class="st-lbl">Aux courses</span></button>` : ""}
+                    <button type="button" class="st-link st-act" data-act="edit" data-id="${esc(i.id)}" aria-label="Modifier"><span aria-hidden="true">✏️</span><span class="st-lbl">Modifier</span></button>
+                    <button type="button" class="st-link st-act ${conf ? "armed" : ""}" data-act="del" data-id="${esc(i.id)}" aria-label="${conf ? "Confirmer la suppression" : "Supprimer"}"><span aria-hidden="true">🗑️</span><span class="st-lbl">${conf ? "Confirmer" : "Supprimer"}</span></button></div>
             </div>`;
         }).join("")}</div>`;
     }
@@ -484,6 +484,7 @@ $("ai-unit").innerHTML = unitOpts; $("ie-unit").innerHTML = unitOpts;
 function openStorage(id) {
     S.view = id; S.confirm = null; S.editing = null;
     hide("item-editor", "edit-storage", "add-storage");
+    $("add-item").classList.remove("ouvert");
     renderAll(); window.scrollTo(0, 0);
 }
 function goHome() { S.view = null; S.confirm = null; renderAll(); }
@@ -493,7 +494,7 @@ function arm(key) {
     confirmT = setTimeout(() => { S.confirm = null; renderAll(); }, 4000);
     renderAll();
 }
-function showForm(id, focusId) { const f = $(id); f.hidden = false; f.scrollIntoView({ block: "nearest", behavior: "smooth" }); if (focusId) $(focusId).focus({ preventScroll: true }); }
+function showForm(id, focusId) { $("add-item").classList.remove("ouvert"); const f = $(id); f.hidden = false; f.scrollIntoView({ block: "nearest", behavior: "smooth" }); if (focusId) $(focusId).focus({ preventScroll: true }); }
 
 // Quantités : on regroupe les clics rapides en une seule écriture
 const timers = {};
@@ -525,6 +526,8 @@ document.addEventListener("click", e => {
     const a = el.dataset.action, act = el.dataset.act, id = el.dataset.id;
 
     if (a === "home") goHome();
+    else if (a === "open-add-item") { $("add-item").classList.add("ouvert"); $("ai-name").focus(); }
+    else if (a === "close-add-item") $("add-item").classList.remove("ouvert");
     else if (a === "new-stock") showForm("new-stock", "ns-name");
     else if (a === "add-storage") { if (S.view) goHome(); showForm("add-storage", "as-name"); }
     else if (a === "edit-storage") {
@@ -597,6 +600,14 @@ document.addEventListener("click", e => {
         queue("stock-" + s.id, () => updateDoc(stockRef(s.id), { memberIds: s.memberIds.filter(x => x !== id), ["members." + id]: deleteField() }))
             .then(ok => { if (ok) toast("Accès retiré."); });
     }
+});
+
+// Échap ferme le panneau ouvert (sur téléphone, ils s'affichent par-dessus la page)
+document.addEventListener("keydown", e => {
+    if (e.key !== "Escape") return;
+    const ouvert = ["item-editor", "edit-storage", "add-storage", "new-stock", "access-panel"].find(id => !$(id).hidden);
+    if (ouvert) { $(ouvert).hidden = true; if (ouvert === "item-editor") S.editing = null; }
+    else $("add-item").classList.remove("ouvert");
 });
 
 $("stock-select").addEventListener("change", e => {

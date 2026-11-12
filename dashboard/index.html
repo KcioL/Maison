@@ -2,9 +2,16 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Dashboard Partagé</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#fdfbf7" data-sombre="#1b1714">
+    <link rel="icon" type="image/png" sizes="32x32" href="../commun/logos/courses-32.png">
+    <link rel="manifest" href="../commun/manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="../commun/logos/maison-apple-touch.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Maison">
     <script src="../commun/theme.js"></script>
     <link rel="stylesheet" href="../commun/base.css">
     <link rel="stylesheet" href="style.css">
@@ -12,7 +19,7 @@
 <body data-app="dashboard">
 
     <header>
-        <h1>👋 Dashboard</h1>
+        <h1 class="titre-logo"><img src="../commun/logos/courses-192.png" alt="" width="56" height="56"> Dashboard</h1>
     </header>
 
     <div class="dashboard-grid">
@@ -46,7 +53,7 @@
 
         <!-- Widget de Courses connecté à Firebase -->
         <div class="widget shopping-widget">
-            <h2 class="widget-title">🛒 Courses</h2>
+            <h2 class="widget-title"><img class="widget-logo" src="../commun/logos/courses-32.png" srcset="../commun/logos/courses-192.png 2x" alt="" width="28" height="28"> Courses</h2>
             <div class="shopping-input-group">
                 <input type="text" id="shopping-input" placeholder="Ajouter un article...">
                 <button id="add-item-btn">+</button>

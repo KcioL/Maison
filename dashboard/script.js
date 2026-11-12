@@ -33,10 +33,13 @@ if (db) {
             
             const li = document.createElement('li');
             li.className = `shopping-item ${item.checked ? 'completed' : ''}`;
+            // le texte est dans le <label> : on coche en touchant tout l'article
             li.innerHTML = `
-                <input type="checkbox" ${item.checked ? 'checked' : ''} class="check-box">
-                <span></span>
-                <button class="delete-btn">×</button>
+                <label class="shopping-label">
+                    <input type="checkbox" ${item.checked ? 'checked' : ''} class="check-box">
+                    <span></span>
+                </label>
+                <button class="delete-btn" aria-label="Supprimer">×</button>
             `;
             // textContent : le texte est affiché tel quel, jamais interprété comme du HTML
             li.querySelector('span').textContent = item.text;

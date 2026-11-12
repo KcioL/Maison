@@ -599,3 +599,6 @@ body:has(.barre-bas:not([hidden])) .toast { bottom: calc(5.5rem + env(safe-area-
 [data-theme="sombre"] .vignette .retirer { color: #ffb3c9; }
 [data-theme="sombre"] .erreur { color: #ffd3e1; }
 [data-theme="sombre"] input, [data-theme="sombre"] textarea { color: var(--texte); }
+
+/* Pas de zoom au double-tap ni de délai sur les boutons (téléphone) */
+a, button, input, label, textarea, select { touch-action: manipulation; }

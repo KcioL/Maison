@@ -2,9 +2,16 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Gestion des stocks</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <meta name="theme-color" content="#fdfbf7" data-sombre="#1b1714">
+    <link rel="icon" type="image/png" sizes="32x32" href="../commun/logos/stock-32.png">
+    <link rel="manifest" href="../commun/manifest.webmanifest">
+    <link rel="apple-touch-icon" sizes="180x180" href="../commun/logos/maison-apple-touch.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Maison">
     <script src="../commun/theme.js"></script>
     <link rel="stylesheet" href="../commun/base.css">
     <link rel="stylesheet" href="stock.css">
@@ -16,7 +23,8 @@
     <!-- ============ CONNEXION ============ -->
     <section id="auth-view" class="st-auth" hidden>
         <div class="widget st-auth-card">
-            <h1 class="st-auth-title">📦 Gestion des stocks</h1>
+            <img class="st-auth-logo" src="../commun/logos/stock-192.png" alt="" width="96" height="96">
+            <h1 class="st-auth-title">Gestion des stocks</h1>
             <p class="st-muted" id="auth-intro">Connecte-toi avec ton compte pour retrouver ton stock.</p>
             <form id="auth-form" autocomplete="on">
                 <label class="st-field">
@@ -41,7 +49,7 @@
     <section id="app-view" hidden>
         <header class="st-top">
             <div class="st-top-title">
-                <h1>📦 <span id="stock-title">Stocks</span></h1>
+                <h1 class="titre-logo"><img src="../commun/logos/stock-192.png" alt="" width="48" height="48"> <span id="stock-title">Stocks</span></h1>
                 <p id="subline" class="st-muted">Chargement…</p>
             </div>
             <div class="st-top-actions">
@@ -55,10 +63,10 @@
         <div id="banner" class="st-banner" hidden></div>
 
         <!-- Panneau accès / partage -->
-        <section id="access-panel" class="widget st-panel" hidden></section>
+        <section id="access-panel" class="widget st-panel st-sheet" hidden></section>
 
         <!-- Nouveau stock -->
-        <form id="new-stock" class="widget st-panel" hidden autocomplete="off">
+        <form id="new-stock" class="widget st-panel st-sheet" hidden autocomplete="off">
             <div class="st-panel-head"><h2 class="st-h2">Nouveau stock</h2><button type="button" class="st-link" data-close="new-stock">Fermer</button></div>
             <p class="st-muted">Un stock regroupe des rangements (ex. la maison, le chalet). Tu choisis qui y a accès.</p>
             <div class="st-row">
@@ -68,7 +76,7 @@
         </form>
 
         <!-- Nouveau rangement -->
-        <form id="add-storage" class="widget st-panel" hidden autocomplete="off">
+        <form id="add-storage" class="widget st-panel st-sheet" hidden autocomplete="off">
             <div class="st-panel-head"><h2 class="st-h2">Nouveau rangement</h2><button type="button" class="st-link" data-close="add-storage">Fermer</button></div>
             <label class="st-field"><span class="st-label">Nom</span><input id="as-name" required maxlength="40" placeholder="Ex. Placard sous l'évier"></label>
             <div class="st-field"><span class="st-label">Type</span><div class="st-chips" id="as-types"></div></div>
@@ -91,15 +99,15 @@
                 <button class="st-back" type="button" data-action="home">← Tous les rangements</button>
                 <div id="detail-head" class="st-detail-head"></div>
 
-                <form id="edit-storage" class="widget st-panel" hidden autocomplete="off">
+                <form id="edit-storage" class="widget st-panel st-sheet" hidden autocomplete="off">
                     <div class="st-panel-head"><h2 class="st-h2">Modifier le rangement</h2><button type="button" class="st-link" data-close="edit-storage">Fermer</button></div>
                     <label class="st-field"><span class="st-label">Nom</span><input id="es-name" required maxlength="40"></label>
                     <div class="st-field"><span class="st-label">Type</span><div class="st-chips" id="es-types"></div></div>
                     <div><button class="st-btn st-primary" type="submit">Enregistrer</button></div>
                 </form>
 
-                <form id="add-item" class="widget st-panel" autocomplete="off">
-                    <h2 class="st-h2">Ajouter un produit</h2>
+                <form id="add-item" class="widget st-panel st-sheet" autocomplete="off">
+                    <div class="st-panel-head"><h2 class="st-h2">Ajouter un produit</h2><button type="button" class="st-link st-mobile-only" data-action="close-add-item">Fermer</button></div>
                     <div class="st-row">
                         <label class="st-field st-grow"><span class="st-label">Produit</span><input id="ai-name" required maxlength="80" placeholder="Ex. Lait demi-écrémé"></label>
                         <label class="st-field st-w-s"><span class="st-label">Quantité</span><input id="ai-qty" type="number" min="0" step="any" value="1" inputmode="decimal"></label>
@@ -110,7 +118,7 @@
                     </div>
                 </form>
 
-                <form id="item-editor" class="widget st-panel" hidden autocomplete="off">
+                <form id="item-editor" class="widget st-panel st-sheet" hidden autocomplete="off">
                     <div class="st-panel-head"><h2 class="st-h2">Modifier le produit</h2><button type="button" class="st-link" data-close="item-editor">Fermer</button></div>
                     <div class="st-row">
                         <label class="st-field st-grow"><span class="st-label">Produit</span><input id="ie-name" required maxlength="80"></label>
@@ -125,6 +133,8 @@
 
                 <div id="item-list"></div>
             </div>
+            <!-- Téléphone : bouton flottant pour ajouter un produit -->
+            <button id="fab-add" class="st-fab" type="button" data-action="open-add-item" aria-label="Ajouter un produit"><span aria-hidden="true">+</span></button>
         </main>
     </section>
 

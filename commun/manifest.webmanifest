@@ -1,0 +1,17 @@
+{
+  "name": "Maison",
+  "short_name": "Maison",
+  "description": "Dashboard, gestion des stocks et recettes de la maison",
+  "lang": "fr",
+  "id": "../",
+  "start_url": "../",
+  "scope": "../",
+  "display": "standalone",
+  "background_color": "#fdfbf7",
+  "theme_color": "#fdfbf7",
+  "icons": [
+    { "src": "logos/maison-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "logos/maison-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "logos/maison-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

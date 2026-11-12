@@ -21,7 +21,10 @@
     }
     function majBouton(b) {
         var sombre = racine.getAttribute("data-theme") === "sombre";
-        b.textContent = sombre ? "☀️ Clair" : "🌙 Sombre";
+        // icône + libellé dans deux éléments (la barre d'onglets les empile)
+        b.innerHTML = sombre
+            ? '<span class="nav-ico" aria-hidden="true">☀️</span><span>Clair</span>'
+            : '<span class="nav-ico" aria-hidden="true">🌙</span><span>Sombre</span>';
         b.setAttribute("aria-label", sombre ? "Passer en mode clair" : "Passer en mode sombre");
         b.title = b.getAttribute("aria-label");
     }

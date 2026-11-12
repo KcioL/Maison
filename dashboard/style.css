@@ -276,3 +276,64 @@
 #spin-btn:active {
     transform: translateY(1px);
 }
+
+/* --- Article de courses : tout l'article est cliquable pour cocher --- */
+.shopping-label { display: flex; align-items: center; flex: 1; min-width: 0; cursor: pointer; }
+
+/* ==========================================
+   TÉLÉPHONE
+   ========================================== */
+@media (max-width: 700px) {
+    .dashboard-grid { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+    .widget { min-width: 0; }
+
+    /* Ordre pensé pour le téléphone : l'heure et la météo en un coup d'œil,
+       puis la liste de courses (le plus utilisé), la roue en dernier */
+    .time-widget { order: 1; }
+    .weather-widget-container { order: 2; }
+    .shopping-widget { order: 3; }
+    .wheel-widget { order: 4; }
+
+    .time-widget { padding: 1rem 1.25rem; flex-direction: row; align-items: baseline; justify-content: center; gap: 0.8rem; flex-wrap: wrap; }
+    #clock { font-size: 2.6rem; margin: 0; letter-spacing: -1px; }
+    #date { font-size: 0.95rem; }
+
+    .weather-widget-container .weather-temp { font-size: 2.2rem; }
+
+    .shopping-input-group { gap: 0.6rem; margin-bottom: 1rem; }
+    #shopping-input { padding: 0.85rem 1rem; }
+    #add-item-btn { width: 3.2rem; }
+    .shopping-list { grid-template-columns: 1fr; max-height: none; overflow: visible; padding-right: 0; gap: 0.5rem; }
+    .shopping-item { padding: 0.35rem 0.4rem 0.35rem 0.9rem; }
+    .shopping-label { padding: 0.5rem 0; }
+    .shopping-item input[type="checkbox"] { width: 24px; height: 24px; }
+    .delete-btn { width: 44px; height: 44px; padding: 0; font-size: 1.8rem; }
+
+    #wheel-result { padding: 1rem; min-height: 64px; font-size: 1.15rem; }
+    .wheel-content { margin-top: 0; gap: 1rem; }
+    #spin-btn { width: 100%; }
+
+    /* Prévisions météo : panneau qui monte du bas de l'écran */
+    .modal { align-items: flex-end; }
+    .modal-content {
+        width: 100%; max-width: none; max-height: 88vh; overflow-y: auto;
+        border-radius: 24px 24px 0 0;
+        padding: 1.5rem 1.1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    }
+    .close-btn { top: 12px; right: 16px; width: 44px; height: 44px; display: grid; place-items: center; }
+    .modal h2 { font-size: 1.3rem; margin-bottom: 1rem; padding-right: 2.5rem; }
+    .city-selector { margin-bottom: 1.2rem; gap: 0.5rem; }
+    #city-input { padding: 0.8rem; min-width: 0; }
+    #search-city-btn { padding: 0.8rem 1rem; }
+    .forecast-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.4rem; }
+    .forecast-day { padding: 0.7rem 0.2rem; border-radius: 12px; }
+    .forecast-icon { width: 40px; height: 40px; }
+    .forecast-temp { font-size: 1rem; margin: 0.2rem 0; }
+    .forecast-desc { display: none; }
+    .forecast-date { font-size: 0.78rem; margin-bottom: 0; }
+}
+
+@media (hover: none) {
+    .weather-widget-container:hover, .forecast-day:hover, .shopping-item:hover, #spin-btn:hover, #add-item-btn:hover { transform: none; }
+    .weather-widget-container:hover { border-color: transparent; }
+}
