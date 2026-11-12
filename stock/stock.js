@@ -8,7 +8,7 @@
 //   stocks/{stockId}/items/{id}           produits
 //   stockDirectory/{email}                annuaire : e-mail → compte (pour partager)
 // ==========================================
-import { app, db } from "./firebase.js";
+import { app, db } from "../commun/firebase.js";
 import {
     getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
     signOut, sendPasswordResetEmail, sendEmailVerification

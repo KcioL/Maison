@@ -1,6 +1,6 @@
 /* ==========================================
    APPLI GESTION DES STOCKS
-   Reprend la palette du dashboard (style.css)
+   Reprend la palette commune (../commun/base.css)
    ========================================== */
 :root {
     --st-line: #ece5dd;

@@ -2,11 +2,11 @@ import { collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, order
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ==========================================
-// 1. CONFIGURATION FIREBASE (partagée dans firebase.js)
+// 1. CONFIGURATION FIREBASE (partagée dans ../commun/firebase.js)
 // ==========================================
 let db;
 try {
-    ({ db } = await import("./firebase.js"));
+    ({ db } = await import("../commun/firebase.js"));
 } catch (e) {
     document.getElementById('list-loader').textContent = "Erreur de configuration Firebase.";
 }

@@ -1,0 +1,148 @@
+/* ==========================================
+   STYLE COMMUN À TOUT LE SITE
+   Palette, fond, cartes (.widget) et page menu.
+   Chaque appli ajoute ensuite son propre fichier CSS.
+   ========================================== */
+
+:root {
+    /* --- PALETTE COSY & CHALEUREUSE --- */
+    --bg-color: #fdfbf7;      /* Un blanc cassé/crème très doux */
+    --card-bg: #ffffff;
+    --text-main: #4a443c;     /* Un marron/gris chaud */
+    --text-muted: #a3988f;    /* Un gris taupe doux */
+    
+    /* Couleur d'accentuation (boutons, icônes) */
+    --accent: #e07a5f;        /* Terracotta / pêche chaleureux */
+    --accent-hover: #cc654a;
+    
+    /* Design global */
+    --border-radius: 24px;    /* Angles bien arrondis */
+    --card-shadow: 0 12px 35px rgba(138, 121, 104, 0.08); /* Ombre douce */
+
+    /* Couleur des cartes météo (pour faire ressortir les nuages blancs) */
+    --weather-card-bg: #d4dde4; 
+}
+
+* { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+    font-family: 'Inter', sans-serif; 
+}
+
+body { 
+    /* Couleur de secours */
+    background-color: var(--bg-color); 
+    
+    /* Image de fond locale avec un calque crème transparent (rgba) par-dessus */
+    background-image: 
+        linear-gradient(rgba(253, 251, 247, 0.75), rgba(253, 251, 247, 0.75)), 
+        url('salon.jpg');
+    
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed; /* L'image reste fixe au défilement */
+    
+    color: var(--text-main); 
+    padding: 2rem; 
+    min-height: 100vh; 
+}
+
+header { 
+    text-align: center; 
+    margin-bottom: 3rem; 
+}
+
+h1 { 
+    font-size: 2.8rem; 
+    font-weight: 800; 
+    color: var(--text-main); 
+    letter-spacing: -1px;
+}
+
+/* --- GRILLE ET CARTES PRINCIPALES --- */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.widget {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(0,0,0,0.02);
+}
+
+.widget-title {
+    font-size: 1.3rem; 
+    font-weight: 700; 
+    margin-bottom: 1.5rem;
+    display: flex; 
+    align-items: center; 
+    gap: 0.5rem;
+    border-bottom: 2px dashed #eee; 
+    padding-bottom: 0.8rem;
+    color: var(--text-main);
+}
+
+/* ==========================================
+   PAGE MENU (index.html à la racine)
+   ========================================== */
+.menu-header { text-align: center; margin: 2rem 0 3rem; }
+.menu-header p { color: var(--text-muted); font-weight: 500; margin-top: 0.4rem; }
+.menu-header .menu-subtitle { color: var(--text-main); font-size: 1.15rem; margin-top: 1.2rem; }
+
+.app-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+.app-tile {
+    --tile-color: var(--accent);
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    text-decoration: none;
+    color: var(--text-main);
+    border: 2px solid transparent;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+a.app-tile:hover, a.app-tile:focus-visible {
+    transform: translateY(-5px);
+    border-color: var(--tile-color);
+    box-shadow: 0 15px 35px rgba(138, 121, 104, 0.18);
+    outline: none;
+}
+.app-tile-icon {
+    font-size: 2.2rem;
+    width: 4rem; height: 4rem;
+    display: grid; place-items: center;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--tile-color) 18%, white);
+}
+.app-tile-name { font-size: 1.4rem; font-weight: 800; margin-top: 0.4rem; }
+.app-tile-desc { color: var(--text-muted); line-height: 1.45; }
+.app-tile-go { margin-top: auto; padding-top: 0.6rem; font-weight: 700; color: var(--accent); }
+.app-tile-soon {
+    background: rgba(255, 255, 255, 0.55);
+    border: 2px dashed #e4dcd3;
+    box-shadow: none;
+}
+.app-tile-soon .app-tile-icon { background: #f4eee8; }
+
+@media (max-width: 600px) {
+    body { padding: 1rem; }
+    h1 { font-size: 2.1rem; }
+}

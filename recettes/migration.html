@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Migration des recettes</title>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@700&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; background: #FCFAFE; color: #373248; font-family: "Atkinson Hyperlegible", system-ui, sans-serif; font-size: 16px; line-height: 1.5; }
+    main { max-width: 640px; margin: 0 auto; padding: 2rem 20px 4rem; display: flex; flex-direction: column; gap: 1rem; }
+    h1 { font-family: "Caveat", cursive; font-size: 2.6rem; color: #4A3E8E; margin: 0; }
+    .carte { background: #fff; border: 1px solid #E6DEF4; border-radius: 16px; padding: 1.2rem 1.4rem; }
+    ol { margin: 0; padding-left: 1.2rem; }
+    button { font: inherit; font-weight: 700; background: #CDBBF3; color: #2E2566; border: none; border-radius: 999px; padding: 0.8rem 1.6rem; cursor: pointer; }
+    button:hover:not(:disabled) { background: #BEA8EE; }
+    button:disabled { opacity: 0.5; cursor: default; }
+    #journal { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.85rem; background: #F2EDF9; border-radius: 12px; padding: 1rem; white-space: pre-wrap; max-height: 50vh; overflow: auto; margin: 0; }
+    .ok { color: #2f7a4f; font-weight: 700; }
+    .ko { color: #b3261e; font-weight: 700; }
+    a { color: #4A3E8E; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>Migration des recettes</h1>
+  <div class="carte">
+    <p style="margin-top:0">Cette page copie toutes les recettes et leurs photos de <strong>l'ancienne base</strong> (recettes-1b272) vers <strong>la base du dashboard</strong> (dash-board-maison).</p>
+    <ol>
+      <li>Publie d'abord les nouvelles règles Firestore dans la base du dashboard.</li>
+      <li>Clique sur « Copier les recettes » et attends la fin.</li>
+      <li>Vérifie le carnet, puis supprime ce fichier <code>migration.html</code> du site.</li>
+    </ol>
+    <p style="margin-bottom:0">L'ancienne base n'est pas modifiée. Tu peux relancer la copie sans risque : les recettes déjà copiées sont ignorées.</p>
+  </div>
+  <div><button id="go" type="button">Copier les recettes</button></div>
+  <pre id="journal" hidden></pre>
+  <p id="fin" hidden><a href="./">Ouvrir le carnet de recettes →</a></p>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import {
+    getFirestore, collection, doc, getDoc, getDocs, setDoc, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { db as nouvelleBase } from "../commun/firebase.js";
+
+  // Configuration de l'ANCIENNE base (celle du dépôt Recettes)
+  const ancienneConfig = {
+    apiKey: "AIzaSyC85xgXx-M7S1d_93AMXm0O7-jUM4YbwSo",
+    authDomain: "recettes-1b272.firebaseapp.com",
+    projectId: "recettes-1b272",
+    storageBucket: "recettes-1b272.firebasestorage.app",
+    messagingSenderId: "999863928968",
+    appId: "1:999863928968:web:b6d5583f480876ad41373d",
+  };
+  const ancienneBase = getFirestore(initializeApp(ancienneConfig, "ancienne"));
+
+  const journal = document.getElementById("journal");
+  const ecrire = (texte, classe) => {
+    journal.hidden = false;
+    const ligne = document.createElement("span");
+    if (classe) ligne.className = classe;
+    ligne.textContent = texte + "\n";
+    journal.appendChild(ligne);
+    journal.scrollTop = journal.scrollHeight;
+  };
+
+  // On ne garde que les champs connus du carnet, avec des valeurs par défaut
+  function nettoyer(d) {
+    return {
+      titre: String(d.titre || "Sans titre").slice(0, 200),
+      ingredients: Array.isArray(d.ingredients) ? d.ingredients.map(String) : [],
+      etapes: Array.isArray(d.etapes) ? d.etapes.map(String) : [],
+      source: typeof d.source === "string" && /^https?:\/\//.test(d.source) ? d.source : null,
+      notes: typeof d.notes === "string" && d.notes.trim() ? d.notes : null,
+      photos: Array.isArray(d.photos) ? d.photos.map(String) : [],
+      miniature: typeof d.miniature === "string" && d.miniature.startsWith("data:image/") ? d.miniature : null,
+      creeLe: d.creeLe && typeof d.creeLe.toDate === "function" ? d.creeLe : serverTimestamp(),
+      modifieLe: d.modifieLe && typeof d.modifieLe.toDate === "function" ? d.modifieLe : serverTimestamp(),
+    };
+  }
+
+  document.getElementById("go").addEventListener("click", async (e) => {
+    const bouton = e.currentTarget;
+    bouton.disabled = true;
+    journal.textContent = "";
+    let copiees = 0, deja = 0, erreurs = 0, nbPhotos = 0;
+    try {
+      ecrire("Lecture de l'ancienne base…");
+      const snap = await getDocs(collection(ancienneBase, "recettes"));
+      ecrire(`${snap.size} recette(s) trouvée(s).`);
+
+      let i = 0;
+      for (const d of snap.docs) {
+        i++;
+        const titre = d.data().titre || d.id;
+        try {
+          const cible = doc(nouvelleBase, "recettes", d.id);
+          if ((await getDoc(cible)).exists()) {
+            deja++;
+            ecrire(`[${i}/${snap.size}] déjà copiée : ${titre}`);
+            continue;
+          }
+          // 1. les photos (une par document)
+          const photos = await getDocs(collection(ancienneBase, "recettes", d.id, "photos"));
+          const idsCopies = [];
+          for (const p of photos.docs) {
+            const data = p.data().data;
+            if (typeof data !== "string" || !data.startsWith("data:image/")) continue;
+            await setDoc(doc(nouvelleBase, "recettes", d.id, "photos", p.id), { data });
+            idsCopies.push(p.id);
+            nbPhotos++;
+          }
+          // 2. la recette (avec ses dates d'origine)
+          const donnees = nettoyer(d.data());
+          donnees.photos = donnees.photos.filter((id) => idsCopies.includes(id));
+          if (!donnees.photos.length) donnees.miniature = null;
+          await setDoc(cible, donnees);
+          copiees++;
+          ecrire(`[${i}/${snap.size}] copiée : ${titre} (${idsCopies.length} photo(s))`);
+        } catch (err) {
+          erreurs++;
+          console.error(err);
+          ecrire(`[${i}/${snap.size}] ÉCHEC : ${titre} (${err.code || err.message})`, "ko");
+        }
+      }
+      ecrire("");
+      ecrire(`Terminé : ${copiees} copiée(s), ${deja} déjà présente(s), ${nbPhotos} photo(s), ${erreurs} échec(s).`, erreurs ? "ko" : "ok");
+      if (erreurs) ecrire("Si l'échec indique « permission-denied », vérifie que les nouvelles règles sont publiées, puis relance.", "ko");
+      document.getElementById("fin").hidden = false;
+    } catch (err) {
+      console.error(err);
+      ecrire(`Impossible de lire l'ancienne base (${err.code || err.message}).`, "ko");
+    } finally {
+      bouton.disabled = false;
+      bouton.textContent = "Relancer la copie";
+    }
+  });
+</script>
+</body>
+</html>

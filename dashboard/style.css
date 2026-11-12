@@ -1,0 +1,277 @@
+/* ==========================================
+   STYLE DU DASHBOARD (widgets)
+   Le style commun est dans ../commun/base.css
+   ========================================== */
+
+/* --- WIDGET HORLOGE (Dégradé chaud) --- */
+.time-widget { 
+    background: linear-gradient(135deg, #f4a261 0%, #e76f51 100%); 
+    color: white; 
+    text-align: center; 
+}
+.time-widget .widget-title { border: none; color: rgba(255,255,255,0.9); }
+#clock { font-size: 4rem; font-weight: 800; margin: 0.5rem 0; letter-spacing: -2px; }
+#date { font-size: 1.1rem; opacity: 0.9; font-weight: 500; }
+
+/* --- WIDGET MÉTÉO (Interactif) --- */
+.weather-widget-container {
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+}
+.weather-widget-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(224, 122, 95, 0.15); 
+    border: 2px solid var(--accent);
+}
+.weather-info { 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+.weather-temp { font-size: 3rem; font-weight: 800; letter-spacing: -1px; }
+.weather-desc { text-transform: capitalize; font-weight: 500;} 
+
+/* --- LISTE DE COURSES --- */
+.shopping-widget {
+    grid-column: 1 / -1; 
+}
+
+.shopping-input-group { 
+    display: flex; 
+    gap: 0.8rem; 
+    margin-bottom: 1.5rem; 
+    width: 100%; 
+}
+
+#shopping-input { 
+    flex: 1 1 auto; 
+    min-width: 0; 
+    padding: 1rem; 
+    border: 2px solid #eee; 
+    border-radius: 12px; 
+    font-size: 1rem;
+    transition: border-color 0.2s;
+    background-color: #fafafa;
+}
+
+#shopping-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    background-color: white;
+}
+
+#add-item-btn { 
+    flex: 0 0 auto; 
+    background: var(--accent); 
+    color: white; 
+    border: none; 
+    width: 3.5rem; 
+    border-radius: 12px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    font-size: 1.8rem; 
+    display: flex; 
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s; 
+}
+
+#add-item-btn:hover { 
+    background: var(--accent-hover); 
+    transform: scale(1.05); 
+}
+
+.shopping-list { 
+    display: grid; 
+    /* Crée autant de colonnes de 250px minimum que possible sur la largeur de l'écran */
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+    gap: 0.8rem 1.5rem; /* Espacement vertical et horizontal entre les articles */
+    list-style: none; 
+    overflow-y: auto; 
+    max-height: 400px; /* On augmente un peu la hauteur maximale */
+    padding-right: 5px; 
+}
+.shopping-list::-webkit-scrollbar { width: 6px; }
+.shopping-list::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 10px; }
+
+/* Design des éléments mis à jour pour s'adapter aux colonnes */
+.shopping-item { 
+    display: flex; 
+    align-items: center; 
+    padding: 0.8rem 1.2rem; 
+    background-color: #fafafa; /* Fond coloré au lieu d'une simple ligne en bas */
+    border-radius: 12px;
+    border: 1px solid #f0f0f0;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.shopping-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+.shopping-item input[type="checkbox"] { 
+    margin-right: 12px; 
+    width: 20px; 
+    height: 20px; 
+    cursor: pointer; 
+    accent-color: var(--accent); 
+    flex-shrink: 0;
+}
+.shopping-item span { 
+    flex-grow: 1; 
+    font-weight: 500; 
+    word-break: break-word; /* Évite qu'un mot très long casse la colonne */
+}
+.shopping-item.completed span { 
+    text-decoration: line-through; 
+    color: var(--text-muted); 
+    opacity: 0.7;
+}
+.delete-btn { 
+    background: none; border: none; color: #ff7675; cursor: pointer; 
+    font-size: 1.8rem; line-height: 1; padding: 0 5px; opacity: 0.6; transition: opacity 0.2s;
+    flex-shrink: 0;
+}
+.delete-btn:hover { opacity: 1; }
+#list-loader { text-align: center; color: var(--accent); font-size: 0.9rem; margin-top: 1rem; font-weight: bold; }
+/* --- MODALE MÉTÉO (Pop-up) --- */
+.modal {
+    display: none; 
+    position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+    background-color: rgba(74, 68, 60, 0.6); 
+    align-items: center; justify-content: center;
+    backdrop-filter: blur(4px); 
+}
+.modal-content {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 2.5rem;
+    width: 90%;
+    max-width: 650px;
+    position: relative;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+}
+.close-btn {
+    position: absolute; top: 20px; right: 25px;
+    font-size: 2.5rem; font-weight: bold; color: #ccc; cursor: pointer; line-height: 1;
+    transition: color 0.2s;
+}
+.close-btn:hover { color: var(--text-main); }
+.modal h2 { margin-bottom: 1.5rem; color: var(--text-main); border-bottom: 2px dashed #eee; padding-bottom: 0.8rem; }
+
+/* --- RECHERCHE VILLE --- */
+.city-selector { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 2rem; }
+#city-input {
+    flex-grow: 1; padding: 1rem; border-radius: 12px; border: 2px solid #eee;
+    font-size: 1rem; font-family: inherit; transition: border-color 0.2s; background-color: #fafafa;
+}
+#city-input:focus { outline: none; border-color: var(--accent); background-color: white;}
+#search-city-btn {
+    background: var(--text-main); color: white; border: none; padding: 1rem 1.5rem;
+    border-radius: 12px; cursor: pointer; font-weight: bold; transition: background 0.2s;
+}
+#search-city-btn:hover { background: #2d2924; }
+
+/* --- PRÉVISIONS 5 JOURS --- */
+.forecast-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; }
+
+.forecast-day {
+    background: var(--weather-card-bg);
+    padding: 1.2rem 0.5rem;
+    border-radius: 16px;
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 2px solid transparent;
+}
+.forecast-day:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    border-color: var(--accent);
+}
+.forecast-date { font-weight: 800; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-main); }
+.forecast-icon { width: 55px; height: 55px; filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.1)); }
+.forecast-temp { font-weight: 800; color: var(--text-main); margin: 0.5rem 0; font-size: 1.2rem; }
+.forecast-desc { font-size: 0.75rem; color: #5a6268; text-transform: capitalize; font-weight: 600; }
+
+/* --- DÉTAILS 3H (HOURLY) --- */
+.hourly-grid { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 15px; }
+.hourly-item {
+    background: var(--weather-card-bg);
+    padding: 1rem;
+    border-radius: 16px;
+    text-align: center;
+    min-width: 90px;
+    flex-shrink: 0;
+}
+.hourly-time { font-weight: 800; font-size: 0.9rem; margin-bottom: 5px; color: var(--text-main); }
+.hourly-icon { width: 45px; height: 45px; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.1));}
+.hourly-temp { color: var(--text-main); font-weight: 800; font-size: 1.1rem; }
+
+.hourly-grid::-webkit-scrollbar { height: 8px; }
+.hourly-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+/* --- WIDGET ROUE DU DESTIN --- */
+.wheel-widget {
+    text-align: center;
+    justify-content: center;
+}
+
+.wheel-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+#wheel-result {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--accent);
+    background: #fafafa;
+    border: 2px dashed #e0e0e0;
+    padding: 1.5rem;
+    border-radius: 16px;
+    width: 100%;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+/* Animation pendant que la roue tourne */
+.spinning {
+    animation: pulse 0.1s infinite alternate;
+    color: var(--text-muted) !important;
+    border-color: var(--text-muted) !important;
+}
+
+@keyframes pulse {
+    from { transform: scale(0.98); opacity: 0.8; }
+    to { transform: scale(1.02); opacity: 1; }
+}
+
+#spin-btn {
+    background: var(--text-main);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+#spin-btn:hover {
+    background: #2d2924;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+}
+
+#spin-btn:active {
+    transform: translateY(1px);
+}
