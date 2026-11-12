@@ -66,20 +66,21 @@ body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
     -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5);
 }
 .dock-appli {
-    position: relative; z-index: 1;
+    position: relative;
     display: grid; place-items: center; flex: none;
     width: 52px; height: 52px; border-radius: 50%;
     color: var(--dock-texte); text-decoration: none; font-size: 1.5rem;
-    transition: transform 0.25s cubic-bezier(.3, 1.4, .5, 1);
     -webkit-tap-highlight-color: transparent; touch-action: manipulation;
 }
-.dock-appli img { width: 46px; height: 46px; border-radius: 50%; display: block; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2); }
+.dock-appli img { width: 46px; height: 46px; border-radius: 50%; display: block; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2); transition: transform 0.25s cubic-bezier(.3, 1.4, .5, 1); }
 .dock-menu { background: var(--dock-bouton); }
-.dock-appli:active { transform: scale(0.9); }
-.dock-appli.active { transform: scale(1.06); }
+.dock-appli:active img, .dock-appli:active svg { transform: scale(0.9); }
+.dock-appli.active img { transform: scale(1.06); }
+/* (le zoom est mis sur l'image, pas sur le bouton : sinon le petit point
+   passerait sous l'anneau) */
 .dock-appli:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .dock-point {
-    position: absolute; right: 3px; bottom: 3px;
+    position: absolute; right: 3px; bottom: 3px; z-index: 3;   /* toujours au-dessus de l'anneau */
     width: 11px; height: 11px; border-radius: 50%;
     background: var(--c); border: 2px solid var(--dock-verre);
     box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
@@ -88,7 +89,7 @@ body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
 
 /* l'anneau qui glisse vers l'appli ouverte */
 .dock-anneau {
-    position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none;
+    position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none;   /* entre le logo et le petit point */
     border-radius: 50%;
     box-shadow: inset 0 0 0 3px var(--dock-anneau), 0 0 14px rgba(255, 255, 255, 0.25);
     opacity: 0;
