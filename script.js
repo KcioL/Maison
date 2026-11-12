@@ -46,9 +46,11 @@ if (db) {
             li.className = `shopping-item ${item.checked ? 'completed' : ''}`;
             li.innerHTML = `
                 <input type="checkbox" ${item.checked ? 'checked' : ''} class="check-box">
-                <span>${item.text}</span>
+                <span></span>
                 <button class="delete-btn">×</button>
             `;
+            // textContent : le texte est affiché tel quel, jamais interprété comme du HTML
+            li.querySelector('span').textContent = item.text;
 
             li.querySelector('.check-box').addEventListener('change', async (e) => {
                 await updateDoc(doc(db, "courses", id), { checked: e.target.checked });
@@ -62,14 +64,14 @@ if (db) {
         });
     }, (error) => {
         if (error.code === 'permission-denied') {
-            loader.innerHTML = `<span style="color:#d93025; font-weight:bold;">Accès refusé (Mode Test expiré ?)</span>`;
+            loader.innerHTML = `<span style="color:#d93025; font-weight:bold;">Accès refusé : vérifie les règles Firestore (collection "courses").</span>`;
         } else {
              loader.textContent = "Erreur de chargement de la liste.";
         }
     });
 
     const addItemToDb = async () => {
-        const text = shoppingInput.value.trim();
+        const text = shoppingInput.value.trim().slice(0, 200); // 200 caractères max (limite des règles)
         if (text !== '') {
             try {
                 await addDoc(coursesRef, {
@@ -80,7 +82,7 @@ if (db) {
                 shoppingInput.value = ''; 
             } catch (e) {
                 if(e.code === 'permission-denied'){
-                    alert("Impossible d'ajouter : Vérifiez le Mode Test dans Firestore.");
+                    alert("Impossible d'ajouter : vérifie les règles Firestore (collection \"courses\").");
                 }
             }
         }
