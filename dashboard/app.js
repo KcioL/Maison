@@ -39,6 +39,7 @@ function widgetListe(el) {
     const champ = form.querySelector("input");
     const zoneImport = el.querySelector(".liste-import");
     let listes = [], id = null, arreterArticles = null, articles = [], charge = false;
+    let voulue = null;   // liste tout juste créée, à ouvrir dès qu'elle arrive
 
     const liste = () => listes.find(l => l.id === id);
     const articlesCol = () => collection(db, "listes", id, "articles");
@@ -46,7 +47,8 @@ function widgetListe(el) {
     function majListes(nouvelles) {
         listes = nouvelles; charge = true;
         let cible = id;
-        if (!cible || !listes.some(l => l.id === cible)) {
+        if (voulue && listes.some(l => l.id === voulue)) { cible = voulue; voulue = null; }
+        else if (!cible || !listes.some(l => l.id === cible)) {
             const memo = lireMemoire(sorte.cle);
             cible = listes.some(l => l.id === memo) ? memo : (listes[0]?.id || null);
         }
@@ -69,11 +71,22 @@ function widgetListe(el) {
         dessinerChoix();
         dessiner();
         if (!id) return;
-        arreterArticles = onSnapshot(query(articlesCol(), orderBy("creeLe", "asc")), snap => {
+        ecouterArticles(id, 0);
+        if (type === "courses") proposerImport();
+    }
+
+    function ecouterArticles(pour, essai) {
+        arreterArticles = onSnapshot(query(collection(db, "listes", pour, "articles"), orderBy("creeLe", "asc")), snap => {
+            if (pour !== id) return;
             articles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
             dessiner();
-        }, err => console.error("articles", err));
-        if (type === "courses") proposerImport();
+        }, err => {
+            // juste après une création ou un partage, le serveur peut ne pas encore connaître
+            // la liste : on réessaie quelques fois avant d'abandonner
+            if (err.code === "permission-denied" && essai < 4 && pour === id) {
+                setTimeout(() => { if (pour === id) ecouterArticles(pour, essai + 1); }, 800 * (essai + 1));
+            } else console.error("articles", err);
+        });
     }
 
     function dessiner() {
@@ -112,9 +125,11 @@ function widgetListe(el) {
     }
     async function creer(nom) {
         try {
+            // (la promesse se termine quand la liste est bien enregistrée sur le serveur)
             const nouvel = await creerPartage("listes", { name: nom, type });
             ecrireMemoire(sorte.cle, nouvel);
-            id = null;   // la liste arrive par l'écoute, puis s'ouvre
+            if (listes.some(l => l.id === nouvel)) ouvrir(nouvel);
+            else voulue = nouvel;   // elle s'ouvrira dès qu'elle arrive par l'écoute
             toast(`Liste « ${nom} » créée.`);
         } catch (e) { console.error(e); toast("Création impossible. Réessaie."); }
     }
@@ -133,6 +148,7 @@ function widgetListe(el) {
         } catch { /* ancienne collection inaccessible : rien à proposer */ }
     }
     async function importer(bouton) {
+        if (!id) { toast("Ouvre d'abord la liste où mettre les articles."); return; }
         bouton.disabled = true; bouton.textContent = "Import…";
         try {
             const anciens = await getDocs(collection(db, "courses"));

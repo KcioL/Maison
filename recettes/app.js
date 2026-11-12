@@ -313,9 +313,11 @@ function nouveauCarnet() {
 
 async function creerCarnet(nom) {
   try {
+    // (la promesse se termine quand le carnet est bien enregistré sur le serveur)
     const id = await creerPartage("carnets", { name: nom });
     ecrireMemo(id);
-    carnetVoulu = id;   // il s'ouvrira dès qu'il arrive par l'écoute
+    if (carnets.some((c) => c.id === id)) changerCarnet(id);
+    else carnetVoulu = id;   // il s'ouvrira dès qu'il arrive par l'écoute
     toastSite(`Carnet « ${nom} » créé.`);
   } catch (e) { console.error(e); toastSite("Création impossible. Réessaie."); }
 }
