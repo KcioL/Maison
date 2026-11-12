@@ -1,37 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
+<!-- Ancienne adresse de l'appli : renvoie vers la page principale du site. -->
 <html lang="fr">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Les recettes de Jenigger</title>
-  <meta name="theme-color" content="#E6DCF9" data-sombre="#1d1a26">
-  <script src="../commun/theme.js"></script>
-
-  <!-- Logo dans l'onglet du navigateur -->
-  <link rel="icon" href="icons/favicon.ico" sizes="16x16 32x32 48x48">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-
-  <!-- Logo de l'application sur l'écran d'accueil du téléphone -->
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="Jenigger">
-
-  <!-- Polices : Caveat (manuscrite) + Atkinson Hyperlegible (lisible de loin en cuisine) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Maison</title>
+    <meta http-equiv="refresh" content="0; url=../#/recettes">
+    <script>location.replace("../#/recettes" + (location.hash.startsWith("#/") ? location.hash.slice(1) : ""));</script>
 </head>
-<body data-app="recettes" data-nav="pleine-page">
-  <div id="app" aria-live="polite">
-    <p class="chargement">Ouverture du carnet…</p>
-  </div>
-  <div id="toast" class="toast" role="status" hidden></div>
-
-  <script type="module" src="../commun/nav.js"></script>
-  <script type="module" src="app.js"></script>
-</body>
+<body></body>
 </html>

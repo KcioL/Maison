@@ -1,0 +1,71 @@
+/* ==========================================
+   STYLE « MAISON » (cosy) : Menu, Dashboard et Stock
+   S'applique aux vues qui ont la classe .style-maison
+   (réglé par le champ style: "maison" dans commun/apps.js).
+   ========================================== */
+
+.style-maison {
+    padding: 0.5rem 2rem 2rem;
+}
+.style-maison * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+.style-maison header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.style-maison h1 {
+    font-size: 2.8rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -1px;
+}
+
+/* --- CARTES --- */
+.style-maison .widget {
+    background: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--card-shadow);
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(0,0,0,0.02);
+}
+
+.style-maison .widget-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-bottom: 2px dashed var(--line);
+    padding-bottom: 0.8rem;
+    color: var(--text-main);
+}
+
+/* --- Logos dans les titres --- */
+.style-maison .titre-logo { display: inline-flex; align-items: center; justify-content: center; gap: 0.6rem; }
+.style-maison .titre-logo img { width: 1.6em; height: 1.6em; flex: none; filter: drop-shadow(0 4px 10px rgba(74, 68, 60, 0.18)); }
+.style-maison .widget-logo { width: 1.7em; height: 1.7em; flex: none; }
+
+/* --- Messages de chargement discrets --- */
+.style-maison #list-loader,
+.style-maison .st-boot,
+.style-maison .st-empty.chargement { animation: apparait-si-lent 0.25s ease-out 0.45s both; }
+
+/* --- TÉLÉPHONE --- */
+@media (max-width: 700px) {
+    .style-maison {
+        padding: 0.3rem max(1rem, env(safe-area-inset-right, 0px)) 1rem max(1rem, env(safe-area-inset-left, 0px));
+    }
+    .style-maison h1 { font-size: 2rem; }
+    .style-maison header { margin-bottom: 1.5rem; }
+    .style-maison .widget { padding: 1.25rem; }
+    .style-maison .widget-title { font-size: 1.15rem; margin-bottom: 1rem; }
+}

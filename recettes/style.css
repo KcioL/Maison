@@ -1,8 +1,13 @@
-/* =========================================================
-   Carnet de recettes : version pastel
-   ========================================================= */
+@import url("https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Caveat:wght@500;700&display=swap");
 
-:root {
+/* ==========================================
+   CARNET DE RECETTES
+   Toutes les règles commencent par .vue-recettes : elles ne s'appliquent
+   qu'à cette appli et ne débordent pas sur les autres.
+   Pour ajouter une règle, garde ce préfixe (.vue-recettes .ma-classe { … }).
+   ========================================== */
+
+.vue-recettes{
   /* papier et texte */
   --papier: #FCFAFE;
   --blanc: #FFFFFF;
@@ -34,10 +39,10 @@
   --largeur: 1080px;
 }
 
-*, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+.vue-recettes *, .vue-recettes *::before, .vue-recettes *::after{ box-sizing: border-box; }
+.vue-recettes{ -webkit-text-size-adjust: 100%; }
 
-body {
+.vue-recettes{
   margin: 0;
   background: var(--papier);
   color: var(--texte);
@@ -47,21 +52,21 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-img { display: block; max-width: 100%; }
-a { color: var(--encre); }
-button, input, textarea { font: inherit; color: inherit; }
+.vue-recettes img{ display: block; max-width: 100%; }
+.vue-recettes a{ color: var(--encre); }
+.vue-recettes button, .vue-recettes input, .vue-recettes textarea{ font: inherit; color: inherit; }
 
-:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+.vue-recettes :focus-visible{ outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
 
-[hidden] { display: none !important; }
+.vue-recettes [hidden]{ display: none !important; }
 
-.sr-only {
+.vue-recettes .sr-only{
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 
 /* ---------- Papier à carreaux (sur n'importe quelle couleur de fond) ---------- */
-.seyes {
+.vue-recettes .seyes{
   background-image:
     linear-gradient(to bottom, rgba(74, 62, 142, .10) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(74, 62, 142, .045) 1px, transparent 1px),
@@ -69,8 +74,8 @@ button, input, textarea { font: inherit; color: inherit; }
   background-size: 100% 32px, 100% 8px, 32px 100%;
 }
 
-.avec-marge { position: relative; }
-.avec-marge::before {
+.vue-recettes .avec-marge{ position: relative; }
+.vue-recettes .avec-marge::before{
   content: "";
   position: absolute; top: 0; bottom: 0;
   left: calc(var(--gauche, 56px) - 12px);
@@ -78,15 +83,15 @@ button, input, textarea { font: inherit; color: inherit; }
 }
 
 /* couleur pastel propre à chaque recette */
-.c-lavande { --pastel: var(--lavande); }
-.c-menthe  { --pastel: var(--menthe); }
-.c-peche   { --pastel: var(--peche); }
-.c-beurre  { --pastel: var(--beurre); }
-.c-rose    { --pastel: var(--rose); }
-.c-ciel    { --pastel: var(--ciel); }
+.vue-recettes .c-lavande{ --pastel: var(--lavande); }
+.vue-recettes .c-menthe{ --pastel: var(--menthe); }
+.vue-recettes .c-peche{ --pastel: var(--peche); }
+.vue-recettes .c-beurre{ --pastel: var(--beurre); }
+.vue-recettes .c-rose{ --pastel: var(--rose); }
+.vue-recettes .c-ciel{ --pastel: var(--ciel); }
 
 /* ---------- Boutons ---------- */
-.btn {
+.vue-recettes .btn{
   display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
   min-height: 46px;
   padding: .55rem 1.2rem;
@@ -99,27 +104,27 @@ button, input, textarea { font: inherit; color: inherit; }
   cursor: pointer;
   white-space: nowrap;
 }
-.btn:hover { background: var(--bouton-survol); }
-.btn svg { width: 1.15em; height: 1.15em; flex: none; }
-.btn[disabled] { opacity: .65; cursor: progress; }
+.vue-recettes .btn:hover{ background: var(--bouton-survol); }
+.vue-recettes .btn svg{ width: 1.15em; height: 1.15em; flex: none; }
+.vue-recettes .btn[disabled]{ opacity: .65; cursor: progress; }
 
-.btn-clair { background: var(--blanc); box-shadow: inset 0 0 0 1.5px var(--bouton); }
-.btn-clair:hover { background: var(--lavande); }
+.vue-recettes .btn-clair{ background: var(--blanc); box-shadow: inset 0 0 0 1.5px var(--bouton); }
+.vue-recettes .btn-clair:hover{ background: var(--lavande); }
 
-.btn-danger { background: transparent; color: #B83A62; padding-inline: .5rem; }
+.vue-recettes .btn-danger{ background: transparent; color: #B83A62; padding-inline: .5rem; }
 
-.btn-supprimer { background: #F7C9D8; color: #6A1D39; }
-.btn-supprimer:hover { background: #F2B1C6; }
-.btn-supprimer[disabled] { opacity: .5; cursor: default; }
-.btn-danger:hover { background: var(--rose); }
+.vue-recettes .btn-supprimer{ background: #F7C9D8; color: #6A1D39; }
+.vue-recettes .btn-supprimer:hover{ background: #F2B1C6; }
+.vue-recettes .btn-supprimer[disabled]{ opacity: .5; cursor: default; }
+.vue-recettes .btn-danger:hover{ background: var(--rose); }
 
-.lien {
+.vue-recettes .lien{
   background: none; border: 0; padding: .5rem 0; cursor: pointer;
   color: var(--doux); text-decoration: underline; text-underline-offset: 3px;
 }
 
 /* ---------- Barre du haut ---------- */
-.barre {
+.vue-recettes .barre{
   position: sticky; top: 0; z-index: 10;
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
   padding: calc(.5rem + env(safe-area-inset-top)) var(--marge-x) .5rem;
@@ -127,56 +132,56 @@ button, input, textarea { font: inherit; color: inherit; }
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--ligne-legere);
 }
-.retour {
+.vue-recettes .retour{
   display: inline-flex; align-items: center; gap: .25rem;
   min-height: 44px; padding-right: .5rem;
   color: var(--encre); font-weight: 700; text-decoration: none;
 }
-.retour svg { width: 1.3rem; height: 1.3rem; }
-.barre-actions { display: flex; align-items: center; gap: .5rem; }
-.barre-actions .btn { padding-inline: 1rem; }
+.vue-recettes .retour svg{ width: 1.3rem; height: 1.3rem; }
+.vue-recettes .barre-actions{ display: flex; align-items: center; gap: .5rem; }
+.vue-recettes .barre-actions .btn{ padding-inline: 1rem; }
 @media (max-width: 479px) {
   /* téléphone : la poubelle seule, pour que tout tienne sur une ligne */
-  .barre-actions .btn-supprimer { width: 46px; padding: 0; }
-  .barre-actions .btn-supprimer .texte-bouton { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .vue-recettes .barre-actions .btn-supprimer{ width: 46px; padding: 0; }
+  .vue-recettes .barre-actions .btn-supprimer .texte-bouton{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 @media (max-width: 359px) {
-  .barre-actions { gap: .35rem; }
-  .barre-actions .btn-clair { padding-inline: .75rem; }
+  .vue-recettes .barre-actions{ gap: .35rem; }
+  .vue-recettes .barre-actions .btn-clair{ padding-inline: .75rem; }
 }
 
 /* ---------- Accueil ---------- */
-.entete {
+.vue-recettes .entete{
   --gauche: 56px;
   background-color: var(--lavande);
   padding: calc(40px + env(safe-area-inset-top)) var(--marge-x) 28px var(--gauche);
   border-radius: 0 0 28px 28px;
 }
-.entete-inner {
+.vue-recettes .entete-inner{
   max-width: var(--largeur); margin: 0 auto;
   display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem;
 }
-.titre-carnet {
+.vue-recettes .titre-carnet{
   margin: 0;
   font-family: var(--manuscrit); font-weight: 700;
   font-size: clamp(2.5rem, 9vw, 4rem);
   line-height: 1;
   color: var(--encre);
 }
-.entete .btn { background: var(--blanc); }
-.entete .btn:hover { background: var(--papier); }
+.vue-recettes .entete .btn{ background: var(--blanc); }
+.vue-recettes .entete .btn:hover{ background: var(--papier); }
 
-.page {
+.vue-recettes .page{
   max-width: var(--largeur); margin: 0 auto;
   padding: 0 var(--marge-x) calc(3rem + env(safe-area-inset-bottom));
 }
 
-.recherche { position: relative; display: block; margin: 1.5rem 0 .5rem; }
-.recherche svg {
+.vue-recettes .recherche{ position: relative; display: block; margin: 1.5rem 0 .5rem; }
+.vue-recettes .recherche svg{
   position: absolute; left: 1rem; top: 50%; transform: translateY(-50%);
   width: 1.2rem; height: 1.2rem; color: var(--encre); pointer-events: none;
 }
-.recherche input {
+.vue-recettes .recherche input{
   width: 100%;
   padding: .8rem 1rem .8rem 2.75rem;
   font-size: 1.0625rem;
@@ -185,36 +190,36 @@ button, input, textarea { font: inherit; color: inherit; }
   border-radius: 999px;
   -webkit-appearance: none; appearance: none;
 }
-.recherche input::placeholder { color: var(--doux); }
-.recherche input:focus-visible { outline: none; border-color: var(--bouton-survol); box-shadow: 0 0 0 4px var(--lavande); }
+.vue-recettes .recherche input::placeholder{ color: var(--doux); }
+.vue-recettes .recherche input:focus-visible{ outline: none; border-color: var(--bouton-survol); box-shadow: 0 0 0 4px var(--lavande); }
 
-.ligne-compteur {
+.vue-recettes .ligne-compteur{
   display: flex; align-items: center; justify-content: space-between; gap: 1rem;
   margin: 0 0 1.25rem; padding: 0 .25rem 0 1rem;
 }
-.compteur { margin: 0; color: var(--doux); font-size: .9375rem; }
-.ligne-compteur .lien { min-height: 44px; font-size: .9375rem; color: var(--encre); }
+.vue-recettes .compteur{ margin: 0; color: var(--doux); font-size: .9375rem; }
+.vue-recettes .ligne-compteur .lien{ min-height: 44px; font-size: .9375rem; color: var(--encre); }
 
-.grille {
+.vue-recettes .grille{
   list-style: none; margin: 0; padding: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 2rem 1rem;
 }
-@media (min-width: 640px) { .grille { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.5rem 1.5rem; } }
-@media (min-width: 960px) { .grille { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 640px) { .vue-recettes .grille{ grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.5rem 1.5rem; } }
+@media (min-width: 960px) { .vue-recettes .grille{ grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 
-.fiche {
+.vue-recettes .fiche{
   display: block; position: relative; text-decoration: none; color: inherit; padding-top: 8px;
   -webkit-touch-callout: none;   /* pas d'aperçu de lien sur iPhone à l'appui long */
   -webkit-user-select: none; user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
-.fiche img { -webkit-touch-callout: none; pointer-events: none; }
-.fiche-visuel { position: relative; }
+.vue-recettes .fiche img{ -webkit-touch-callout: none; pointer-events: none; }
+.vue-recettes .fiche-visuel{ position: relative; }
 
 /* le petit morceau de washi tape, dans la couleur de la recette */
-.fiche::before {
+.vue-recettes .fiche::before{
   content: "";
   position: absolute; z-index: 1; top: 0; left: 50%;
   width: 58px; height: 20px;
@@ -224,19 +229,19 @@ button, input, textarea { font: inherit; color: inherit; }
   border-radius: 2px;
   box-shadow: 0 1px 0 rgba(74, 62, 142, .08);
 }
-.grille li:nth-child(even) .fiche::before { transform: translateX(-50%) rotate(3deg); }
+.vue-recettes .grille li:nth-child(even) .fiche::before{ transform: translateX(-50%) rotate(3deg); }
 
-.fiche-photo, .fiche-vide {
+.vue-recettes .fiche-photo, .vue-recettes .fiche-vide{
   aspect-ratio: 4 / 5;
   width: 100%;
   border-radius: 14px;
   background-color: var(--pastel);
 }
-.fiche-photo { object-fit: cover; }
-.fiche-photo, .fiche-vide { transition: transform .15s ease, box-shadow .15s ease; }
+.vue-recettes .fiche-photo{ object-fit: cover; }
+.vue-recettes .fiche-photo, .vue-recettes .fiche-vide{ transition: transform .15s ease, box-shadow .15s ease; }
 
 /* ---- mode sélection ---- */
-.fiche-coche {
+.vue-recettes .fiche-coche{
   position: absolute; top: 10px; right: 10px;
   width: 30px; height: 30px; border-radius: 50%;
   display: none; place-items: center;
@@ -244,32 +249,32 @@ button, input, textarea { font: inherit; color: inherit; }
   box-shadow: inset 0 0 0 2px var(--bouton-survol);
   color: transparent;
 }
-.fiche-coche svg { width: 18px; height: 18px; }
-.en-selection .fiche-coche { display: grid; }
-.en-selection { padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
+.vue-recettes .fiche-coche svg{ width: 18px; height: 18px; }
+.vue-recettes .en-selection .fiche-coche{ display: grid; }
+.vue-recettes .en-selection{ padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
 
-.fiche.est-selectionnee .fiche-photo,
-.fiche.est-selectionnee .fiche-vide {
+.vue-recettes .fiche.est-selectionnee .fiche-photo,
+.vue-recettes .fiche.est-selectionnee .fiche-vide{
   transform: scale(.94);
   box-shadow: 0 0 0 4px var(--papier), 0 0 0 7px var(--encre);
 }
-.fiche.est-selectionnee .fiche-coche { background: var(--encre); box-shadow: none; color: var(--blanc); }
-.fiche.est-selectionnee .fiche-titre { text-decoration: none; }
-.fiche-vide {
+.vue-recettes .fiche.est-selectionnee .fiche-coche{ background: var(--encre); box-shadow: none; color: var(--blanc); }
+.vue-recettes .fiche.est-selectionnee .fiche-titre{ text-decoration: none; }
+.vue-recettes .fiche-vide{
   display: grid; place-items: center;
   font-family: var(--manuscrit); font-weight: 700;
   font-size: 4.5rem; color: var(--encre);
 }
-.fiche-titre {
+.vue-recettes .fiche-titre{
   margin: .55rem .15rem 0;
   font-family: var(--manuscrit); font-weight: 700;
   font-size: 1.5rem; line-height: 1.1;
   color: var(--encre);
   overflow-wrap: anywhere;
 }
-@media (hover: hover) { .fiche:hover .fiche-titre { text-decoration: underline; text-decoration-color: var(--marge); text-decoration-thickness: 2px; text-underline-offset: 4px; } }
+@media (hover: hover) { .vue-recettes .fiche:hover .fiche-titre{ text-decoration: underline; text-decoration-color: var(--marge); text-decoration-thickness: 2px; text-underline-offset: 4px; } }
 
-.vide {
+.vue-recettes .vide{
   --gauche: 44px;
   margin-top: 1.5rem;
   padding: 32px 20px 32px var(--gauche);
@@ -277,94 +282,94 @@ button, input, textarea { font: inherit; color: inherit; }
   border-radius: 20px;
   overflow: hidden;
 }
-.vide p { margin: 0 0 1.25rem; font-family: var(--manuscrit); font-size: 1.75rem; line-height: 32px; color: var(--encre); }
-.vide .btn { background: var(--blanc); }
+.vue-recettes .vide p{ margin: 0 0 1.25rem; font-family: var(--manuscrit); font-size: 1.75rem; line-height: 32px; color: var(--encre); }
+.vue-recettes .vide .btn{ background: var(--blanc); }
 
-.pied { margin-top: 3rem; text-align: center; }
+.vue-recettes .pied{ margin-top: 3rem; text-align: center; }
 
 /* ---------- Page recette ---------- */
-.photos-wrap { position: relative; max-width: var(--largeur); margin: 0 auto; }
-.photos {
+.vue-recettes .photos-wrap{ position: relative; max-width: var(--largeur); margin: 0 auto; }
+.vue-recettes .photos{
   display: flex; overflow-x: auto;
   scroll-snap-type: x mandatory; scrollbar-width: none;
   background: var(--pastel);
 }
-.photos::-webkit-scrollbar { display: none; }
-.photos img {
+.vue-recettes .photos::-webkit-scrollbar{ display: none; }
+.vue-recettes .photos img{
   flex: 0 0 100%; width: 100%;
   aspect-ratio: 4 / 3; max-height: 62vh;
   object-fit: cover; scroll-snap-align: start;
   background: var(--pastel);
 }
-.photos-compteur {
+.vue-recettes .photos-compteur{
   position: absolute; right: 12px; bottom: 12px;
   padding: .15rem .65rem; border-radius: 999px;
   background: rgba(255, 255, 255, .88); color: var(--encre);
   font-size: .875rem; font-weight: 700;
 }
 @media (min-width: 880px) {
-  .photos-wrap { margin-top: 1.25rem; padding: 0 var(--marge-x); }
-  .photos { border-radius: 20px; }
-  .photos-compteur { right: calc(var(--marge-x) + 12px); }
+  .vue-recettes .photos-wrap{ margin-top: 1.25rem; padding: 0 var(--marge-x); }
+  .vue-recettes .photos{ border-radius: 20px; }
+  .vue-recettes .photos-compteur{ right: calc(var(--marge-x) + 12px); }
 }
 
-.titre-bloc {
+.vue-recettes .titre-bloc{
   --gauche: 56px;
   background-color: var(--pastel);
   padding: 28px var(--marge-x) 28px var(--gauche);
 }
-.titre-bloc-inner { max-width: var(--largeur); margin: 0 auto; }
+.vue-recettes .titre-bloc-inner{ max-width: var(--largeur); margin: 0 auto; }
 @media (min-width: 880px) {
-  .titre-bloc {
+  .vue-recettes .titre-bloc{
     max-width: calc(var(--largeur) - 2 * var(--marge-x));
     margin: 1rem auto 0;
     border-radius: 20px;
     --gauche: 56px;
   }
 }
-.titre-recette {
+.vue-recettes .titre-recette{
   margin: 0;
   font-family: var(--manuscrit); font-weight: 700;
   font-size: clamp(2.5rem, 10vw, 3.75rem);
   line-height: 1.05; color: var(--encre);
   overflow-wrap: anywhere;
 }
-.actions { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; margin-top: 1.25rem; }
-.actions .btn { background: var(--blanc); }
-.actions .btn:hover { background: var(--papier); }
+.vue-recettes .actions{ display: flex; flex-wrap: wrap; align-items: center; gap: .75rem 1rem; margin-top: 1.25rem; }
+.vue-recettes .actions .btn{ background: var(--blanc); }
+.vue-recettes .actions .btn:hover{ background: var(--papier); }
 
-.interrupteur {
+.vue-recettes .interrupteur{
   display: inline-flex; align-items: center; gap: .6rem;
   min-height: 44px; cursor: pointer; font-size: .9375rem;
 }
-.interrupteur input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.interrupteur .piste {
+.vue-recettes .interrupteur input{ position: absolute; opacity: 0; width: 1px; height: 1px; }
+.vue-recettes .interrupteur .piste{
   position: relative; width: 46px; height: 28px; flex: none;
   border-radius: 999px; background: rgba(255, 255, 255, .8);
   box-shadow: inset 0 0 0 1.5px rgba(74, 62, 142, .18);
   transition: background .15s;
 }
-.interrupteur .piste::after {
+.vue-recettes .interrupteur .piste::after{
   content: ""; position: absolute; top: 4px; left: 4px;
   width: 20px; height: 20px; border-radius: 50%; background: #B3A8D6;
   transition: transform .15s;
 }
-.interrupteur input:checked + .piste { background: var(--blanc); box-shadow: inset 0 0 0 1.5px var(--encre); }
-.interrupteur input:checked + .piste::after { transform: translateX(18px); background: #3FA67A; }
-.interrupteur input:focus-visible + .piste { outline: 3px solid var(--focus); outline-offset: 2px; }
+.vue-recettes .interrupteur input:checked + .piste{ background: var(--blanc); box-shadow: inset 0 0 0 1.5px var(--encre); }
+.vue-recettes .interrupteur input:checked + .piste::after{ transform: translateX(18px); background: #3FA67A; }
+.vue-recettes .interrupteur input:focus-visible + .piste{ outline: 3px solid var(--focus); outline-offset: 2px; }
 
-.contenu {
+.vue-recettes .contenu{
   max-width: var(--largeur); margin: 0 auto;
   padding: 2rem var(--marge-x) calc(3rem + env(safe-area-inset-bottom));
   display: grid; gap: 2.5rem;
 }
 @media (min-width: 880px) {
-  .contenu { grid-template-columns: minmax(260px, 1fr) 1.7fr; gap: 3.5rem; align-items: start; }
-  .ingredients { position: sticky; top: 80px; }
+  .vue-recettes .contenu{ grid-template-columns: minmax(260px, 1fr) 1.7fr; gap: 3.5rem; align-items: start; }
+  .vue-recettes .ingredients{ position: sticky; top: 80px; }
 }
 
 /* titres de section surlignés au feutre pastel */
-.section-titre {
+.vue-recettes .section-titre{
   display: inline-block;
   margin: 0 0 1rem;
   padding: 0 .35rem;
@@ -373,63 +378,63 @@ button, input, textarea { font: inherit; color: inherit; }
   color: var(--encre);
   background: linear-gradient(to bottom, transparent 52%, var(--surligneur, var(--beurre)) 52%, var(--surligneur, var(--beurre)) 92%, transparent 92%);
 }
-.ingredients .section-titre { --surligneur: var(--menthe); }
-.preparation .section-titre { --surligneur: var(--peche); }
+.vue-recettes .ingredients .section-titre{ --surligneur: var(--menthe); }
+.vue-recettes .preparation .section-titre{ --surligneur: var(--peche); }
 
-.liste-ingredients { list-style: none; margin: 0; padding: 0; }
-.liste-ingredients li { border-bottom: 1px dashed var(--ligne); }
-.liste-ingredients label { display: flex; align-items: flex-start; gap: .75rem; padding: .6rem 0; cursor: pointer; }
-.liste-ingredients input { flex: none; margin: .2rem 0 0; width: 1.2rem; height: 1.2rem; accent-color: #9B83E0; }
-.liste-ingredients input:checked + span {
+.vue-recettes .liste-ingredients{ list-style: none; margin: 0; padding: 0; }
+.vue-recettes .liste-ingredients li{ border-bottom: 1px dashed var(--ligne); }
+.vue-recettes .liste-ingredients label{ display: flex; align-items: flex-start; gap: .75rem; padding: .6rem 0; cursor: pointer; }
+.vue-recettes .liste-ingredients input{ flex: none; margin: .2rem 0 0; width: 1.2rem; height: 1.2rem; accent-color: #9B83E0; }
+.vue-recettes .liste-ingredients input:checked + span{
   color: var(--doux);
   text-decoration: line-through; text-decoration-color: var(--marge); text-decoration-thickness: 2px;
 }
 
-.liste-etapes { --gauche: 48px; list-style: none; margin: 0; padding: 0; counter-reset: etape; }
-.liste-etapes li {
+.vue-recettes .liste-etapes{ --gauche: 48px; list-style: none; margin: 0; padding: 0; counter-reset: etape; }
+.vue-recettes .liste-etapes li{
   position: relative; counter-increment: etape;
   padding: .2rem 0 1.35rem var(--gauche);
   max-width: 68ch; font-size: 1.125rem; line-height: 1.65;
 }
-.liste-etapes li::before {
+.vue-recettes .liste-etapes li::before{
   content: counter(etape);
   position: absolute; left: 0; top: -.35rem;
   width: calc(var(--gauche) - 22px); text-align: right;
   font-family: var(--manuscrit); font-weight: 700; font-size: 2rem; line-height: 1;
   color: var(--encre);
 }
-.liste-etapes li::after {
+.vue-recettes .liste-etapes li::after{
   content: ""; position: absolute; top: 0; bottom: 0;
   left: calc(var(--gauche) - 12px); width: 2px; background: var(--marge);
 }
 
-.notes {
+.vue-recettes .notes{
   margin-top: 2rem; padding: 1rem 1.2rem;
   background: var(--beurre); border-radius: 16px;
   white-space: pre-line; max-width: 68ch;
 }
-.notes h3 { margin: 0 0 .25rem; font-size: 1rem; color: var(--encre); }
+.vue-recettes .notes h3{ margin: 0 0 .25rem; font-size: 1rem; color: var(--encre); }
 
-.muet { color: var(--doux); }
+.vue-recettes .muet{ color: var(--doux); }
 
 /* ---------- Formulaire ---------- */
-.form {
+.vue-recettes .form{
   max-width: 720px; margin: 0 auto;
   padding: 1.5rem var(--marge-x) calc(7rem + env(safe-area-inset-bottom));
 }
-.form h1 {
+.vue-recettes .form h1{
   margin: 0 0 1.5rem;
   font-family: var(--manuscrit); font-weight: 700;
   font-size: 2.75rem; line-height: 1; color: var(--encre);
 }
-.champ { margin-bottom: 1.6rem; }
-.champ > label, .champ > .label { display: block; margin-bottom: .35rem; font-weight: 700; }
-.aide { margin: -.15rem 0 .5rem; color: var(--doux); font-size: .9375rem; }
-.champ input[type="text"],
-.champ input[type="url"],
-.champ input[type="email"],
-.champ input[type="password"],
-.champ textarea {
+.vue-recettes .champ{ margin-bottom: 1.6rem; }
+.vue-recettes .champ > label, .vue-recettes .champ > .label{ display: block; margin-bottom: .35rem; font-weight: 700; }
+.vue-recettes .aide{ margin: -.15rem 0 .5rem; color: var(--doux); font-size: .9375rem; }
+.vue-recettes .champ input[type="text"],
+.vue-recettes .champ input[type="url"],
+.vue-recettes .champ input[type="email"],
+.vue-recettes .champ input[type="password"],
+.vue-recettes .champ textarea{
   width: 100%;
   padding: .75rem .9rem;
   font-size: 1.0625rem;   /* ≥ 16px : évite le zoom auto sur iPhone */
@@ -438,34 +443,34 @@ button, input, textarea { font: inherit; color: inherit; }
   border-radius: 14px;
   -webkit-appearance: none; appearance: none;
 }
-.champ textarea { min-height: 9rem; resize: vertical; line-height: 1.55; }
-.champ input:focus-visible, .champ textarea:focus-visible {
+.vue-recettes .champ textarea{ min-height: 9rem; resize: vertical; line-height: 1.55; }
+.vue-recettes .champ input:focus-visible, .vue-recettes .champ textarea:focus-visible{
   outline: none; border-color: var(--bouton-survol); box-shadow: 0 0 0 4px var(--lavande);
 }
 
-.vignettes { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: .7rem; }
-.vignette { position: relative; aspect-ratio: 1; }
-.vignette > button.couv {
+.vue-recettes .vignettes{ display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: .7rem; }
+.vue-recettes .vignette{ position: relative; aspect-ratio: 1; }
+.vue-recettes .vignette > button.couv{
   all: unset; display: block; width: 100%; height: 100%;
   cursor: pointer; border-radius: 14px; overflow: hidden; background: var(--lavande);
 }
-.vignette > button.couv:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-.vignette img { width: 100%; height: 100%; object-fit: cover; }
-.vignette .badge {
+.vue-recettes .vignette > button.couv:focus-visible{ outline: 3px solid var(--focus); outline-offset: 2px; }
+.vue-recettes .vignette img{ width: 100%; height: 100%; object-fit: cover; }
+.vue-recettes .vignette .badge{
   position: absolute; left: 6px; bottom: 6px;
   padding: .05rem .5rem; border-radius: 999px;
   background: var(--blanc); color: var(--encre);
   font-size: .75rem; font-weight: 700;
 }
-.vignette .retirer {
+.vue-recettes .vignette .retirer{
   position: absolute; top: -8px; right: -8px;
   width: 32px; height: 32px; border-radius: 50%;
   display: grid; place-items: center; padding: 0;
   border: 2px solid var(--papier);
   background: var(--rose); color: #8A2B4B; cursor: pointer;
 }
-.vignette .retirer svg { width: 14px; height: 14px; }
-.ajout-photo {
+.vue-recettes .vignette .retirer svg{ width: 14px; height: 14px; }
+.vue-recettes .ajout-photo{
   position: relative; aspect-ratio: 1;
   display: grid; place-items: center; align-content: center; gap: .25rem;
   border: 2px dashed var(--bouton-survol); border-radius: 14px;
@@ -473,36 +478,36 @@ button, input, textarea { font: inherit; color: inherit; }
   color: var(--encre); font-weight: 700; font-size: .875rem; text-align: center;
   cursor: pointer; padding: .5rem;
 }
-.ajout-photo svg { width: 1.5rem; height: 1.5rem; }
-.ajout-photo input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.ajout-photo:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.vue-recettes .ajout-photo svg{ width: 1.5rem; height: 1.5rem; }
+.vue-recettes .ajout-photo input{ position: absolute; opacity: 0; width: 1px; height: 1px; }
+.vue-recettes .ajout-photo:focus-within{ outline: 3px solid var(--focus); outline-offset: 2px; }
 
-.barre-enregistrer, .barre-bas {
+.vue-recettes .barre-enregistrer, .vue-recettes .barre-bas{
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
   padding: .75rem var(--marge-x) calc(.75rem + env(safe-area-inset-bottom));
   background: rgba(252, 250, 254, .95);
   -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
   border-top: 1px solid var(--ligne);
 }
-.barre-enregistrer-inner { max-width: 720px; margin: 0 auto; display: flex; align-items: center; gap: 1rem; }
-.barre-bas-inner { max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: .75rem; }
-.barre-bas-inner .btn { flex: 1; }
-.barre-bas-inner .btn-supprimer { flex: 1.6; }
-.barre-enregistrer .btn:not(.btn-danger) { flex: 1; max-width: 320px; margin-left: auto; }
+.vue-recettes .barre-enregistrer-inner{ max-width: 720px; margin: 0 auto; display: flex; align-items: center; gap: 1rem; }
+.vue-recettes .barre-bas-inner{ max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: .75rem; }
+.vue-recettes .barre-bas-inner .btn{ flex: 1; }
+.vue-recettes .barre-bas-inner .btn-supprimer{ flex: 1.6; }
+.vue-recettes .barre-enregistrer .btn:not(.btn-danger){ flex: 1; max-width: 320px; margin-left: auto; }
 
-.erreur {
+.vue-recettes .erreur{
   margin: 0 0 1rem; padding: .8rem 1rem;
   background: var(--rose); border-radius: 14px; color: #5E1F37;
 }
 
 /* ---------- Écrans simples (connexion, erreur) ---------- */
-.ecran {
+.vue-recettes .ecran{
   min-height: 100vh; min-height: 100dvh;
   display: grid; place-items: center;
   padding: 2rem var(--marge-x);
   background-color: var(--lavande);
 }
-.carte {
+.vue-recettes .carte{
   --gauche: 52px;
   width: 100%; max-width: 420px;
   padding: 32px 24px 24px var(--gauche);
@@ -510,19 +515,19 @@ button, input, textarea { font: inherit; color: inherit; }
   border-radius: 24px;
   overflow: hidden;
 }
-.carte h1 { margin: 0 0 1.5rem; font-family: var(--manuscrit); font-weight: 700; font-size: 2.5rem; line-height: 1; color: var(--encre); }
-.carte .btn { width: 100%; }
-.carte p { margin: 0 0 1rem; }
-.carte code {
+.vue-recettes .carte h1{ margin: 0 0 1.5rem; font-family: var(--manuscrit); font-weight: 700; font-size: 2.5rem; line-height: 1; color: var(--encre); }
+.vue-recettes .carte .btn{ width: 100%; }
+.vue-recettes .carte p{ margin: 0 0 1rem; }
+.vue-recettes .carte code{
   display: block; margin-top: .35rem; padding: .45rem .6rem;
   background: var(--lavande); border-radius: 8px;
   font-size: .85rem; overflow-wrap: anywhere; user-select: all;
 }
 
-.chargement { padding: 4rem 1rem; text-align: center; font-family: var(--manuscrit); font-size: 1.75rem; color: var(--doux); }
+.vue-recettes .chargement{ padding: 4rem 1rem; text-align: center; font-family: var(--manuscrit); font-size: 1.75rem; color: var(--doux); }
 
 /* ---------- Toast ---------- */
-.toast {
+.vue-recettes .toast{
   position: fixed; left: 50%; z-index: 50;
   bottom: calc(1.25rem + env(safe-area-inset-bottom));
   transform: translateX(-50%);
@@ -530,18 +535,18 @@ button, input, textarea { font: inherit; color: inherit; }
   padding: .7rem 1.2rem; border-radius: 999px;
   background: var(--encre); color: var(--blanc); font-weight: 700;
 }
-body:has(.barre-enregistrer) .toast,
-body:has(.barre-bas:not([hidden])) .toast { bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+body:has(.barre-enregistrer) .vue-recettes .toast,
+body:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
+  .vue-recettes *, .vue-recettes *::before, .vue-recettes *::after{ transition: none !important; scroll-behavior: auto !important; }
 }
 
 /* =========================================================
    MODE SOMBRE (activé par commun/theme.js)
    Même carnet, papier nuit et pastels assourdis
    ========================================================= */
-:root[data-theme="sombre"] {
+:root[data-theme="sombre"] .vue-recettes{
   --papier: #1d1a26;
   --blanc: #2a2536;
   --ligne: #3d3650;
@@ -564,40 +569,52 @@ body:has(.barre-bas:not([hidden])) .toast { bottom: calc(5.5rem + env(safe-area-
   --focus: #a995f0;
 
 }
-[data-theme="sombre"] .seyes {
+[data-theme="sombre"] .vue-recettes .seyes{
   background-image:
     linear-gradient(to bottom, rgba(203, 191, 245, .10) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(203, 191, 245, .04) 1px, transparent 1px),
     linear-gradient(to right, rgba(203, 191, 245, .04) 1px, transparent 1px);
 }
-[data-theme="sombre"] .barre { background: rgba(29, 26, 38, .92); }
-[data-theme="sombre"] .barre-enregistrer,
-[data-theme="sombre"] .barre-bas { background: rgba(29, 26, 38, .95); }
-[data-theme="sombre"] .btn-danger { color: #f08aa8; }
-[data-theme="sombre"] .btn-supprimer { background: #5a2236; color: #ffd3e1; }
-[data-theme="sombre"] .btn-supprimer:hover { background: #6b2942; }
-[data-theme="sombre"] .fiche-coche { background: rgba(42, 37, 54, .92); }
-[data-theme="sombre"] .photos-compteur { background: rgba(42, 37, 54, .88); }
-[data-theme="sombre"] .interrupteur .piste { background: rgba(42, 37, 54, .8); box-shadow: inset 0 0 0 1.5px rgba(203, 191, 245, .25); }
-[data-theme="sombre"] .interrupteur .piste::after { background: #6e6390; }
-[data-theme="sombre"] .interrupteur input:checked + .piste::after { background: #3FA67A; }
-[data-theme="sombre"] .vignette .retirer { color: #ffb3c9; }
-[data-theme="sombre"] .erreur { color: #ffd3e1; }
-[data-theme="sombre"] input, [data-theme="sombre"] textarea { color: var(--texte); }
+[data-theme="sombre"] .vue-recettes .barre{ background: rgba(29, 26, 38, .92); }
+[data-theme="sombre"] .vue-recettes .barre-enregistrer,
+[data-theme="sombre"] .vue-recettes .barre-bas{ background: rgba(29, 26, 38, .95); }
+[data-theme="sombre"] .vue-recettes .btn-danger{ color: #f08aa8; }
+[data-theme="sombre"] .vue-recettes .btn-supprimer{ background: #5a2236; color: #ffd3e1; }
+[data-theme="sombre"] .vue-recettes .btn-supprimer:hover{ background: #6b2942; }
+[data-theme="sombre"] .vue-recettes .fiche-coche{ background: rgba(42, 37, 54, .92); }
+[data-theme="sombre"] .vue-recettes .photos-compteur{ background: rgba(42, 37, 54, .88); }
+[data-theme="sombre"] .vue-recettes .interrupteur .piste{ background: rgba(42, 37, 54, .8); box-shadow: inset 0 0 0 1.5px rgba(203, 191, 245, .25); }
+[data-theme="sombre"] .vue-recettes .interrupteur .piste::after{ background: #6e6390; }
+[data-theme="sombre"] .vue-recettes .interrupteur input:checked + .piste::after{ background: #3FA67A; }
+[data-theme="sombre"] .vue-recettes .vignette .retirer{ color: #ffb3c9; }
+[data-theme="sombre"] .vue-recettes .erreur{ color: #ffd3e1; }
+[data-theme="sombre"] .vue-recettes input, [data-theme="sombre"] .vue-recettes textarea{ color: var(--texte); }
 
 /* Pas de zoom au double-tap ni de délai sur les boutons (téléphone) */
-a, button, input, label, textarea, select { touch-action: manipulation; }
+.vue-recettes a, .vue-recettes button, .vue-recettes input, .vue-recettes label, .vue-recettes textarea, .vue-recettes select{ touch-action: manipulation; }
 
 /* =========================================================
    Barre d'onglets du site (téléphone) : les barres du bas
    du carnet se posent juste au-dessus
    ========================================================= */
 @media (max-width: 700px) {
-  body.avec-onglets .barre-enregistrer,
-  body.avec-onglets .barre-bas { bottom: var(--hauteur-onglets); padding-bottom: .75rem; }
-  body.avec-onglets .toast { bottom: calc(var(--hauteur-onglets) + 1rem); }
-  body.avec-onglets:has(.barre-enregistrer) .toast,
-  body.avec-onglets:has(.barre-bas:not([hidden])) .toast { bottom: calc(var(--hauteur-onglets) + 5rem); }
-  body.avec-onglets .barre { top: 0; }
-  body.avec-onglets .entete { padding-top: 12px; }
+  body.avec-onglets .vue-recettes .barre-enregistrer,
+  body.avec-onglets .vue-recettes .barre-bas{ bottom: var(--hauteur-onglets); padding-bottom: .75rem; }
+  body.avec-onglets .vue-recettes .toast{ bottom: calc(var(--hauteur-onglets) + 1rem); }
+  body.avec-onglets:has(.barre-enregistrer) .vue-recettes .toast,
+  body.avec-onglets:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(var(--hauteur-onglets) + 5rem); }
+  body.avec-onglets .vue-recettes .barre{ top: 0; }
+  body.avec-onglets .vue-recettes .entete{ padding-top: 12px; }
 }
+
+/* « Ouverture du carnet… » n'apparaît que si le chargement dure */
+@keyframes apparait-si-lent { from { opacity: 0; } to { opacity: 1; } }
+.vue-recettes .chargement{ animation: apparait-si-lent .25s ease-out .45s both; }
+
+
+/* ---------- La page entière quand le carnet est affiché ----------
+   (règles hors de .vue-recettes : elles visent la page, pas l'appli)
+   Le papier du carnet remplace la photo de fond. */
+body.appli-recettes::before { display: none; }
+body.appli-recettes { background-color: #FCFAFE; }
+:root[data-theme="sombre"] body.appli-recettes { background-color: #1d1a26; }

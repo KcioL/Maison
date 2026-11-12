@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Maison</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <!-- Icônes et appli « Maison » sur l'écran d'accueil -->
     <meta name="theme-color" content="#fdfbf7" data-sombre="#1b1714">
     <link rel="icon" href="commun/logos/maison.ico" sizes="16x16 32x32 48x48">
     <link rel="icon" type="image/png" sizes="32x32" href="commun/logos/maison-32.png">
@@ -13,52 +13,24 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Maison">
+
+    <!-- Polices et connexions préparées à l'avance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Mode clair / sombre : avant les styles, pour éviter un flash -->
     <script src="commun/theme.js"></script>
     <link rel="stylesheet" href="commun/base.css">
+    <link rel="stylesheet" href="commun/maison.css">
+    <link rel="stylesheet" href="commun/coquille.css">
 </head>
-<body class="menu-page">
+<body>
+    <!-- Chaque appli s'affiche ici dans sa propre vue (voir commun/coquille.js) -->
+    <main id="vues"></main>
 
-    <div class="menu-tools" id="menu-tools"></div>
-
-    <header class="menu-header">
-        <img class="menu-logo" src="commun/logos/maison-192.png" srcset="commun/logos/maison-512.png 2x" alt="Logo de la maison" width="120" height="120">
-        <h1>Salut !</h1>
-        <p id="menu-date"></p>
-        <p class="menu-subtitle">Quelle appli tu veux ouvrir ?</p>
-    </header>
-
-    <main class="app-grid" id="app-grid"></main>
-
-    <script type="module">
-        import { APPS } from "./commun/apps.js";
-
-        document.getElementById("menu-tools").appendChild(window.Theme.bouton());
-
-        const grid = document.getElementById("app-grid");
-        APPS.forEach(a => {
-            const tile = document.createElement("a");
-            tile.className = "app-tile";
-            tile.href = a.href;
-            tile.style.setProperty("--tile-color", a.color);
-            tile.innerHTML = `<span class="app-tile-icon"></span><span class="app-tile-name"></span><span class="app-tile-desc"></span><span class="app-tile-go">Ouvrir →</span>`;
-            const ico = tile.querySelector(".app-tile-icon");
-            if (a.logo) {
-                ico.classList.add("avec-logo");
-                const img = document.createElement("img");
-                img.src = a.logo; img.alt = ""; img.width = 128; img.height = 128;
-                ico.appendChild(img);
-            } else ico.textContent = a.icon;
-            tile.querySelector(".app-tile-name").textContent = a.name;
-            tile.querySelector(".app-tile-desc").textContent = a.desc;
-            grid.appendChild(tile);
-        });
-        const soon = document.createElement("div");
-        soon.className = "app-tile app-tile-soon";
-        soon.innerHTML = `<span class="app-tile-icon">✨</span><span class="app-tile-name">Bientôt</span><span class="app-tile-desc">La prochaine appli viendra se ranger ici.</span>`;
-        grid.appendChild(soon);
-
-        const d = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-        document.getElementById("menu-date").textContent = d.charAt(0).toUpperCase() + d.slice(1);
-    </script>
+    <script type="module" src="commun/coquille.js"></script>
 </body>
 </html>

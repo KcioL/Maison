@@ -1,5 +1,11 @@
 /* =========================================================
    CARNET DE RECETTES
+   Appli chargée dans la page principale (voir commun/coquille.js).
+   Ses pages internes ont pour adresse :
+     #/recettes                   le carnet
+     #/recettes/recette/<id>      une recette
+     #/recettes/ajouter           nouvelle recette
+     #/recettes/modifier/<id>     modifier une recette
    Utilise la base Firebase du site (fichier ../commun/firebase.js).
    ========================================================= */
 
@@ -9,11 +15,15 @@ const TITRE = "Les recettes de Jenigger";
 
 import { db } from "../commun/firebase.js";
 import {
-  collection, doc, getDoc, getDocs, setDoc, updateDoc, writeBatch,
+  collection, doc, getDoc, getDocs, getDocsFromCache, getDocsFromServer, setDoc, updateDoc, writeBatch,
   query, orderBy, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-const app = document.getElementById("app");
+let app;              // zone où s'affichent les pages du carnet
+let racine;           // vue de l'appli
+let outils;           // outils de la coquille (titre, adresse, défilement)
+let cheminCourant = ""; // page interne affichée ("", "recette/<id>", "ajouter"…)
+const $id = (id) => racine.querySelector("#" + id);
 const PASTELS = ["lavande", "menthe", "peche", "beurre", "rose", "ciel"];
 
 let recettesCache = null;        // liste des recettes gardée en mémoire
@@ -52,21 +62,19 @@ const icones = {
 };
 
 function toast(message) {
-  const el = document.getElementById("toast");
+  const el = $id("toast");
   el.textContent = message;
   el.hidden = false;
   clearTimeout(toast.t);
   toast.t = setTimeout(() => (el.hidden = true), 2600);
 }
 
-function aller(hash, { remplacer = false } = {}) {
-  if (remplacer) {
-    history.replaceState(null, "", hash);
-    route();
-  } else {
-    location.hash = hash;
-  }
+// aller("recette/abc") ouvre une page du carnet ; aller("") revient au carnet
+function aller(chemin, options) {
+  outils.aller(chemin, options);
 }
+// adresse d'un lien vers une page du carnet
+const lien = (chemin) => outils.lien(chemin);
 
 function urlValide(url) {
   try {
@@ -155,11 +163,44 @@ async function preparerMiniature(source) {
    recettes/{id}/photos/{photoId} data
    ========================================================= */
 
+const requeteRecettes = () => query(collection(db, "recettes"), orderBy("creeLe", "desc"));
+const versListe = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+const empreinte = (liste) => JSON.stringify(liste.map((r) => [r.id, r.modifieLe?.seconds ?? 0, r.miniature?.length ?? 0]));
+
 async function chargerRecettes({ forcer = false } = {}) {
   if (recettesCache && !forcer) return recettesCache;
-  const snap = await getDocs(query(collection(db, "recettes"), orderBy("creeLe", "desc")));
-  recettesCache = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  if (!forcer) {
+    // 1. affichage immédiat avec les recettes gardées sur le téléphone
+    try {
+      const enCache = await getDocsFromCache(requeteRecettes());
+      if (!enCache.empty) {
+        recettesCache = versListe(enCache);
+        actualiserEnArrierePlan();
+        return recettesCache;
+      }
+    } catch { /* rien en cache : on passe par le serveur */ }
+  }
+  // 2. sinon (première ouverture), on attend le serveur
+  recettesCache = versListe(await getDocs(requeteRecettes()));
   return recettesCache;
+}
+
+// Récupère la version à jour ; ne réaffiche le carnet que si quelque chose a changé
+// et si on est toujours sur l'accueil sans être en train de chercher ou sélectionner.
+function actualiserEnArrierePlan() {
+  getDocsFromServer(requeteRecettes())
+    .then((snap) => {
+      const fraiches = versListe(snap);
+      if (empreinte(fraiches) === empreinte(recettesCache || [])) return;
+      recettesCache = fraiches;
+      const surAccueil = !cheminCourant;
+      const occupe = document.activeElement?.id === "recherche" || racine.querySelector(".en-selection");
+      if (surAccueil && !occupe) {
+        if (outils.visible()) scrollAccueil = window.scrollY;
+        route();
+      }
+    })
+    .catch(() => {});
 }
 
 async function chargerRecette(id) {
@@ -196,19 +237,19 @@ async function supprimerRecettes(liste, progression = () => {}) {
 }
 
 /* =========================================================
-   Routeur (#/  #/recette/:id  #/ajouter  #/modifier/:id)
+   Routeur (page interne d'après cheminCourant)
    ========================================================= */
 
 async function route() {
   libererEcran();
   toucheEchap = null;
-  const parties = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
+  const parties = cheminCourant.split("/").filter(Boolean);
   try {
     if (parties.length === 0) return await pageAccueil();
     if (parties[0] === "recette" && parties[1]) return await pageRecette(parties[1]);
     if (parties[0] === "ajouter") return await pageFormulaire();
     if (parties[0] === "modifier" && parties[1]) return await pageFormulaire(parties[1]);
-    aller("#/", { remplacer: true });
+    aller("", { remplacer: true });
   } catch (err) {
     console.error(err);
     pageErreur(err);
@@ -220,7 +261,7 @@ async function route() {
    ========================================================= */
 
 async function pageAccueil() {
-  document.title = TITRE;
+  outils.titre(TITRE);
   if (!recettesCache) app.innerHTML = `<p class="chargement">Ouverture du carnet…</p>`;
   const recettes = await chargerRecettes();
 
@@ -228,7 +269,7 @@ async function pageAccueil() {
     <header class="entete seyes avec-marge">
       <div class="entete-inner">
         <h1 class="titre-carnet">${esc(TITRE)}</h1>
-        <a class="btn" href="#/ajouter">${icones.plus}<span>Ajouter</span></a>
+        <a class="btn" href="${lien("ajouter")}">${icones.plus}<span>Ajouter</span></a>
       </div>
     </header>
     <main class="page" id="page">
@@ -236,7 +277,7 @@ async function pageAccueil() {
         recettes.length === 0
           ? `<div class="vide seyes avec-marge">
                <p>Le carnet est encore vide.<br>Ajoute ta première recette.</p>
-               <a class="btn" href="#/ajouter">${icones.plus}<span>Ajouter une recette</span></a>
+               <a class="btn" href="${lien("ajouter")}">${icones.plus}<span>Ajouter une recette</span></a>
              </div>`
           : `<label class="recherche">
                ${icones.loupe}
@@ -259,15 +300,15 @@ async function pageAccueil() {
 
   if (recettes.length === 0) return;
 
-  const page = document.getElementById("page");
-  const grille = document.getElementById("grille");
-  const compteur = document.getElementById("compteur");
-  const champ = document.getElementById("recherche");
-  const barre = document.getElementById("barre-selection");
-  const btnSelectionner = document.getElementById("btn-selectionner");
-  const btnAnnuler = document.getElementById("annuler-selection");
-  const btnSupprimer = document.getElementById("supprimer-selection");
-  const texteSupprimer = document.getElementById("texte-supprimer");
+  const page = $id("page");
+  const grille = $id("grille");
+  const compteur = $id("compteur");
+  const champ = $id("recherche");
+  const barre = $id("barre-selection");
+  const btnSelectionner = $id("btn-selectionner");
+  const btnAnnuler = $id("annuler-selection");
+  const btnSupprimer = $id("supprimer-selection");
+  const texteSupprimer = $id("texte-supprimer");
 
   const selection = new Set();
   let modeSelection = false;
@@ -324,7 +365,7 @@ async function pageAccueil() {
       .map(
         (r) => `
         <li>
-          <a class="fiche ${pastelDe(r.id)}" href="#/recette/${r.id}" data-id="${r.id}" draggable="false">
+          <a class="fiche ${pastelDe(r.id)}" href="${lien(`recette/${r.id}`)}" data-id="${r.id}" draggable="false">
             <div class="fiche-visuel">
               ${
                 r.miniature
@@ -440,18 +481,18 @@ async function pageAccueil() {
   });
 
   afficher();
-  requestAnimationFrame(() => window.scrollTo(0, scrollAccueil));
+  requestAnimationFrame(() => outils.defiler(scrollAccueil));
 }
 
 async function pageRecette(id) {
-  window.scrollTo(0, 0);
+  outils.defiler(0);
   if (!recettesCache) app.innerHTML = `<p class="chargement">Ouverture de la recette…</p>`;
   const r = await chargerRecette(id);
   if (!r) {
     toast("Cette recette n'existe plus.");
-    return aller("#/", { remplacer: true });
+    return aller("", { remplacer: true });
   }
-  document.title = `${r.titre} | ${TITRE}`;
+  outils.titre(`${r.titre} | ${TITRE}`);
 
   const couleur = pastelDe(r.id);
   const source = libelleSource(r.source);
@@ -459,10 +500,10 @@ async function pageRecette(id) {
 
   app.innerHTML = `
     <nav class="barre">
-      <a class="retour" href="#/">${icones.retour}<span>Recettes</span></a>
+      <a class="retour" href="${lien("")}">${icones.retour}<span>Recettes</span></a>
       <div class="barre-actions">
         <button type="button" class="btn btn-supprimer" id="supprimer-recette">${icones.poubelle}<span class="texte-bouton">Supprimer</span></button>
-        <a class="btn btn-clair" href="#/modifier/${r.id}">${icones.crayon}<span class="texte-bouton">Modifier</span></a>
+        <a class="btn btn-clair" href="${lien(`modifier/${r.id}`)}">${icones.crayon}<span class="texte-bouton">Modifier</span></a>
       </div>
     </nav>
 
@@ -528,14 +569,14 @@ async function pageRecette(id) {
       </section>
     </main>`;
 
-  document.getElementById("supprimer-recette").addEventListener("click", async (e) => {
+  $id("supprimer-recette").addEventListener("click", async (e) => {
     if (!confirm(`Supprimer « ${r.titre} » ? Cette action est définitive.`)) return;
     const bouton = e.currentTarget;
     bouton.disabled = true;
     try {
       await supprimerRecettes([r]);
       toast("Recette supprimée");
-      aller("#/", { remplacer: true });
+      aller("", { remplacer: true });
     } catch (err) {
       console.error(err);
       bouton.disabled = false;
@@ -555,8 +596,8 @@ async function pageRecette(id) {
       .catch((err) => console.warn("Photos non chargées", err));
   }
 
-  const photosEl = document.getElementById("photos");
-  const compteurPhotos = document.getElementById("photos-compteur");
+  const photosEl = $id("photos");
+  const compteurPhotos = $id("photos-compteur");
   if (photosEl && compteurPhotos) {
     photosEl.addEventListener(
       "scroll",
@@ -568,7 +609,7 @@ async function pageRecette(id) {
     );
   }
 
-  const interrupteur = document.getElementById("ecran");
+  const interrupteur = $id("ecran");
   if (interrupteur) {
     interrupteur.addEventListener("change", async () => {
       if (interrupteur.checked) {
@@ -586,22 +627,22 @@ async function pageRecette(id) {
 }
 
 async function pageFormulaire(id = null) {
-  window.scrollTo(0, 0);
+  outils.defiler(0);
   let r = null;
   let photos = []; // { id, data } pour les photos enregistrées, { fichier, apercu } pour les nouvelles
 
   if (id) {
     app.innerHTML = `<p class="chargement">Ouverture de la recette…</p>`;
     r = await chargerRecette(id);
-    if (!r) return aller("#/", { remplacer: true });
+    if (!r) return aller("", { remplacer: true });
     photos = await chargerPhotos(r);
   }
-  document.title = `${r ? "Modifier" : "Nouvelle recette"} | ${TITRE}`;
+  outils.titre(`${r ? "Modifier" : "Nouvelle recette"} | ${TITRE}`);
   const aSupprimer = [];
 
   app.innerHTML = `
     <nav class="barre">
-      <a class="retour" href="${r ? `#/recette/${r.id}` : "#/"}">${icones.retour}<span>Annuler</span></a>
+      <a class="retour" href="${lien(r ? `recette/${r.id}` : "")}">${icones.retour}<span>Annuler</span></a>
     </nav>
 
     <form class="form" id="form-recette" novalidate>
@@ -650,11 +691,11 @@ async function pageFormulaire(id = null) {
       </div>
     </form>`;
 
-  const vignettes = document.getElementById("vignettes");
-  const zoneErreur = document.getElementById("erreur-form");
+  const vignettes = $id("vignettes");
+  const zoneErreur = $id("erreur-form");
   const montrerErreur = (message) => {
     zoneErreur.innerHTML = `<p class="erreur">${esc(message)}</p>`;
-    window.scrollTo({ top: 0 });
+    outils.defiler(0);
   };
 
   const dessinerVignettes = () => {
@@ -705,12 +746,12 @@ async function pageFormulaire(id = null) {
   });
 
   if (r) {
-    document.getElementById("supprimer").addEventListener("click", async () => {
+    $id("supprimer").addEventListener("click", async () => {
       if (!confirm(`Supprimer « ${r.titre} » ? Cette action est définitive.`)) return;
       try {
         await supprimerRecettes([r]);
         toast("Recette supprimée");
-        aller("#/", { remplacer: true });
+        aller("", { remplacer: true });
       } catch (err) {
         console.error(err);
         montrerErreur(err.message.startsWith("Pas de connexion") ? err.message : `La suppression a échoué (${err.code || err.message}).`);
@@ -718,20 +759,20 @@ async function pageFormulaire(id = null) {
     });
   }
 
-  document.getElementById("form-recette").addEventListener("submit", async (e) => {
+  $id("form-recette").addEventListener("submit", async (e) => {
     e.preventDefault();
     zoneErreur.innerHTML = "";
-    const bouton = document.getElementById("enregistrer");
-    const titre = document.getElementById("titre").value.trim();
-    const sourceBrute = document.getElementById("source").value.trim();
+    const bouton = $id("enregistrer");
+    const titre = $id("titre").value.trim();
+    const sourceBrute = $id("source").value.trim();
 
     if (!titre) {
       montrerErreur("Donne un nom à la recette pour l'enregistrer.");
-      return document.getElementById("titre").focus();
+      return $id("titre").focus();
     }
     if (sourceBrute && !urlValide(sourceBrute)) {
       montrerErreur("Le lien d'inspiration doit commencer par https://");
-      return document.getElementById("source").focus();
+      return $id("source").focus();
     }
     if (!navigator.onLine) {
       return montrerErreur("Pas de connexion internet : la recette ne peut pas être enregistrée pour l'instant.");
@@ -766,10 +807,10 @@ async function pageFormulaire(id = null) {
       // 3. la recette
       const donnees = {
         titre,
-        ingredients: lignes(document.getElementById("ingredients").value),
-        etapes: lignes(document.getElementById("etapes").value, { numeros: true }),
+        ingredients: lignes($id("ingredients").value),
+        etapes: lignes($id("etapes").value, { numeros: true }),
         source: sourceBrute || null,
-        notes: document.getElementById("notes").value.trim() || null,
+        notes: $id("notes").value.trim() || null,
         photos: photos.map((p) => p.id),
         miniature,
         modifieLe: serverTimestamp(),
@@ -790,7 +831,7 @@ async function pageFormulaire(id = null) {
       photos.forEach((p) => p.apercu && URL.revokeObjectURL(p.apercu));
       await chargerRecettes({ forcer: true });
       toast(r ? "Modifications enregistrées" : "Recette enregistrée");
-      aller(`#/recette/${ref.id}`, { remplacer: true });
+      aller(`recette/${ref.id}`, { remplacer: true });
     } catch (err) {
       console.error(err);
       // on retire les photos envoyées pour rien
@@ -820,7 +861,7 @@ function pageErreur(err) {
           <button class="btn" id="reessayer">Réessayer</button>
         </div>
       </main>`;
-    document.getElementById("reessayer").addEventListener("click", () => {
+    $id("reessayer").addEventListener("click", () => {
       recettesCache = null;
       route();
     });
@@ -834,7 +875,7 @@ function pageErreur(err) {
         <button class="btn" id="reessayer">Réessayer</button>
       </div>
     </main>`;
-  document.getElementById("reessayer").addEventListener("click", () => {
+  $id("reessayer").addEventListener("click", () => {
     recettesCache = null;
     route();
   });
@@ -848,13 +889,14 @@ function libererEcran() {
 }
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && toucheEchap) toucheEchap();
+  if (e.key === "Escape" && toucheEchap && outils?.visible()) toucheEchap();
 });
 
 // l'écran allumé est coupé quand on change d'appli : on le redemande au retour
 document.addEventListener("visibilitychange", async () => {
-  const interrupteur = document.getElementById("ecran");
-  if (document.visibilityState === "visible" && interrupteur?.checked) {
+  if (!racine) return;
+  const interrupteur = $id("ecran");
+  if (document.visibilityState === "visible" && interrupteur?.checked && outils?.visible()) {
     try { wakeLock = await navigator.wakeLock.request("screen"); } catch {}
   }
 });
@@ -863,10 +905,24 @@ document.addEventListener("visibilitychange", async () => {
    Démarrage
    ========================================================= */
 
-function demarrer() {
-  document.title = TITRE;
-  window.addEventListener("hashchange", route);
+// Appelée une seule fois par la coquille : prépare le carnet (même caché)
+export function demarrer(conteneur, outilsCoquille) {
+  racine = conteneur;
+  outils = outilsCoquille;
+  app = $id("app");
+  outils.titre(TITRE);
   route();
 }
 
-demarrer();
+// À chaque ouverture du carnet ou changement de page interne
+export function afficher(chemin = "") {
+  cheminCourant = chemin;
+  return route();
+}
+
+// En quittant le carnet : on rend la main à la mise en veille de l'écran
+export function masquer() {
+  libererEcran();
+  const interrupteur = $id("ecran");
+  if (interrupteur) interrupteur.checked = false;
+}

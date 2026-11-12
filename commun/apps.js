@@ -1,16 +1,39 @@
 // ==========================================
 // LISTE DES APPLIS DU SITE
-// Pour ajouter une appli :
-//   1. crée son dossier avec une page principale (ex. budget/index.html)
-//   2. dans cette page : <script src="../commun/theme.js"></script> dans le <head>,
-//      <body data-app="budget">
-//      et <script type="module" src="../commun/nav.js"></script>
-//   3. ajoute un bloc ci-dessous avec href: "budget/"
-//      (short = nom court affiché dans la barre d'onglets du téléphone,
-//       logo = image ronde, chemin depuis la racine ; sinon l'emoji icon est utilisé)
-// Elle apparaîtra dans le menu et dans la barre du haut.
-// Les liens (href) sont relatifs à la racine du site.
+// Chaque appli a son dossier, avec toujours les trois mêmes fichiers :
+//   vue.html   le contenu (HTML) de l'appli
+//   style.css  son style (règles préfixées par .vue-<id>)
+//   app.js     son code, qui exporte :
+//                demarrer(racine, outils)  appelé une seule fois
+//                afficher(chemin)          à chaque fois qu'on ouvre l'appli
+//                masquer()                 quand on part sur une autre appli
+//
+// Pour ajouter une appli « budget » :
+//   1. crée le dossier budget/ avec vue.html, style.css et app.js
+//      (copie un dossier existant comme modèle, par exemple dashboard/)
+//   2. ajoute un bloc ci-dessous
+//   3. si elle utilise la base, ajoute ses règles dans firestore.rules
+// Elle apparaît alors dans le menu et dans la barre d'onglets.
+//
+//   id     identifiant, utilisé dans l'adresse (#/budget) et la classe .vue-budget
+//   name   nom affiché (menu, barre sur ordinateur)
+//   short  nom court (barre d'onglets du téléphone)
+//   logo   image ronde, chemin depuis la racine (sinon l'emoji icon)
+//   style  "maison" pour reprendre le style cosy commun (commun/maison.css)
 // ==========================================
+
+// La page d'accueil (pas affichée comme une tuile du menu)
+export const MENU = {
+    id: "menu",
+    name: "Menu",
+    short: "Menu",
+    icon: "☰",
+    logo: "commun/logos/maison-192.png",
+    dossier: "menu",
+    style: "maison",
+    titre: "Maison"
+};
+
 export const APPS = [
     {
         id: "dashboard",
@@ -19,7 +42,8 @@ export const APPS = [
         icon: "🏠",
         logo: "commun/logos/courses-192.png",
         desc: "Horloge, météo, roue du destin et liste de courses.",
-        href: "dashboard/",
+        dossier: "dashboard",
+        style: "maison",
         color: "#e07a5f"
     },
     {
@@ -29,7 +53,8 @@ export const APPS = [
         icon: "📦",
         logo: "commun/logos/stock-192.png",
         desc: "Frigo, placards, congélateur : ce qu'il reste et ce qu'il faut racheter.",
-        href: "stock/",
+        dossier: "stock",
+        style: "maison",
         color: "#81a88d"
     },
     {
@@ -39,7 +64,7 @@ export const APPS = [
         icon: "📖",
         logo: "recettes/icons/icon-192.png",
         desc: "Le carnet de recettes de Jenigger, avec les photos et les liens d'inspiration.",
-        href: "recettes/",
+        dossier: "recettes",
         color: "#9c88d8"
     }
 ];

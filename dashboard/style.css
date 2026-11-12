@@ -1,50 +1,61 @@
 /* ==========================================
-   STYLE DU DASHBOARD (widgets)
-   Le style commun est dans ../commun/base.css
+   DASHBOARD
+   Toutes les règles commencent par .vue-dashboard : elles ne s'appliquent
+   qu'à cette appli et ne débordent pas sur les autres.
+   Pour ajouter une règle, garde ce préfixe (.vue-dashboard .ma-classe { … }).
    ========================================== */
 
+/* --- GRILLE DES CARTES --- */
+.vue-dashboard .dashboard-grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
 /* --- WIDGET HORLOGE (Dégradé chaud) --- */
-.time-widget { 
+.vue-dashboard .time-widget{ 
     background: linear-gradient(135deg, #f4a261 0%, #e76f51 100%); 
     color: white; 
     text-align: center; 
 }
-.time-widget .widget-title { border: none; color: rgba(255,255,255,0.9); }
-#clock { font-size: 4rem; font-weight: 800; margin: 0.5rem 0; letter-spacing: -2px; }
-#date { font-size: 1.1rem; opacity: 0.9; font-weight: 500; }
+.vue-dashboard .time-widget .widget-title{ border: none; color: rgba(255,255,255,0.9); }
+.vue-dashboard #clock{ font-size: 4rem; font-weight: 800; margin: 0.5rem 0; letter-spacing: -2px; }
+.vue-dashboard #date{ font-size: 1.1rem; opacity: 0.9; font-weight: 500; }
 
 /* --- WIDGET MÉTÉO (Interactif) --- */
-.weather-widget-container {
+.vue-dashboard .weather-widget-container{
     cursor: pointer;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     position: relative;
 }
-.weather-widget-container:hover {
+.vue-dashboard .weather-widget-container:hover{
     transform: translateY(-5px);
     box-shadow: 0 15px 35px rgba(224, 122, 95, 0.15); 
     border: 2px solid var(--accent);
 }
-.weather-info { 
+.vue-dashboard .weather-info{ 
     display: flex; 
     justify-content: space-between; 
     align-items: center; 
 }
-.weather-temp { font-size: 3rem; font-weight: 800; letter-spacing: -1px; }
-.weather-desc { text-transform: capitalize; font-weight: 500;} 
+.vue-dashboard .weather-temp{ font-size: 3rem; font-weight: 800; letter-spacing: -1px; }
+.vue-dashboard .weather-desc{ text-transform: capitalize; font-weight: 500;} 
 
 /* --- LISTE DE COURSES --- */
-.shopping-widget {
+.vue-dashboard .shopping-widget{
     grid-column: 1 / -1; 
 }
 
-.shopping-input-group { 
+.vue-dashboard .shopping-input-group{ 
     display: flex; 
     gap: 0.8rem; 
     margin-bottom: 1.5rem; 
     width: 100%; 
 }
 
-#shopping-input { 
+.vue-dashboard #shopping-input{ 
     flex: 1 1 auto; 
     min-width: 0; 
     padding: 1rem; 
@@ -55,13 +66,13 @@
     background-color: var(--field-bg);
 }
 
-#shopping-input:focus {
+.vue-dashboard #shopping-input:focus{
     outline: none;
     border-color: var(--accent);
     background-color: var(--field-focus);
 }
 
-#add-item-btn { 
+.vue-dashboard #add-item-btn{ 
     flex: 0 0 auto; 
     background: var(--accent); 
     color: var(--on-accent); 
@@ -77,12 +88,12 @@
     transition: all 0.2s; 
 }
 
-#add-item-btn:hover { 
+.vue-dashboard #add-item-btn:hover{ 
     background: var(--accent-hover); 
     transform: scale(1.05); 
 }
 
-.shopping-list { 
+.vue-dashboard .shopping-list{ 
     display: grid; 
     /* Crée autant de colonnes de 250px minimum que possible sur la largeur de l'écran */
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
@@ -92,11 +103,11 @@
     max-height: 400px; /* On augmente un peu la hauteur maximale */
     padding-right: 5px; 
 }
-.shopping-list::-webkit-scrollbar { width: 6px; }
-.shopping-list::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 10px; }
+.vue-dashboard .shopping-list::-webkit-scrollbar{ width: 6px; }
+.vue-dashboard .shopping-list::-webkit-scrollbar-thumb{ background: var(--scroll-thumb); border-radius: 10px; }
 
 /* Design des éléments mis à jour pour s'adapter aux colonnes */
-.shopping-item { 
+.vue-dashboard .shopping-item{ 
     display: flex; 
     align-items: center; 
     padding: 0.8rem 1.2rem; 
@@ -105,11 +116,11 @@
     border: 1px solid var(--line-soft);
     transition: transform 0.2s, box-shadow 0.2s;
 }
-.shopping-item:hover {
+.vue-dashboard .shopping-item:hover{
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
-.shopping-item input[type="checkbox"] { 
+.vue-dashboard .shopping-item input[type="checkbox"]{ 
     margin-right: 12px; 
     width: 20px; 
     height: 20px; 
@@ -117,32 +128,32 @@
     accent-color: var(--accent); 
     flex-shrink: 0;
 }
-.shopping-item span { 
+.vue-dashboard .shopping-item span{ 
     flex-grow: 1; 
     font-weight: 500; 
     word-break: break-word; /* Évite qu'un mot très long casse la colonne */
 }
-.shopping-item.completed span { 
+.vue-dashboard .shopping-item.completed span{ 
     text-decoration: line-through; 
     color: var(--text-muted); 
     opacity: 0.7;
 }
-.delete-btn { 
+.vue-dashboard .delete-btn{ 
     background: none; border: none; color: #ff7675; cursor: pointer; 
     font-size: 1.8rem; line-height: 1; padding: 0 5px; opacity: 0.6; transition: opacity 0.2s;
     flex-shrink: 0;
 }
-.delete-btn:hover { opacity: 1; }
-#list-loader { text-align: center; color: var(--accent); font-size: 0.9rem; margin-top: 1rem; font-weight: bold; }
+.vue-dashboard .delete-btn:hover{ opacity: 1; }
+.vue-dashboard #list-loader{ text-align: center; color: var(--accent); font-size: 0.9rem; margin-top: 1rem; font-weight: bold; }
 /* --- MODALE MÉTÉO (Pop-up) --- */
-.modal {
+.vue-dashboard .modal{
     display: none; 
     position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
     background-color: rgba(74, 68, 60, 0.6); 
     align-items: center; justify-content: center;
     backdrop-filter: blur(4px); 
 }
-.modal-content {
+.vue-dashboard .modal-content{
     background-color: var(--card-bg);
     border-radius: var(--border-radius);
     padding: 2.5rem;
@@ -151,32 +162,32 @@
     position: relative;
     box-shadow: 0 20px 50px rgba(0,0,0,0.15);
 }
-.close-btn {
+.vue-dashboard .close-btn{
     position: absolute; top: 20px; right: 25px;
     font-size: 2.5rem; font-weight: bold; color: var(--muted-icon); cursor: pointer; line-height: 1;
     transition: color 0.2s;
 }
-.close-btn:hover { color: var(--text-main); }
-.modal h2 { margin-bottom: 1.5rem; color: var(--text-main); border-bottom: 2px dashed var(--line); padding-bottom: 0.8rem; }
+.vue-dashboard .close-btn:hover{ color: var(--text-main); }
+.vue-dashboard .modal h2{ margin-bottom: 1.5rem; color: var(--text-main); border-bottom: 2px dashed var(--line); padding-bottom: 0.8rem; }
 
 /* --- RECHERCHE VILLE --- */
-.modal-content input, #shopping-input { color: var(--text-main); }
-.city-selector { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 2rem; }
-#city-input {
+.vue-dashboard .modal-content input, .vue-dashboard #shopping-input{ color: var(--text-main); }
+.vue-dashboard .city-selector{ display: flex; align-items: center; gap: 0.8rem; margin-bottom: 2rem; }
+.vue-dashboard #city-input{
     flex-grow: 1; padding: 1rem; border-radius: 12px; border: 2px solid var(--line);
     font-size: 1rem; font-family: inherit; transition: border-color 0.2s; background-color: var(--field-bg);
 }
-#city-input:focus { outline: none; border-color: var(--accent); background-color: var(--field-focus);}
-#search-city-btn {
+.vue-dashboard #city-input:focus{ outline: none; border-color: var(--accent); background-color: var(--field-focus);}
+.vue-dashboard #search-city-btn{
     background: var(--strong-bg); color: var(--strong-text); border: none; padding: 1rem 1.5rem;
     border-radius: 12px; cursor: pointer; font-weight: bold; transition: background 0.2s;
 }
-#search-city-btn:hover { background: var(--strong-hover); }
+.vue-dashboard #search-city-btn:hover{ background: var(--strong-hover); }
 
 /* --- PRÉVISIONS 5 JOURS --- */
-.forecast-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; }
+.vue-dashboard .forecast-grid{ display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; }
 
-.forecast-day {
+.vue-dashboard .forecast-day{
     background: var(--weather-card-bg);
     padding: 1.2rem 0.5rem;
     border-radius: 16px;
@@ -186,19 +197,19 @@
     transition: transform 0.2s, box-shadow 0.2s;
     border: 2px solid transparent;
 }
-.forecast-day:hover {
+.vue-dashboard .forecast-day:hover{
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0,0,0,0.08);
     border-color: var(--accent);
 }
-.forecast-date { font-weight: 800; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-main); }
-.forecast-icon { width: 55px; height: 55px; filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.1)); }
-.forecast-temp { font-weight: 800; color: var(--text-main); margin: 0.5rem 0; font-size: 1.2rem; }
-.forecast-desc { font-size: 0.75rem; color: var(--weather-desc); text-transform: capitalize; font-weight: 600; }
+.vue-dashboard .forecast-date{ font-weight: 800; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-main); }
+.vue-dashboard .forecast-icon{ width: 55px; height: 55px; filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.1)); }
+.vue-dashboard .forecast-temp{ font-weight: 800; color: var(--text-main); margin: 0.5rem 0; font-size: 1.2rem; }
+.vue-dashboard .forecast-desc{ font-size: 0.75rem; color: var(--weather-desc); text-transform: capitalize; font-weight: 600; }
 
 /* --- DÉTAILS 3H (HOURLY) --- */
-.hourly-grid { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 15px; }
-.hourly-item {
+.vue-dashboard .hourly-grid{ display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 15px; }
+.vue-dashboard .hourly-item{
     background: var(--weather-card-bg);
     padding: 1rem;
     border-radius: 16px;
@@ -206,19 +217,19 @@
     min-width: 90px;
     flex-shrink: 0;
 }
-.hourly-time { font-weight: 800; font-size: 0.9rem; margin-bottom: 5px; color: var(--text-main); }
-.hourly-icon { width: 45px; height: 45px; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.1));}
-.hourly-temp { color: var(--text-main); font-weight: 800; font-size: 1.1rem; }
+.vue-dashboard .hourly-time{ font-weight: 800; font-size: 0.9rem; margin-bottom: 5px; color: var(--text-main); }
+.vue-dashboard .hourly-icon{ width: 45px; height: 45px; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.1));}
+.vue-dashboard .hourly-temp{ color: var(--text-main); font-weight: 800; font-size: 1.1rem; }
 
-.hourly-grid::-webkit-scrollbar { height: 8px; }
-.hourly-grid::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 10px; }
+.vue-dashboard .hourly-grid::-webkit-scrollbar{ height: 8px; }
+.vue-dashboard .hourly-grid::-webkit-scrollbar-thumb{ background: var(--scroll-thumb); border-radius: 10px; }
 /* --- WIDGET ROUE DU DESTIN --- */
-.wheel-widget {
+.vue-dashboard .wheel-widget{
     text-align: center;
     justify-content: center;
 }
 
-.wheel-content {
+.vue-dashboard .wheel-content{
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -226,7 +237,7 @@
     margin-top: 1rem;
 }
 
-#wheel-result {
+.vue-dashboard #wheel-result{
     font-size: 1.3rem;
     font-weight: 800;
     color: var(--accent);
@@ -243,7 +254,7 @@
 }
 
 /* Animation pendant que la roue tourne */
-.spinning {
+.vue-dashboard .spinning{
     animation: pulse 0.1s infinite alternate;
     color: var(--text-muted) !important;
     border-color: var(--text-muted) !important;
@@ -254,7 +265,7 @@
     to { transform: scale(1.02); opacity: 1; }
 }
 
-#spin-btn {
+.vue-dashboard #spin-btn{
     background: var(--strong-bg);
     color: var(--strong-text);
     border: none;
@@ -267,73 +278,73 @@
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-#spin-btn:hover {
+.vue-dashboard #spin-btn:hover{
     background: var(--strong-hover);
     transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }
 
-#spin-btn:active {
+.vue-dashboard #spin-btn:active{
     transform: translateY(1px);
 }
 
 /* --- Article de courses : tout l'article est cliquable pour cocher --- */
-.shopping-label { display: flex; align-items: center; flex: 1; min-width: 0; cursor: pointer; }
+.vue-dashboard .shopping-label{ display: flex; align-items: center; flex: 1; min-width: 0; cursor: pointer; }
 
 /* ==========================================
    TÉLÉPHONE
    ========================================== */
 @media (max-width: 700px) {
-    .dashboard-grid { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
-    .widget { min-width: 0; }
+    .vue-dashboard .dashboard-grid{ grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+    .vue-dashboard .widget{ min-width: 0; }
 
     /* Ordre pensé pour le téléphone : l'heure et la météo en un coup d'œil,
        puis la liste de courses (le plus utilisé), la roue en dernier */
-    .time-widget { order: 1; }
-    .weather-widget-container { order: 2; }
-    .shopping-widget { order: 3; }
-    .wheel-widget { order: 4; }
+    .vue-dashboard .time-widget{ order: 1; }
+    .vue-dashboard .weather-widget-container{ order: 2; }
+    .vue-dashboard .shopping-widget{ order: 3; }
+    .vue-dashboard .wheel-widget{ order: 4; }
 
-    .time-widget { padding: 1rem 1.25rem; flex-direction: row; align-items: baseline; justify-content: center; gap: 0.8rem; flex-wrap: wrap; }
-    #clock { font-size: 2.6rem; margin: 0; letter-spacing: -1px; }
-    #date { font-size: 0.95rem; }
+    .vue-dashboard .time-widget{ padding: 1rem 1.25rem; flex-direction: row; align-items: baseline; justify-content: center; gap: 0.8rem; flex-wrap: wrap; }
+    .vue-dashboard #clock{ font-size: 2.6rem; margin: 0; letter-spacing: -1px; }
+    .vue-dashboard #date{ font-size: 0.95rem; }
 
-    .weather-widget-container .weather-temp { font-size: 2.2rem; }
+    .vue-dashboard .weather-widget-container .weather-temp{ font-size: 2.2rem; }
 
-    .shopping-input-group { gap: 0.6rem; margin-bottom: 1rem; }
-    #shopping-input { padding: 0.85rem 1rem; }
-    #add-item-btn { width: 3.2rem; }
-    .shopping-list { grid-template-columns: 1fr; max-height: none; overflow: visible; padding-right: 0; gap: 0.5rem; }
-    .shopping-item { padding: 0.35rem 0.4rem 0.35rem 0.9rem; }
-    .shopping-label { padding: 0.5rem 0; }
-    .shopping-item input[type="checkbox"] { width: 24px; height: 24px; }
-    .delete-btn { width: 44px; height: 44px; padding: 0; font-size: 1.8rem; }
+    .vue-dashboard .shopping-input-group{ gap: 0.6rem; margin-bottom: 1rem; }
+    .vue-dashboard #shopping-input{ padding: 0.85rem 1rem; }
+    .vue-dashboard #add-item-btn{ width: 3.2rem; }
+    .vue-dashboard .shopping-list{ grid-template-columns: 1fr; max-height: none; overflow: visible; padding-right: 0; gap: 0.5rem; }
+    .vue-dashboard .shopping-item{ padding: 0.35rem 0.4rem 0.35rem 0.9rem; }
+    .vue-dashboard .shopping-label{ padding: 0.5rem 0; }
+    .vue-dashboard .shopping-item input[type="checkbox"]{ width: 24px; height: 24px; }
+    .vue-dashboard .delete-btn{ width: 44px; height: 44px; padding: 0; font-size: 1.8rem; }
 
-    #wheel-result { padding: 1rem; min-height: 64px; font-size: 1.15rem; }
-    .wheel-content { margin-top: 0; gap: 1rem; }
-    #spin-btn { width: 100%; }
+    .vue-dashboard #wheel-result{ padding: 1rem; min-height: 64px; font-size: 1.15rem; }
+    .vue-dashboard .wheel-content{ margin-top: 0; gap: 1rem; }
+    .vue-dashboard #spin-btn{ width: 100%; }
 
     /* Prévisions météo : panneau qui monte du bas de l'écran */
-    .modal { align-items: flex-end; }
-    .modal-content {
+    .vue-dashboard .modal{ align-items: flex-end; }
+    .vue-dashboard .modal-content{
         width: 100%; max-width: none; max-height: 88vh; overflow-y: auto;
         border-radius: 24px 24px 0 0;
         padding: 1.5rem 1.1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
     }
-    .close-btn { top: 12px; right: 16px; width: 44px; height: 44px; display: grid; place-items: center; }
-    .modal h2 { font-size: 1.3rem; margin-bottom: 1rem; padding-right: 2.5rem; }
-    .city-selector { margin-bottom: 1.2rem; gap: 0.5rem; }
-    #city-input { padding: 0.8rem; min-width: 0; }
-    #search-city-btn { padding: 0.8rem 1rem; }
-    .forecast-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.4rem; }
-    .forecast-day { padding: 0.7rem 0.2rem; border-radius: 12px; }
-    .forecast-icon { width: 40px; height: 40px; }
-    .forecast-temp { font-size: 1rem; margin: 0.2rem 0; }
-    .forecast-desc { display: none; }
-    .forecast-date { font-size: 0.78rem; margin-bottom: 0; }
+    .vue-dashboard .close-btn{ top: 12px; right: 16px; width: 44px; height: 44px; display: grid; place-items: center; }
+    .vue-dashboard .modal h2{ font-size: 1.3rem; margin-bottom: 1rem; padding-right: 2.5rem; }
+    .vue-dashboard .city-selector{ margin-bottom: 1.2rem; gap: 0.5rem; }
+    .vue-dashboard #city-input{ padding: 0.8rem; min-width: 0; }
+    .vue-dashboard #search-city-btn{ padding: 0.8rem 1rem; }
+    .vue-dashboard .forecast-grid{ grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.4rem; }
+    .vue-dashboard .forecast-day{ padding: 0.7rem 0.2rem; border-radius: 12px; }
+    .vue-dashboard .forecast-icon{ width: 40px; height: 40px; }
+    .vue-dashboard .forecast-temp{ font-size: 1rem; margin: 0.2rem 0; }
+    .vue-dashboard .forecast-desc{ display: none; }
+    .vue-dashboard .forecast-date{ font-size: 0.78rem; margin-bottom: 0; }
 }
 
 @media (hover: none) {
-    .weather-widget-container:hover, .forecast-day:hover, .shopping-item:hover, #spin-btn:hover, #add-item-btn:hover { transform: none; }
-    .weather-widget-container:hover { border-color: transparent; }
+    .vue-dashboard .weather-widget-container:hover, .vue-dashboard .forecast-day:hover, .vue-dashboard .shopping-item:hover, .vue-dashboard #spin-btn:hover, .vue-dashboard #add-item-btn:hover{ transform: none; }
+    .vue-dashboard .weather-widget-container:hover{ border-color: transparent; }
 }
