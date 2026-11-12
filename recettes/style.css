@@ -538,20 +538,6 @@ body:has(.barre-bas:not([hidden])) .toast { bottom: calc(5.5rem + env(safe-area-
 }
 
 /* =========================================================
-   Barre « Menu » du site (commun/nav.js) : couleurs du carnet
-   ========================================================= */
-:root {
-  --card-bg: var(--blanc);
-  --text-main: var(--texte);
-  --hover-bg: var(--ligne-legere);
-  --strong-bg: var(--encre);
-  --strong-hover: #3a3072;
-  --strong-text: var(--blanc);
-  --accent: var(--bouton);
-  --on-accent: var(--bouton-texte);
-}
-
-/* =========================================================
    MODE SOMBRE (activé par commun/theme.js)
    Même carnet, papier nuit et pastels assourdis
    ========================================================= */
@@ -577,7 +563,6 @@ body:has(.barre-bas:not([hidden])) .toast { bottom: calc(5.5rem + env(safe-area-
   --bouton-texte: #f4f0ff;
   --focus: #a995f0;
 
-  --strong-hover: #e2dafc;
 }
 [data-theme="sombre"] .seyes {
   background-image:
@@ -602,3 +587,17 @@ body:has(.barre-bas:not([hidden])) .toast { bottom: calc(5.5rem + env(safe-area-
 
 /* Pas de zoom au double-tap ni de délai sur les boutons (téléphone) */
 a, button, input, label, textarea, select { touch-action: manipulation; }
+
+/* =========================================================
+   Barre d'onglets du site (téléphone) : les barres du bas
+   du carnet se posent juste au-dessus
+   ========================================================= */
+@media (max-width: 700px) {
+  body.avec-onglets .barre-enregistrer,
+  body.avec-onglets .barre-bas { bottom: var(--hauteur-onglets); padding-bottom: .75rem; }
+  body.avec-onglets .toast { bottom: calc(var(--hauteur-onglets) + 1rem); }
+  body.avec-onglets:has(.barre-enregistrer) .toast,
+  body.avec-onglets:has(.barre-bas:not([hidden])) .toast { bottom: calc(var(--hauteur-onglets) + 5rem); }
+  body.avec-onglets .barre { top: 0; }
+  body.avec-onglets .entete { padding-top: 12px; }
+}
