@@ -41,7 +41,7 @@ export const APPS = [
         short: "Dashboard",
         icon: "🏠",
         logo: "commun/logos/courses-192.png",
-        desc: "Horloge, météo, roue du destin et liste de courses.",
+        desc: "Horloge, météo, roue du destin, listes de courses et choses à faire.",
         dossier: "dashboard",
         style: "maison",
         color: "#e07a5f"
@@ -63,7 +63,7 @@ export const APPS = [
         short: "Recettes",
         icon: "📖",
         logo: "recettes/icons/icon-192.png",
-        desc: "Le carnet de recettes de Jenigger, avec les photos et les liens d'inspiration.",
+        desc: "Les carnets de recettes, avec les photos et les liens d'inspiration.",
         dossier: "recettes",
         color: "#9c88d8"
     }

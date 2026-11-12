@@ -32,16 +32,36 @@
         </div>
     </div>
 
-    <!-- Widget de Courses connecté à Firebase -->
-    <div class="widget shopping-widget">
-        <h2 class="widget-title"><img class="widget-logo" src="commun/logos/courses-32.png" srcset="commun/logos/courses-192.png 2x" alt="" width="28" height="28"> Courses</h2>
-        <div class="shopping-input-group">
-            <input type="text" id="shopping-input" placeholder="Ajouter un article...">
-            <button id="add-item-btn">+</button>
+    <!-- Listes partagées : une (ou plusieurs) liste de courses et de choses à faire -->
+    <div class="listes-zone">
+        <div class="widget liste-widget" data-type="courses">
+            <h2 class="widget-title"><img class="widget-logo" src="commun/logos/courses-32.png" srcset="commun/logos/courses-192.png 2x" alt="" width="28" height="28"> Courses</h2>
+            <div class="liste-outils">
+                <select class="liste-choix" aria-label="Choisir la liste"></select>
+                <button type="button" class="liste-bouton" data-action="partager">👥 Partager</button>
+            </div>
+            <div class="liste-import" hidden></div>
+            <form class="liste-ajout" autocomplete="off">
+                <input type="text" maxlength="200" placeholder="Ajouter un article…" aria-label="Ajouter un article…">
+                <button type="submit" aria-label="Ajouter">+</button>
+            </form>
+            <ul class="liste-articles"></ul>
+            <div class="liste-vide" hidden></div>
         </div>
-        
-        <div id="list-loader">Connexion à la base de données...</div>
-        <ul class="shopping-list" id="shopping-list"></ul>
+        <div class="widget liste-widget" data-type="taches">
+            <h2 class="widget-title"><span class="widget-emoji" aria-hidden="true">✅</span> À faire</h2>
+            <div class="liste-outils">
+                <select class="liste-choix" aria-label="Choisir la liste"></select>
+                <button type="button" class="liste-bouton" data-action="partager">👥 Partager</button>
+            </div>
+            <div class="liste-import" hidden></div>
+            <form class="liste-ajout" autocomplete="off">
+                <input type="text" maxlength="200" placeholder="Ajouter une chose à faire…" aria-label="Ajouter une chose à faire…">
+                <button type="submit" aria-label="Ajouter">+</button>
+            </form>
+            <ul class="liste-articles"></ul>
+            <div class="liste-vide" hidden></div>
+        </div>
     </div>
 </div>
 

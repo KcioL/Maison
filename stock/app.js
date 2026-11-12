@@ -1,26 +1,23 @@
 // ==========================================
 // APPLI GESTION DES STOCKS
 // Chargée dans la page principale (voir commun/coquille.js) :
-// demarrer() est appelée une seule fois, avec la vue de l'appli.
-// Firebase Auth (comptes e-mail) + Firestore
+// demarrer() est appelée une seule fois, avec la vue de l'appli,
+// une fois le compte connecté (géré par la page principale).
 //
 // Données :
 //   stocks/{stockId}                      nom, propriétaire, membres
 //   stocks/{stockId}/storages/{id}        rangements (frigo, placard…)
 //   stocks/{stockId}/items/{id}           produits
-//   stockDirectory/{email}                annuaire : e-mail → compte (pour partager)
+// La connexion et le partage sont communs à tout le site :
+//   commun/compte.js (compte connecté) et commun/partage.js (qui a accès)
 // ==========================================
-import { app, db } from "../commun/firebase.js";
-import {
-    getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword,
-    signOut, sendPasswordResetEmail, sendEmailVerification
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { db } from "../commun/firebase.js";
+import { compte, nomDe } from "../commun/compte.js";
+import { ecouterMesPartages, creerPartage, ouvrirAcces } from "../commun/partage.js";
 import {
     collection, doc, query, where, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc,
     getDoc, getDocs, writeBatch, deleteField
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-
-const auth = getAuth(app);
 
 let racine, outils;
 
@@ -44,17 +41,16 @@ export function demarrer(conteneur, outilsCoquille) {
     const typeOf = id => T[id] || T.autre;
     const colorVar = id => `var(--t-${typeOf(id).id})`;
     const UNITS = ["pcs", "g", "kg", "ml", "L", "boîte", "paquet", "bouteille", "pot", "sachet"];
-    const AVATAR_COLORS = ["#e07a5f", "#5b8fb9", "#6a9a76", "#c08552", "#9b84b8", "#a5576b", "#3d8a8a"];
 
     // ------------------------------------------
     // État
     // ------------------------------------------
     const S = {
-        user: null, verified: false, myName: "",
-        stocks: new Map(), stockId: null,
+        user: { uid: compte.uid, email: compte.email },
+        stocks: new Map(), stockId: null, listesCourses: [],
         storages: new Map(), items: new Map(), loadedS: false, loadedI: false,
         view: null, q: "", pending: {}, confirm: null, editing: null,
-        names: {}, unsubStocks: null, unsubStock: [], signupMode: false
+        unsubStocks: null, unsubStock: []
     };
 
     const $ = id => racine.querySelector("#" + id);
@@ -63,7 +59,6 @@ export function demarrer(conteneur, outilsCoquille) {
     const now = () => Date.now();
     const stock = () => S.stocks.get(S.stockId);
     const isOwner = () => !!stock() && stock().ownerId === S.user?.uid;
-    const emailKey = e => String(e || "").trim().toLowerCase();
     const storeGet = k => { try { return localStorage.getItem(k); } catch { return null; } };
     const storeSet = (k, v) => { try { localStorage.setItem(k, v); } catch { } };
 
@@ -100,9 +95,7 @@ export function demarrer(conteneur, outilsCoquille) {
     function nameOf(uid) {
         if (!uid) return "";
         if (uid === S.user?.uid) return "toi";
-        if (S.names[uid]) return S.names[uid];
-        const email = stock()?.members?.[uid];
-        return email ? email.split("@")[0] : "un ancien membre";
+        return nomDe(uid, stock()?.members?.[uid], () => { if (S.view) renderDetail(); });
     }
 
     // ------------------------------------------
@@ -136,98 +129,11 @@ export function demarrer(conteneur, outilsCoquille) {
     const storageRef = id => doc(db, "stocks", S.stockId, "storages", id);
     const itemRef = id => doc(db, "stocks", S.stockId, "items", id);
 
-    // ==========================================
-    // CONNEXION
-    // ==========================================
-    const AUTH_ERRORS = {
-        "auth/invalid-credential": "E-mail ou mot de passe incorrect.",
-        "auth/invalid-login-credentials": "E-mail ou mot de passe incorrect.",
-        "auth/wrong-password": "E-mail ou mot de passe incorrect.",
-        "auth/user-not-found": "Aucun compte avec cet e-mail.",
-        "auth/email-already-in-use": "Un compte existe déjà avec cet e-mail : connecte-toi.",
-        "auth/weak-password": "Le mot de passe doit faire au moins 6 caractères.",
-        "auth/invalid-email": "Cette adresse e-mail n'est pas valide.",
-        "auth/too-many-requests": "Trop d'essais. Attends quelques minutes avant de réessayer.",
-        "auth/network-request-failed": "Pas de connexion internet."
-    };
-    function authError(msg) { const el = $("auth-error"); el.textContent = msg; el.hidden = !msg; }
-    function setAuthMode(signup) {
-        S.signupMode = signup;
-        $("auth-submit").textContent = signup ? "Créer mon compte" : "Se connecter";
-        $("auth-toggle").textContent = signup ? "J'ai déjà un compte : me connecter" : "Pas encore de compte ? Créer un compte";
-        $("auth-intro").textContent = signup ? "Crée ton compte. Tu recevras un e-mail pour le vérifier." : "Connecte-toi avec ton compte pour retrouver ton stock.";
-        $("auth-password").autocomplete = signup ? "new-password" : "current-password";
-        authError("");
-    }
-    $("auth-toggle").onclick = () => setAuthMode(!S.signupMode);
-    $("auth-forgot").onclick = async () => {
-        const email = $("auth-email").value.trim();
-        if (!email) { authError("Écris ton e-mail ci-dessus, puis clique à nouveau sur « Mot de passe oublié ? »."); return; }
-        try { await sendPasswordResetEmail(auth, email); authError(""); toast("E-mail de réinitialisation envoyé (pense à regarder les spams)."); }
-        catch (e) { authError(AUTH_ERRORS[e.code] || "Envoi impossible. Vérifie l'adresse."); }
-    };
-    $("auth-form").addEventListener("submit", async e => {
-        e.preventDefault();
-        const email = $("auth-email").value.trim(), pass = $("auth-password").value;
-        $("auth-submit").disabled = true; authError("");
-        try {
-            if (S.signupMode) {
-                const cred = await createUserWithEmailAndPassword(auth, email, pass);
-                try { await sendEmailVerification(cred.user); } catch { }
-                toast("Compte créé. Un e-mail de vérification t'a été envoyé.");
-            } else {
-                await signInWithEmailAndPassword(auth, email, pass);
-            }
-            $("auth-password").value = "";
-        } catch (err) {
-            authError(AUTH_ERRORS[err.code] || "Connexion impossible. Réessaie.");
-        } finally { $("auth-submit").disabled = false; }
-    });
-    $("btn-logout").onclick = () => signOut(auth);
-
-    onAuthStateChanged(auth, async u => {
-        $("boot").hidden = true;
-        stopAll();
-        S.user = u;
-        if (!u) {
-            $("auth-view").hidden = false; $("app-view").hidden = true;
-            return;
-        }
-        $("auth-view").hidden = true; $("app-view").hidden = false;
-        $("account-email").textContent = `Connecté : ${u.email}`;
-        S.verified = !!u.emailVerified;
-        S.view = null; S.q = ""; $("search").value = "";
-        renderAll();
-        subscribeStocks();
-        ensureDirectory();
-    });
-
-    // L'annuaire permet aux autres de te retrouver par e-mail pour te partager un stock.
-    // Il faut un e-mail vérifié pour s'y inscrire (personne ne peut se faire passer pour toi).
-    async function ensureDirectory() {
-        const u = S.user; if (!u || !u.email) return;
-        S.myName = u.email.split("@")[0];
-        if (!S.verified) return;
-        try {
-            const ref = doc(db, "stockDirectory", emailKey(u.email));
-            const snap = await getDoc(ref);
-            if (snap.exists() && snap.data().uid === u.uid) {
-                S.myName = snap.data().name || S.myName;
-            } else {
-                await setDoc(ref, { uid: u.uid, name: S.myName.slice(0, 40) });
-            }
-        } catch (e) { console.warn("Annuaire :", e); }
-        if (!$("access-panel").hidden) renderAccess();
-    }
-
+    // Le compte est déjà connecté (page principale) : on affiche tout de suite
+    // ce qu'il y a en cache, puis les données à jour arrivent.
     // ==========================================
     // ABONNEMENTS FIRESTORE
     // ==========================================
-    function stopAll() {
-        if (S.unsubStocks) { S.unsubStocks(); S.unsubStocks = null; }
-        stopStock();
-        S.stocks = new Map(); S.stockId = null; S.names = {};
-    }
     function stopStock() {
         S.unsubStock.forEach(f => f()); S.unsubStock = [];
         S.storages = new Map(); S.items = new Map(); S.loadedS = S.loadedI = false; S.pending = {};
@@ -236,10 +142,9 @@ export function demarrer(conteneur, outilsCoquille) {
     let stocksLoaded = false;
     function subscribeStocks() {
         stocksLoaded = false;
-        const q = query(collection(db, "stocks"), where("memberIds", "array-contains", S.user.uid));
-        S.unsubStocks = onSnapshot(q, snap => {
+        S.unsubStocks = ecouterMesPartages("stocks", liste => {
             stocksLoaded = true;
-            S.stocks = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }]));
+            S.stocks = new Map(liste.map(d => [d.id, d]));
             let target = S.stockId;
             if (S.wantStock && S.stocks.has(S.wantStock)) { target = S.wantStock; S.wantStock = null; }
             else if (!target || !S.stocks.has(target)) {
@@ -247,7 +152,7 @@ export function demarrer(conteneur, outilsCoquille) {
                 target = saved && S.stocks.has(saved) ? saved : (sortedStocks()[0]?.id || null);
             }
             if (target !== S.stockId) openStock(target);
-            else { loadNames(); renderAll(); }
+            else renderAll();
         }, err => {
             console.error(err);
             stocksLoaded = true;
@@ -272,25 +177,10 @@ export function demarrer(conteneur, outilsCoquille) {
             S.items = new Map(snap.docs.map(d => [d.id, { id: d.id, ...d.data() }]));
             S.loadedI = true; renderAll();
         }, stockErr));
-        loadNames();
     }
     function stockErr(err) {
         console.error(err);
         if (err.code !== "permission-denied") showBanner("Le stock n'a pas pu se mettre à jour. Recharge la page.");
-    }
-
-    // Prénoms des membres, lus dans l'annuaire
-    async function loadNames() {
-        const s = stock(); if (!s || !s.members) return;
-        const todo = Object.entries(s.members).filter(([uid]) => !(uid in S.names) && uid !== S.user.uid);
-        if (!todo.length) return;
-        await Promise.all(todo.map(async ([uid, email]) => {
-            try {
-                const snap = await getDoc(doc(db, "stockDirectory", email));
-                S.names[uid] = snap.exists() && snap.data().uid === uid && snap.data().name ? snap.data().name : email.split("@")[0];
-            } catch { S.names[uid] = email.split("@")[0]; }
-        }));
-        renderAll();
     }
 
     // ==========================================
@@ -303,7 +193,6 @@ export function demarrer(conteneur, outilsCoquille) {
         if (!S.user) return;
         renderChrome();
         if (S.view) renderDetail(); else renderHome();
-        if (!$("access-panel").hidden) renderAccess();
     }
 
     function renderChrome() {
@@ -432,52 +321,6 @@ export function demarrer(conteneur, outilsCoquille) {
         }
     }
 
-    function avatar(name, uid) {
-        let h = 0; for (const c of String(uid)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-        return `<span class="st-avatar" style="background:${AVATAR_COLORS[h % AVATAR_COLORS.length]}">${esc((name || "?").charAt(0).toUpperCase())}</span>`;
-    }
-
-    function renderAccess() {
-        const p = $("access-panel"), s = stock();
-        if (!s) { p.hidden = true; return; }
-        const me = S.user.uid, owner = isOwner();
-        const members = Object.entries(s.members || {}).sort(([a], [b]) => (a === s.ownerId ? -1 : b === s.ownerId ? 1 : 0));
-        const people = members.map(([uid, email]) => {
-            const nm = uid === me ? `${S.myName} (toi)` : (S.names[uid] || email.split("@")[0]);
-            const conf = S.confirm === "member:" + uid;
-            return `<div class="st-person">${avatar(nm, uid)}
-                <div class="st-person-txt"><b>${esc(nm)}</b><small>${esc(email)}</small></div>
-                ${uid === s.ownerId ? `<span class="st-flag ok">Propriétaire</span>` : `<span class="st-flag neutral">Membre</span>`}
-                ${owner && uid !== me ? `<button type="button" class="st-link ${conf ? "armed" : ""}" data-act="remove-member" data-id="${esc(uid)}">${conf ? "Confirmer le retrait" : "Retirer"}</button>` : ""}
-            </div>`;
-        }).join("");
-
-        const verifyNote = S.verified ? "" : `<div class="st-note">
-            <span><b>Vérifie ton adresse e-mail</b> pour que les autres puissent te partager leur stock.</span>
-            <span style="display:flex;gap:0.5rem;flex-wrap:wrap"><button type="button" class="st-btn st-small" data-action="send-verify">Envoyer l'e-mail de vérification</button>
-            <button type="button" class="st-btn st-small" data-action="check-verify">J'ai cliqué sur le lien</button></span></div>`;
-
-        const confDel = S.confirm === "stock:" + s.id, confLeave = S.confirm === "leave:" + s.id;
-        p.innerHTML = `<div class="st-panel-head"><h2 class="st-h2">👥 Qui a accès à « ${esc(s.name)} »</h2><button type="button" class="st-link" data-close="access-panel">Fermer</button></div>
-            <div class="st-people">${people}</div>
-            ${owner ? `<form id="add-member" class="st-row" autocomplete="off">
-                <label class="st-field st-grow"><span class="st-label">Donner l'accès à</span><input id="am-email" type="email" required placeholder="E-mail de son compte"></label>
-                <button class="st-btn st-primary" type="submit">Donner l'accès</button></form>
-                <p class="st-muted" style="font-size:0.88rem">La personne doit avoir un compte, avoir ouvert l'appli Stock une fois et vérifié son e-mail. Elle verra alors ce stock et pourra le modifier.</p>`
-                : `<p class="st-muted" style="font-size:0.9rem">Seul le propriétaire peut donner ou retirer l'accès.</p>`}
-            ${verifyNote}
-            <hr class="st-divider">
-            <form id="my-name" class="st-row" autocomplete="off">
-                <label class="st-field st-grow"><span class="st-label">Ton prénom (vu par les autres)</span><input id="mn-name" maxlength="40" value="${esc(S.myName)}" ${S.verified ? "" : "disabled"}></label>
-                <button class="st-btn" type="submit" ${S.verified ? "" : "disabled"}>Enregistrer</button></form>
-            ${owner ? `<form id="rename-stock" class="st-row" autocomplete="off">
-                <label class="st-field st-grow"><span class="st-label">Nom du stock</span><input id="rs-name" maxlength="60" required value="${esc(s.name)}"></label>
-                <button class="st-btn" type="submit">Renommer</button></form>` : ""}
-            <div>${owner
-                ? `<button type="button" class="st-btn st-small st-danger ${confDel ? "armed" : ""}" data-action="del-stock">${confDel ? "Supprimer définitivement ce stock et tout son contenu ?" : "Supprimer ce stock"}</button>`
-                : `<button type="button" class="st-btn st-small st-danger ${confLeave ? "armed" : ""}" data-action="leave-stock">${confLeave ? "Confirmer : quitter ce stock" : "Quitter ce stock"}</button>`}</div>`;
-    }
-
     // ==========================================
     // ACTIONS
     // ==========================================
@@ -550,43 +393,17 @@ export function demarrer(conteneur, outilsCoquille) {
             S.confirm = null; goHome();
             queue("del-" + sid, () => deleteRefs(refs)).then(ok => { if (ok) toast("Rangement supprimé."); });
         }
-        else if (a === "send-verify") {
-            sendEmailVerification(S.user).then(() => toast("E-mail envoyé à " + S.user.email + " (regarde aussi les spams)."))
-                .catch(err => toast(err.code === "auth/too-many-requests" ? "Déjà envoyé il y a peu : attends quelques minutes." : "Envoi impossible pour le moment."));
-        }
-        else if (a === "check-verify") {
-            (async () => {
-                await S.user.reload(); await S.user.getIdToken(true);
-                S.verified = !!auth.currentUser.emailVerified;
-                if (S.verified) { toast("E-mail vérifié ✔"); await ensureDirectory(); renderAll(); }
-                else toast("Pas encore vérifié : clique sur le lien reçu par e-mail, puis réessaie.");
-            })();
-        }
-        else if (a === "del-stock") {
-            const s = stock(); if (!s || !isOwner()) return;
-            const key = "stock:" + s.id; if (S.confirm !== key) { arm(key); return; }
-            S.confirm = null; $("access-panel").hidden = true;
-            const sid = s.id;
-            queue("stock-" + sid, async () => {
-                const [a1, a2] = await Promise.all([getDocs(collection(db, "stocks", sid, "items")), getDocs(collection(db, "stocks", sid, "storages"))]);
-                await deleteRefs([...a1.docs, ...a2.docs].map(d => d.ref));
-                await deleteDoc(stockRef(sid));
-            }).then(ok => { if (ok) toast("Stock supprimé."); });
-        }
-        else if (a === "leave-stock") {
-            const s = stock(); if (!s) return;
-            const key = "leave:" + s.id; if (S.confirm !== key) { arm(key); return; }
-            S.confirm = null; $("access-panel").hidden = true;
-            const me = S.user.uid;
-            queue("stock-" + s.id, () => updateDoc(stockRef(s.id), { memberIds: s.memberIds.filter(x => x !== me), ["members." + me]: deleteField() }))
-                .then(ok => { if (ok) toast("Tu as quitté ce stock."); });
-        }
         else if (act === "inc") bump(id, 1);
         else if (act === "dec") bump(id, -1);
         else if (act === "shop") {
             const it = S.items.get(id); if (!it) return;
-            queue("courses", () => addDoc(collection(db, "courses"), { text: String(it.name).slice(0, 200), checked: false, createdAt: new Date() }))
-                .then(ok => { if (ok) toast(`« ${it.name} » ajouté à la liste de courses 🛒`); });
+            // la liste de courses choisie en dernier dans le Dashboard (sinon la première)
+            const choisie = storeGet("liste-courses");
+            const liste = S.listesCourses.find(l => l.id === choisie) || S.listesCourses[0];
+            if (!liste) { toast("Crée d'abord une liste de courses dans le Dashboard."); return; }
+            queue("courses", () => addDoc(collection(db, "listes", liste.id, "articles"),
+                { texte: String(it.name).slice(0, 200), coche: false, creeLe: now(), creePar: S.user.uid }))
+                .then(ok => { if (ok) toast(`« ${it.name} » ajouté à « ${liste.name} » 🛒`); });
         }
         else if (act === "edit") {
             const i = S.items.get(id); if (!i) return; S.editing = id;
@@ -601,19 +418,12 @@ export function demarrer(conteneur, outilsCoquille) {
             S.confirm = null;
             queue("item-" + id, () => deleteDoc(itemRef(id))).then(ok => { if (ok) toast("Produit supprimé."); });
         }
-        else if (act === "remove-member") {
-            const s = stock(); if (!s || !isOwner()) return;
-            const key = "member:" + id; if (S.confirm !== key) { arm(key); return; }
-            S.confirm = null;
-            queue("stock-" + s.id, () => updateDoc(stockRef(s.id), { memberIds: s.memberIds.filter(x => x !== id), ["members." + id]: deleteField() }))
-                .then(ok => { if (ok) toast("Accès retiré."); });
-        }
     });
 
     // Échap ferme le panneau ouvert (sur téléphone, ils s'affichent par-dessus la page)
     document.addEventListener("keydown", e => {
         if (e.key !== "Escape" || !outils.visible()) return;
-        const ouvert = ["item-editor", "edit-storage", "add-storage", "new-stock", "access-panel"].find(id => !$(id).hidden);
+        const ouvert = ["item-editor", "edit-storage", "add-storage", "new-stock"].find(id => !$(id).hidden);
         if (ouvert) { $(ouvert).hidden = true; if (ouvert === "item-editor") S.editing = null; }
         else $("add-item").classList.remove("ouvert");
     });
@@ -621,11 +431,20 @@ export function demarrer(conteneur, outilsCoquille) {
     $("stock-select").addEventListener("change", e => {
         const v = e.target.value;
         if (v === "__new") { e.target.value = S.stockId || ""; showForm("new-stock", "ns-name"); return; }
-        $("access-panel").hidden = true;
         openStock(v);
     });
     $("btn-add-storage").onclick = () => { if (S.view) goHome(); showForm("add-storage", "as-name"); };
-    $("btn-access").onclick = () => { const p = $("access-panel"); p.hidden = !p.hidden; if (!p.hidden) { renderAccess(); loadNames(); } };
+    // Qui a accès : panneau commun à tout le site
+    $("btn-access").onclick = () => {
+        if (!S.stockId) return;
+        ouvrirAcces({
+            collection: "stocks", id: S.stockId, quoi: "ce stock",
+            supprimerContenu: async (sid) => {
+                const [a1, a2] = await Promise.all([getDocs(collection(db, "stocks", sid, "items")), getDocs(collection(db, "stocks", sid, "storages"))]);
+                await deleteRefs([...a1.docs, ...a2.docs].map(d => d.ref));
+            }
+        });
+    };
     $("search").addEventListener("input", e => { S.q = e.target.value.trim(); renderWatch(); renderResults(); });
 
     // Formulaires
@@ -635,12 +454,11 @@ export function demarrer(conteneur, outilsCoquille) {
 
         if (f.id === "new-stock") {
             const name = $("ns-name").value.trim(); if (!name) return;
-            const uid = S.user.uid;
             f.hidden = true;
             try {
-                const ref = await addDoc(collection(db, "stocks"), { name, ownerId: uid, memberIds: [uid], members: { [uid]: emailKey(S.user.email) }, createdAt: now() });
-                storeSet("stock-current", ref.id);
-                if (S.stocks.has(ref.id)) openStock(ref.id); else S.wantStock = ref.id;
+                const id = await creerPartage("stocks", { name });
+                storeSet("stock-current", id);
+                if (S.stocks.has(id)) openStock(id); else S.wantStock = id;
                 toast(`Stock « ${name} » créé.`);
             } catch (err) { onWriteErr(err); }
         }
@@ -672,34 +490,13 @@ export function demarrer(conteneur, outilsCoquille) {
             queue("item-" + id, () => updateDoc(itemRef(id), patch))
                 .then(ok => { if (ok) toast(patch.storageId !== S.view ? "Produit déplacé." : "Produit mis à jour."); });
         }
-        else if (f.id === "add-member") {
-            const s = stock(); if (!s || !isOwner()) return;
-            const key = emailKey($("am-email").value);
-            if (!key) return;
-            if (Object.values(s.members || {}).includes(key)) { toast("Cette personne a déjà accès."); return; }
-            try {
-                const snap = await getDoc(doc(db, "stockDirectory", key));
-                if (!snap.exists()) {
-                    toast("Aucun compte trouvé. La personne doit ouvrir l'appli Stock une fois et vérifier son e-mail.");
-                    return;
-                }
-                const uid = snap.data().uid;
-                S.names[uid] = snap.data().name || key.split("@")[0];
-                await updateDoc(stockRef(s.id), { memberIds: [...s.memberIds, uid], ["members." + uid]: key });
-                $("am-email").value = "";
-                toast(`${S.names[uid]} a maintenant accès à « ${s.name} ».`);
-            } catch (err) { onWriteErr(err); }
-        }
-        else if (f.id === "my-name") {
-            const name = $("mn-name").value.trim().slice(0, 40); if (!name || !S.verified) return;
-            try {
-                await setDoc(doc(db, "stockDirectory", emailKey(S.user.email)), { uid: S.user.uid, name });
-                S.myName = name; toast("Prénom enregistré.");
-            } catch (err) { onWriteErr(err); }
-        }
-        else if (f.id === "rename-stock") {
-            const s = stock(); const name = $("rs-name").value.trim(); if (!s || !name) return;
-            queue("stock-" + s.id, () => updateDoc(stockRef(s.id), { name })).then(ok => { if (ok) toast("Stock renommé."); });
-        }
     });
+
+    // ==========================================
+    // DÉMARRAGE
+    // ==========================================
+    renderAll();
+    subscribeStocks();
+    // listes de courses du compte (pour le bouton « Aux courses »)
+    ecouterMesPartages("listes", listes => { S.listesCourses = listes.filter(l => l.type === "courses"); });
 }

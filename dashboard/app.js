@@ -1,10 +1,204 @@
 // ==========================================
-// DASHBOARD : horloge, météo, roue du destin et liste de courses
+// DASHBOARD : horloge, météo, roue du destin, listes de courses et de choses à faire
 // Appli chargée dans la page principale (voir commun/coquille.js) :
 // demarrer() est appelée une seule fois, avec la vue de l'appli.
 // ==========================================
-import { collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } 
-from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+    collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, getDocs, query, orderBy, writeBatch
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { db } from "../commun/firebase.js";
+import { compte, nomDe } from "../commun/compte.js";
+import { ecouterMesPartages, creerPartage, ouvrirAcces } from "../commun/partage.js";
+import { esc, toast, ouvrirFeuille } from "../commun/ui.js";
+
+// Réglages de chaque sorte de liste
+const SORTES = {
+    courses: {
+        nomDefaut: "Courses", placeholder: "Ajouter un article…",
+        vide: "La liste est vide. Ajoute ce qu'il faut acheter.",
+        aucune: "Tu n'as pas encore de liste de courses.", creer: "Créer ma liste de courses",
+        cle: "liste-courses"
+    },
+    taches: {
+        nomDefaut: "À faire", placeholder: "Ajouter une chose à faire…",
+        vide: "Rien à faire pour l'instant 🎉",
+        aucune: "Tu n'as pas encore de liste de choses à faire.", creer: "Créer ma liste à faire",
+        cle: "liste-taches"
+    }
+};
+const lireMemoire = k => { try { return localStorage.getItem(k); } catch { return null; } };
+const ecrireMemoire = (k, v) => { try { localStorage.setItem(k, v); } catch { } };
+
+// Un bloc de liste (courses ou à faire) : choix de la liste, partage, articles
+function widgetListe(el) {
+    const type = el.dataset.type, sorte = SORTES[type];
+    const choix = el.querySelector(".liste-choix");
+    const ul = el.querySelector(".liste-articles");
+    const vide = el.querySelector(".liste-vide");
+    const form = el.querySelector(".liste-ajout");
+    const champ = form.querySelector("input");
+    const zoneImport = el.querySelector(".liste-import");
+    let listes = [], id = null, arreterArticles = null, articles = [], charge = false;
+
+    const liste = () => listes.find(l => l.id === id);
+    const articlesCol = () => collection(db, "listes", id, "articles");
+
+    function majListes(nouvelles) {
+        listes = nouvelles; charge = true;
+        let cible = id;
+        if (!cible || !listes.some(l => l.id === cible)) {
+            const memo = lireMemoire(sorte.cle);
+            cible = listes.some(l => l.id === memo) ? memo : (listes[0]?.id || null);
+        }
+        dessinerChoix();
+        if (cible !== id) ouvrir(cible); else dessiner();
+    }
+
+    function dessinerChoix() {
+        choix.innerHTML = listes.map(l => `<option value="${esc(l.id)}" ${l.id === id ? "selected" : ""}>${esc(l.name)}${l.ownerId !== compte.uid ? " (partagée)" : ""}</option>`).join("")
+            + `<option value="__nouvelle">+ Nouvelle liste…</option>`;
+        if (id) choix.value = id;
+        el.querySelector(".liste-outils").hidden = !listes.length;
+        form.hidden = !listes.length;
+    }
+
+    function ouvrir(nouvelId) {
+        arreterArticles?.(); arreterArticles = null;
+        id = nouvelId; articles = [];
+        if (id) ecrireMemoire(sorte.cle, id);
+        dessinerChoix();
+        dessiner();
+        if (!id) return;
+        arreterArticles = onSnapshot(query(articlesCol(), orderBy("creeLe", "asc")), snap => {
+            articles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            dessiner();
+        }, err => console.error("articles", err));
+        if (type === "courses") proposerImport();
+    }
+
+    function dessiner() {
+        if (!charge) { ul.innerHTML = ""; vide.hidden = true; return; }
+        if (!listes.length) {
+            ul.innerHTML = "";
+            vide.hidden = false;
+            vide.innerHTML = `<p>${esc(sorte.aucune)}</p><button type="button" class="liste-bouton principal" data-action="creer">${esc(sorte.creer)}</button>`;
+            return;
+        }
+        // les articles cochés passent à la fin
+        const tries = [...articles].sort((a, b) => (a.coche === b.coche ? 0 : a.coche ? 1 : -1));
+        ul.innerHTML = tries.map(a => `
+            <li class="liste-article ${a.coche ? "coche" : ""}" data-id="${esc(a.id)}">
+                <label class="liste-label"><input type="checkbox" ${a.coche ? "checked" : ""}><span>${esc(a.texte)}</span></label>
+                <button type="button" class="liste-suppr" aria-label="Supprimer">×</button>
+            </li>`).join("");
+        vide.innerHTML = (articles.length ? "" : `<p>${esc(sorte.vide)}</p>`)
+            + (articles.some(a => a.coche) ? `<button type="button" class="liste-bouton petit" data-action="vider-coches">Retirer les éléments cochés</button>` : "");
+        vide.hidden = !vide.innerHTML;
+    }
+
+    async function nouvelleListe() {
+        const f = ouvrirFeuille({ titre: type === "courses" ? "Nouvelle liste de courses" : "Nouvelle liste à faire" });
+        f.corps.innerHTML = `<form class="ligne-form" autocomplete="off">
+            <label class="champ"><span>Nom</span><input name="nom" maxlength="60" required placeholder="Ex. Courses avec mes parents"></label>
+            <button class="bouton principal" type="submit">Créer</button></form>
+            <p class="muet petit">Ensuite, « Partager » pour choisir qui peut la voir et la modifier.</p>`;
+        const input = f.corps.querySelector("input"); input.focus();
+        f.corps.querySelector("form").addEventListener("submit", async e => {
+            e.preventDefault();
+            const nom = input.value.trim(); if (!nom) return;
+            f.fermer();
+            await creer(nom);
+        });
+    }
+    async function creer(nom) {
+        try {
+            const nouvel = await creerPartage("listes", { name: nom, type });
+            ecrireMemoire(sorte.cle, nouvel);
+            id = null;   // la liste arrive par l'écoute, puis s'ouvre
+            toast(`Liste « ${nom} » créée.`);
+        } catch (e) { console.error(e); toast("Création impossible. Réessaie."); }
+    }
+
+    // ---- ancienne liste de courses (avant les comptes) : import une seule fois
+    let importVerifie = false;
+    async function proposerImport() {
+        if (importVerifie) return; importVerifie = true;
+        try {
+            const anciens = await getDocs(collection(db, "courses"));
+            if (anciens.empty) return;
+            const l = liste(); if (!l || l.ownerId !== compte.uid) { importVerifie = false; return; }
+            zoneImport.hidden = false;
+            zoneImport.innerHTML = `<span>Ton ancienne liste de courses contient <b>${anciens.size}</b> article${anciens.size > 1 ? "s" : ""}.</span>
+                <button type="button" class="liste-bouton principal petit" data-action="importer">Les mettre dans « ${esc(l.name)} »</button>`;
+        } catch { /* ancienne collection inaccessible : rien à proposer */ }
+    }
+    async function importer(bouton) {
+        bouton.disabled = true; bouton.textContent = "Import…";
+        try {
+            const anciens = await getDocs(collection(db, "courses"));
+            for (const d of anciens.docs) {
+                const a = d.data();
+                const quand = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
+                await addDoc(articlesCol(), { texte: String(a.text || "").slice(0, 200) || "Article", coche: !!a.checked, creeLe: quand, creePar: compte.uid });
+                await deleteDoc(d.ref);
+            }
+            zoneImport.hidden = true;
+            toast("Ancienne liste importée ✔");
+        } catch (e) {
+            console.error(e); bouton.disabled = false; bouton.textContent = "Réessayer l'import";
+            toast("L'import n'a pas pu aller jusqu'au bout. Réessaie.");
+        }
+    }
+
+    // ---- actions
+    choix.addEventListener("change", () => {
+        if (choix.value === "__nouvelle") { choix.value = id || ""; nouvelleListe(); return; }
+        ouvrir(choix.value);
+    });
+    form.addEventListener("submit", async e => {
+        e.preventDefault();
+        const texte = champ.value.trim().slice(0, 200);
+        if (!texte || !id) return;
+        champ.value = "";
+        try { await addDoc(articlesCol(), { texte, coche: false, creeLe: Date.now(), creePar: compte.uid }); }
+        catch (err) { console.error(err); toast("Ajout impossible. Réessaie."); champ.value = texte; }
+    });
+    ul.addEventListener("change", e => {
+        const li = e.target.closest(".liste-article"); if (!li) return;
+        updateDoc(doc(articlesCol(), li.dataset.id), { coche: e.target.checked }).catch(() => toast("Modification impossible."));
+    });
+    el.addEventListener("click", async e => {
+        const b = e.target.closest("button"); if (!b) return;
+        if (b.classList.contains("liste-suppr")) {
+            const li = b.closest(".liste-article");
+            deleteDoc(doc(articlesCol(), li.dataset.id)).catch(() => toast("Suppression impossible."));
+        } else if (b.dataset.action === "creer") creer(sorte.nomDefaut);
+        else if (b.dataset.action === "partager" && id) {
+            ouvrirAcces({
+                collection: "listes", id, quoi: "cette liste",
+                supprimerContenu: async (lid) => {
+                    const snap = await getDocs(collection(db, "listes", lid, "articles"));
+                    for (let i = 0; i < snap.docs.length; i += 400) {
+                        const lot = writeBatch(db);
+                        snap.docs.slice(i, i + 400).forEach(d => lot.delete(d.ref));
+                        await lot.commit();
+                    }
+                }
+            });
+        } else if (b.dataset.action === "vider-coches") {
+            const lot = writeBatch(db);
+            articles.filter(a => a.coche).forEach(a => lot.delete(doc(articlesCol(), a.id)));
+            lot.commit().catch(() => toast("Suppression impossible."));
+        } else if (b.dataset.action === "importer") importer(b);
+    });
+    champ.placeholder = sorte.placeholder;
+
+    return {
+        type,
+        majListes,
+        erreur: () => { vide.hidden = false; vide.innerHTML = `<p>Les listes n'ont pas pu se charger. Vérifie ta connexion puis recharge la page.</p>`; }
+    };
+}
 
 let fermerMeteo = () => {};
 
@@ -13,92 +207,17 @@ export async function demarrer(racine) {
     const $id = (id) => racine.querySelector("#" + id);
 
     // ==========================================
-    // 1. CONFIGURATION FIREBASE (partagée dans ../commun/firebase.js)
+    // 1. LISTES PARTAGÉES (courses et choses à faire)
     // ==========================================
-    let db;
-    try {
-        ({ db } = await import("../commun/firebase.js"));
-    } catch (e) {
-        $id('list-loader').textContent = "Erreur de configuration Firebase.";
-    }
-
-    // ==========================================
-    // 2. GESTION DE LA LISTE DE COURSES
-    // ==========================================
-    const shoppingListEl = $id('shopping-list');
-    const shoppingInput = $id('shopping-input');
-    const addBtn = $id('add-item-btn');
-    const loader = $id('list-loader');
-
-    if (db) {
-        const coursesRef = collection(db, "courses");
-        const q = query(coursesRef, orderBy("createdAt", "asc"));
-
-        onSnapshot(q, (snapshot) => {
-            loader.style.display = 'none';
-            shoppingListEl.innerHTML = ''; 
-        
-            snapshot.forEach((docSnap) => {
-                const item = docSnap.data();
-                const id = docSnap.id;
-            
-                const li = document.createElement('li');
-                li.className = `shopping-item ${item.checked ? 'completed' : ''}`;
-                // le texte est dans le <label> : on coche en touchant tout l'article
-                li.innerHTML = `
-                    <label class="shopping-label">
-                        <input type="checkbox" ${item.checked ? 'checked' : ''} class="check-box">
-                        <span></span>
-                    </label>
-                    <button class="delete-btn" aria-label="Supprimer">×</button>
-                `;
-                // textContent : le texte est affiché tel quel, jamais interprété comme du HTML
-                li.querySelector('span').textContent = item.text;
-
-                li.querySelector('.check-box').addEventListener('change', async (e) => {
-                    await updateDoc(doc(db, "courses", id), { checked: e.target.checked });
-                });
-
-                li.querySelector('.delete-btn').addEventListener('click', async () => {
-                    await deleteDoc(doc(db, "courses", id));
-                });
-
-                shoppingListEl.appendChild(li);
-            });
-        }, (error) => {
-            if (error.code === 'permission-denied') {
-                loader.innerHTML = `<span style="color:#d93025; font-weight:bold;">Accès refusé : vérifie les règles Firestore (collection "courses").</span>`;
-            } else {
-                 loader.textContent = "Erreur de chargement de la liste.";
-            }
-        });
-
-        const addItemToDb = async () => {
-            const text = shoppingInput.value.trim().slice(0, 200); // 200 caractères max (limite des règles)
-            if (text !== '') {
-                try {
-                    await addDoc(coursesRef, {
-                        text: text,
-                        checked: false,
-                        createdAt: new Date()
-                    });
-                    shoppingInput.value = ''; 
-                } catch (e) {
-                    if(e.code === 'permission-denied'){
-                        alert("Impossible d'ajouter : vérifie les règles Firestore (collection \"courses\").");
-                    }
-                }
-            }
-        };
-
-        addBtn.addEventListener('click', addItemToDb);
-        shoppingInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') addItemToDb();
-        });
-    }
+    // Chaque liste est un document « listes/{id} » partagé (voir commun/partage.js),
+    // avec un champ type ("courses" ou "taches") et ses articles dans « listes/{id}/articles ».
+    const widgets = [...racine.querySelectorAll(".liste-widget")].map(el => widgetListe(el));
+    ecouterMesPartages("listes", (listes) => {
+        widgets.forEach(w => w.majListes(listes.filter(l => l.type === w.type)));
+    }, () => widgets.forEach(w => w.erreur()));
 
     // ==========================================
-    // 3. GESTION HEURE & DATE
+    // 2. GESTION HEURE & DATE
     // ==========================================
     function updateClock() {
         const now = new Date();

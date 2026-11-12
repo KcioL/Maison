@@ -6,7 +6,9 @@
      #/recettes/recette/<id>      une recette
      #/recettes/ajouter           nouvelle recette
      #/recettes/modifier/<id>     modifier une recette
-   Utilise la base Firebase du site (fichier ../commun/firebase.js).
+   Les recettes sont rangées dans des carnets partagés (comme les stocks et les listes) :
+     carnets/{carnet}/recettes/{recette}/photos/{photo}
+   Le compte et le partage sont communs au site (commun/compte.js, commun/partage.js).
    ========================================================= */
 
 const TITRE = "Les recettes de Jenigger";
@@ -14,8 +16,11 @@ const TITRE = "Les recettes de Jenigger";
 /* ========================================================= */
 
 import { db } from "../commun/firebase.js";
+import { compte } from "../commun/compte.js";
+import { ecouterMesPartages, creerPartage, ouvrirAcces } from "../commun/partage.js";
+import { ouvrirFeuille, toast as toastSite } from "../commun/ui.js";
 import {
-  collection, doc, getDoc, getDocs, getDocsFromCache, getDocsFromServer, setDoc, updateDoc, writeBatch,
+  collection, doc, getDoc, getDocs, getDocsFromCache, getDocsFromServer, setDoc, updateDoc, deleteDoc, writeBatch,
   query, orderBy, serverTimestamp,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
@@ -26,7 +31,13 @@ let cheminCourant = ""; // page interne affichée ("", "recette/<id>", "ajouter"
 const $id = (id) => racine.querySelector("#" + id);
 const PASTELS = ["lavande", "menthe", "peche", "beurre", "rose", "ciel"];
 
-let recettesCache = null;        // liste des recettes gardée en mémoire
+let recettesCache = null;        // liste des recettes du carnet ouvert, gardée en mémoire
+let carnets = [];                // carnets que je possède ou qu'on m'a partagés
+let carnetsCharges = false;
+let carnetId = null;             // carnet ouvert
+const carnet = () => carnets.find((c) => c.id === carnetId);
+const recettesCol = () => collection(db, "carnets", carnetId, "recettes");
+const nomCarnet = () => carnet()?.name || TITRE;
 const photosCache = new Map();   // id de photo -> image (data URL)
 let recherche = "";
 let scrollAccueil = 0;
@@ -163,7 +174,7 @@ async function preparerMiniature(source) {
    recettes/{id}/photos/{photoId} data
    ========================================================= */
 
-const requeteRecettes = () => query(collection(db, "recettes"), orderBy("creeLe", "desc"));
+const requeteRecettes = () => query(recettesCol(), orderBy("creeLe", "desc"));
 const versListe = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 const empreinte = (liste) => JSON.stringify(liste.map((r) => [r.id, r.modifieLe?.seconds ?? 0, r.miniature?.length ?? 0]));
 
@@ -188,8 +199,10 @@ async function chargerRecettes({ forcer = false } = {}) {
 // Récupère la version à jour ; ne réaffiche le carnet que si quelque chose a changé
 // et si on est toujours sur l'accueil sans être en train de chercher ou sélectionner.
 function actualiserEnArrierePlan() {
+  const pour = carnetId;
   getDocsFromServer(requeteRecettes())
     .then((snap) => {
+      if (pour !== carnetId) return;
       const fraiches = versListe(snap);
       if (empreinte(fraiches) === empreinte(recettesCache || [])) return;
       recettesCache = fraiches;
@@ -206,14 +219,14 @@ function actualiserEnArrierePlan() {
 async function chargerRecette(id) {
   const trouvee = recettesCache?.find((r) => r.id === id);
   if (trouvee) return trouvee;
-  const snap = await getDoc(doc(db, "recettes", id));
+  const snap = await getDoc(doc(recettesCol(), id));
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
 async function chargerPhotos(recette) {
   const manquantes = recette.photos.filter((id) => !photosCache.has(id));
   if (manquantes.length) {
-    const snap = await getDocs(collection(db, "recettes", recette.id, "photos"));
+    const snap = await getDocs(collection(recettesCol(), recette.id, "photos"));
     snap.forEach((d) => photosCache.set(d.id, d.data().data));
   }
   return recette.photos.map((id) => ({ id, data: photosCache.get(id) })).filter((p) => p.data);
@@ -225,7 +238,7 @@ async function supprimerRecettes(liste, progression = () => {}) {
   let i = 0;
   for (const r of liste) {
     progression(++i, liste.length);
-    const ref = doc(db, "recettes", r.id);
+    const ref = doc(recettesCol(), r.id);
     const photosSnap = await getDocs(collection(ref, "photos"));
     const batch = writeBatch(db);
     photosSnap.forEach((d) => batch.delete(d.ref));
@@ -233,6 +246,167 @@ async function supprimerRecettes(liste, progression = () => {}) {
     await batch.commit();
     (r.photos || []).forEach((pid) => photosCache.delete(pid));
     if (recettesCache) recettesCache = recettesCache.filter((x) => x.id !== r.id);
+  }
+}
+
+
+/* =========================================================
+   Carnets (partagés comme les listes et les stocks)
+   ========================================================= */
+
+const MEMO_CARNET = "carnet-courant";
+const lireMemo = () => { try { return localStorage.getItem(MEMO_CARNET); } catch { return null; } };
+const ecrireMemo = (v) => { try { localStorage.setItem(MEMO_CARNET, v); } catch {} };
+
+// Choix du carnet + bouton de partage, sous le titre
+function outilsCarnet() {
+  return `<div class="carnet-outils">
+      <select id="choix-carnet" aria-label="Choisir le carnet">
+        ${carnets.map((c) => `<option value="${esc(c.id)}" ${c.id === carnetId ? "selected" : ""}>${esc(c.name)}${c.ownerId !== compte.uid ? " (partagé)" : ""}</option>`).join("")}
+        <option value="__nouveau">+ Nouveau carnet…</option>
+      </select>
+      <button type="button" class="btn btn-clair" id="partager-carnet">👥 Partager</button>
+    </div>`;
+}
+
+function brancherOutilsCarnet() {
+  brancherChoix();
+  $id("partager-carnet")?.addEventListener("click", () => {
+    if (!carnetId) return;
+    ouvrirAcces({ collection: "carnets", id: carnetId, quoi: "ce carnet", supprimerContenu: viderCarnet });
+  });
+}
+
+function brancherChoix() {
+  const choix = $id("choix-carnet");
+  choix?.addEventListener("change", () => {
+    if (choix.value === "__nouveau") { choix.value = carnetId || ""; nouveauCarnet(); return; }
+    changerCarnet(choix.value);
+  });
+}
+
+function changerCarnet(id) {
+  if (id === carnetId) return;
+  carnetId = id;
+  if (id) ecrireMemo(id);
+  recettesCache = null;
+  recherche = "";
+  scrollAccueil = 0;
+  importVerifie = false;
+  if (cheminCourant) aller("", { remplacer: true }); else route();
+}
+
+function nouveauCarnet() {
+  const f = ouvrirFeuille({ titre: "Nouveau carnet de recettes" });
+  f.corps.innerHTML = `<form class="ligne-form" autocomplete="off">
+      <label class="champ"><span>Nom</span><input name="nom" maxlength="60" required placeholder="Ex. Recettes de famille"></label>
+      <button class="bouton principal" type="submit">Créer</button></form>
+    <p class="muet petit">Ensuite, « Partager » pour choisir qui peut le voir et ajouter des recettes.</p>`;
+  const input = f.corps.querySelector("input"); input.focus();
+  f.corps.querySelector("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const nom = input.value.trim(); if (!nom) return;
+    f.fermer();
+    await creerCarnet(nom);
+  });
+}
+
+async function creerCarnet(nom) {
+  try {
+    const id = await creerPartage("carnets", { name: nom });
+    ecrireMemo(id);
+    carnetVoulu = id;   // il s'ouvrira dès qu'il arrive par l'écoute
+    toastSite(`Carnet « ${nom} » créé.`);
+  } catch (e) { console.error(e); toastSite("Création impossible. Réessaie."); }
+}
+let carnetVoulu = null;
+
+// Supprime toutes les recettes (et leurs photos) d'un carnet
+async function viderCarnet(id) {
+  const recettes = await getDocs(collection(db, "carnets", id, "recettes"));
+  for (const r of recettes.docs) {
+    const photos = await getDocs(collection(r.ref, "photos"));
+    const lot = writeBatch(db);
+    photos.forEach((p) => lot.delete(p.ref));
+    lot.delete(r.ref);
+    await lot.commit();
+  }
+}
+
+// Pas encore de carnet
+function pageSansCarnet() {
+  outils.titre("Recettes");
+  app.innerHTML = `
+    <header class="entete seyes avec-marge">
+      <div class="entete-inner"><h1 class="titre-carnet">Recettes</h1></div>
+    </header>
+    <main class="page">
+      <div class="vide seyes avec-marge">
+        <p>Tu n'as pas encore de carnet.<br>Crée le tien pour y ranger tes recettes.</p>
+        <button type="button" class="btn" id="creer-carnet">${icones.plus}<span>Créer mon carnet</span></button>
+        <p class="muet petit-texte">Si quelqu'un t'a partagé son carnet, il apparaîtra ici tout seul.</p>
+      </div>
+    </main>`;
+  $id("creer-carnet").addEventListener("click", (e) => { e.currentTarget.disabled = true; creerCarnet("Les recettes de Jenigger"); });
+}
+
+/* ---- Recettes d'avant les comptes : import (une seule fois) ---- */
+let importVerifie = false;
+let anciennesEnAttente = 0;   // nombre d'anciennes recettes encore à importer
+async function proposerImport() {
+  const c = carnet();
+  if (!c || c.ownerId !== compte.uid) return;
+  if (!importVerifie) {
+    importVerifie = true;
+    try { anciennesEnAttente = (await getDocs(collection(db, "recettes"))).size; }
+    catch { anciennesEnAttente = 0; /* ancienne collection inaccessible */ }
+  }
+  const zone = $id("zone-import");
+  if (!zone || !anciennesEnAttente || carnet()?.id !== c.id) return;
+  const anciennes = { size: anciennesEnAttente };
+  {
+    zone.hidden = false;
+    zone.className = "note-import";
+    zone.innerHTML = `<span>Tu as <b>${anciennes.size}</b> recette${anciennes.size > 1 ? "s" : ""} de l'ancien carnet (avant les comptes).</span>
+      <button type="button" class="btn" id="importer">Les mettre dans « ${esc(c.name)} »</button>`;
+    $id("importer").addEventListener("click", importerAnciennes);
+  }
+}
+
+async function importerAnciennes(e) {
+  const bouton = e.currentTarget;
+  bouton.disabled = true;
+  try {
+    const anciennes = await getDocs(collection(db, "recettes"));
+    let n = 0;
+    for (const d of anciennes.docs) {
+      bouton.textContent = `Import ${++n}/${anciennes.size}…`;
+      const photos = await getDocs(collection(d.ref, "photos"));
+      const cible = doc(recettesCol(), d.id);
+      for (const p of photos.docs) await setDoc(doc(cible, "photos", p.id), p.data());
+      const r = d.data();
+      await setDoc(cible, {
+        titre: r.titre || "Sans titre",
+        ingredients: r.ingredients || [], etapes: r.etapes || [],
+        source: r.source ?? null, notes: r.notes ?? null,
+        photos: r.photos || [], miniature: r.miniature ?? null,
+        creeLe: r.creeLe || serverTimestamp(), modifieLe: r.modifieLe || serverTimestamp(),
+      });
+      // l'ancienne copie n'est supprimée qu'une fois la nouvelle enregistrée
+      const lot = writeBatch(db);
+      photos.forEach((p) => lot.delete(p.ref));
+      lot.delete(d.ref);
+      await lot.commit();
+    }
+    toastSite("Recettes importées ✔");
+    anciennesEnAttente = 0;
+    recettesCache = null;
+    route();
+  } catch (err) {
+    console.error(err);
+    bouton.disabled = false;
+    bouton.textContent = "Réessayer l'import";
+    toastSite("L'import n'a pas pu aller jusqu'au bout. Réessaie : rien n'est perdu.");
   }
 }
 
@@ -244,6 +418,8 @@ async function route() {
   libererEcran();
   toucheEchap = null;
   const parties = cheminCourant.split("/").filter(Boolean);
+  if (!carnetsCharges) { app.innerHTML = `<p class="chargement">Ouverture du carnet…</p>`; return; }
+  if (!carnetId) return pageSansCarnet();
   try {
     if (parties.length === 0) return await pageAccueil();
     if (parties[0] === "recette" && parties[1]) return await pageRecette(parties[1]);
@@ -261,18 +437,20 @@ async function route() {
    ========================================================= */
 
 async function pageAccueil() {
-  outils.titre(TITRE);
+  outils.titre(nomCarnet());
   if (!recettesCache) app.innerHTML = `<p class="chargement">Ouverture du carnet…</p>`;
   const recettes = await chargerRecettes();
 
   app.innerHTML = `
     <header class="entete seyes avec-marge">
       <div class="entete-inner">
-        <h1 class="titre-carnet">${esc(TITRE)}</h1>
+        <h1 class="titre-carnet">${esc(nomCarnet())}</h1>
         <a class="btn" href="${lien("ajouter")}">${icones.plus}<span>Ajouter</span></a>
       </div>
+      ${outilsCarnet()}
     </header>
     <main class="page" id="page">
+      <div id="zone-import" hidden></div>
       ${
         recettes.length === 0
           ? `<div class="vide seyes avec-marge">
@@ -298,6 +476,8 @@ async function pageAccueil() {
       </div>
     </div>`;
 
+  brancherOutilsCarnet();
+  proposerImport();
   if (recettes.length === 0) return;
 
   const page = $id("page");
@@ -492,7 +672,7 @@ async function pageRecette(id) {
     toast("Cette recette n'existe plus.");
     return aller("", { remplacer: true });
   }
-  outils.titre(`${r.titre} | ${TITRE}`);
+  outils.titre(`${r.titre} | ${nomCarnet()}`);
 
   const couleur = pastelDe(r.id);
   const source = libelleSource(r.source);
@@ -637,7 +817,7 @@ async function pageFormulaire(id = null) {
     if (!r) return aller("", { remplacer: true });
     photos = await chargerPhotos(r);
   }
-  outils.titre(`${r ? "Modifier" : "Nouvelle recette"} | ${TITRE}`);
+  outils.titre(`${r ? "Modifier" : "Nouvelle recette"} | ${nomCarnet()}`);
   const aSupprimer = [];
 
   app.innerHTML = `
@@ -779,7 +959,7 @@ async function pageFormulaire(id = null) {
     }
 
     bouton.disabled = true;
-    const ref = r ? doc(db, "recettes", r.id) : doc(collection(db, "recettes"));
+    const ref = r ? doc(recettesCol(), r.id) : doc(recettesCol());
     const envoyees = [];
 
     try {
@@ -910,8 +1090,29 @@ export function demarrer(conteneur, outilsCoquille) {
   racine = conteneur;
   outils = outilsCoquille;
   app = $id("app");
-  outils.titre(TITRE);
+  outils.titre("Recettes");
   route();
+  // carnets que je possède ou qu'on m'a partagés (en direct)
+  ecouterMesPartages("carnets", (liste) => {
+    const premier = !carnetsCharges;
+    carnets = liste;
+    carnetsCharges = true;
+    let cible = carnetId;
+    if (carnetVoulu && carnets.some((c) => c.id === carnetVoulu)) { cible = carnetVoulu; carnetVoulu = null; }
+    else if (!cible || !carnets.some((c) => c.id === cible)) {
+      const memo = lireMemo();
+      cible = carnets.some((c) => c.id === memo) ? memo : (carnets[0]?.id || null);
+    }
+    if (cible !== carnetId) changerCarnet(cible);
+    else if (premier) route();
+    else if (!cheminCourant) {
+      // nom ou partage modifié : on rafraîchit l'en-tête de l'accueil
+      const titre = racine.querySelector(".titre-carnet");
+      if (titre && carnet()) titre.textContent = carnet().name;
+      const choix = $id("choix-carnet");
+      if (choix) { choix.outerHTML = outilsCarnet().match(/<select[\s\S]*<\/select>/)[0]; brancherChoix(); }
+    }
+  }, () => { carnetsCharges = true; app.innerHTML = `<p class="chargement">Les carnets n'ont pas pu se charger. Vérifie ta connexion puis recharge la page.</p>`; });
 }
 
 // À chaque ouverture du carnet ou changement de page interne

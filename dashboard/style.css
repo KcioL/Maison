@@ -41,110 +41,13 @@
     align-items: center; 
 }
 .vue-dashboard .weather-temp{ font-size: 3rem; font-weight: 800; letter-spacing: -1px; }
-.vue-dashboard .weather-desc{ text-transform: capitalize; font-weight: 500;} 
-
-/* --- LISTE DE COURSES --- */
-.vue-dashboard .shopping-widget{
-    grid-column: 1 / -1; 
-}
-
-.vue-dashboard .shopping-input-group{ 
-    display: flex; 
-    gap: 0.8rem; 
-    margin-bottom: 1.5rem; 
-    width: 100%; 
-}
-
-.vue-dashboard #shopping-input{ 
-    flex: 1 1 auto; 
-    min-width: 0; 
-    padding: 1rem; 
-    border: 2px solid var(--line); 
-    border-radius: 12px; 
-    font-size: 1rem;
-    transition: border-color 0.2s;
-    background-color: var(--field-bg);
-}
-
-.vue-dashboard #shopping-input:focus{
-    outline: none;
-    border-color: var(--accent);
-    background-color: var(--field-focus);
-}
-
-.vue-dashboard #add-item-btn{ 
-    flex: 0 0 auto; 
-    background: var(--accent); 
-    color: var(--on-accent); 
-    border: none; 
-    width: 3.5rem; 
-    border-radius: 12px; 
-    cursor: pointer; 
-    font-weight: bold; 
-    font-size: 1.8rem; 
-    display: flex; 
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s; 
-}
-
-.vue-dashboard #add-item-btn:hover{ 
-    background: var(--accent-hover); 
-    transform: scale(1.05); 
-}
-
-.vue-dashboard .shopping-list{ 
-    display: grid; 
-    /* Crée autant de colonnes de 250px minimum que possible sur la largeur de l'écran */
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
-    gap: 0.8rem 1.5rem; /* Espacement vertical et horizontal entre les articles */
-    list-style: none; 
-    overflow-y: auto; 
-    max-height: 400px; /* On augmente un peu la hauteur maximale */
-    padding-right: 5px; 
-}
-.vue-dashboard .shopping-list::-webkit-scrollbar{ width: 6px; }
-.vue-dashboard .shopping-list::-webkit-scrollbar-thumb{ background: var(--scroll-thumb); border-radius: 10px; }
-
-/* Design des éléments mis à jour pour s'adapter aux colonnes */
-.vue-dashboard .shopping-item{ 
-    display: flex; 
-    align-items: center; 
-    padding: 0.8rem 1.2rem; 
-    background-color: var(--field-bg); /* Fond coloré au lieu d'une simple ligne en bas */
-    border-radius: 12px;
-    border: 1px solid var(--line-soft);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.vue-dashboard .shopping-item:hover{
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-}
-.vue-dashboard .shopping-item input[type="checkbox"]{ 
-    margin-right: 12px; 
-    width: 20px; 
-    height: 20px; 
-    cursor: pointer; 
-    accent-color: var(--accent); 
-    flex-shrink: 0;
-}
-.vue-dashboard .shopping-item span{ 
-    flex-grow: 1; 
-    font-weight: 500; 
-    word-break: break-word; /* Évite qu'un mot très long casse la colonne */
-}
-.vue-dashboard .shopping-item.completed span{ 
-    text-decoration: line-through; 
-    color: var(--text-muted); 
-    opacity: 0.7;
-}
+.vue-dashboard .weather-desc{ text-transform: capitalize; font-weight: 500;}
 .vue-dashboard .delete-btn{ 
     background: none; border: none; color: #ff7675; cursor: pointer; 
     font-size: 1.8rem; line-height: 1; padding: 0 5px; opacity: 0.6; transition: opacity 0.2s;
     flex-shrink: 0;
 }
 .vue-dashboard .delete-btn:hover{ opacity: 1; }
-.vue-dashboard #list-loader{ text-align: center; color: var(--accent); font-size: 0.9rem; margin-top: 1rem; font-weight: bold; }
 /* --- MODALE MÉTÉO (Pop-up) --- */
 .vue-dashboard .modal{
     display: none; 
@@ -169,9 +72,6 @@
 }
 .vue-dashboard .close-btn:hover{ color: var(--text-main); }
 .vue-dashboard .modal h2{ margin-bottom: 1.5rem; color: var(--text-main); border-bottom: 2px dashed var(--line); padding-bottom: 0.8rem; }
-
-/* --- RECHERCHE VILLE --- */
-.vue-dashboard .modal-content input, .vue-dashboard #shopping-input{ color: var(--text-main); }
 .vue-dashboard .city-selector{ display: flex; align-items: center; gap: 0.8rem; margin-bottom: 2rem; }
 .vue-dashboard #city-input{
     flex-grow: 1; padding: 1rem; border-radius: 12px; border: 2px solid var(--line);
@@ -288,9 +188,6 @@
     transform: translateY(1px);
 }
 
-/* --- Article de courses : tout l'article est cliquable pour cocher --- */
-.vue-dashboard .shopping-label{ display: flex; align-items: center; flex: 1; min-width: 0; cursor: pointer; }
-
 /* ==========================================
    TÉLÉPHONE
    ========================================== */
@@ -302,7 +199,6 @@
        puis la liste de courses (le plus utilisé), la roue en dernier */
     .vue-dashboard .time-widget{ order: 1; }
     .vue-dashboard .weather-widget-container{ order: 2; }
-    .vue-dashboard .shopping-widget{ order: 3; }
     .vue-dashboard .wheel-widget{ order: 4; }
 
     .vue-dashboard .time-widget{ padding: 1rem 1.25rem; flex-direction: row; align-items: baseline; justify-content: center; gap: 0.8rem; flex-wrap: wrap; }
@@ -310,14 +206,6 @@
     .vue-dashboard #date{ font-size: 0.95rem; }
 
     .vue-dashboard .weather-widget-container .weather-temp{ font-size: 2.2rem; }
-
-    .vue-dashboard .shopping-input-group{ gap: 0.6rem; margin-bottom: 1rem; }
-    .vue-dashboard #shopping-input{ padding: 0.85rem 1rem; }
-    .vue-dashboard #add-item-btn{ width: 3.2rem; }
-    .vue-dashboard .shopping-list{ grid-template-columns: 1fr; max-height: none; overflow: visible; padding-right: 0; gap: 0.5rem; }
-    .vue-dashboard .shopping-item{ padding: 0.35rem 0.4rem 0.35rem 0.9rem; }
-    .vue-dashboard .shopping-label{ padding: 0.5rem 0; }
-    .vue-dashboard .shopping-item input[type="checkbox"]{ width: 24px; height: 24px; }
     .vue-dashboard .delete-btn{ width: 44px; height: 44px; padding: 0; font-size: 1.8rem; }
 
     .vue-dashboard #wheel-result{ padding: 1rem; min-height: 64px; font-size: 1.15rem; }
@@ -345,6 +233,70 @@
 }
 
 @media (hover: none) {
-    .vue-dashboard .weather-widget-container:hover, .vue-dashboard .forecast-day:hover, .vue-dashboard .shopping-item:hover, .vue-dashboard #spin-btn:hover, .vue-dashboard #add-item-btn:hover{ transform: none; }
     .vue-dashboard .weather-widget-container:hover{ border-color: transparent; }
+}
+
+/* ==========================================
+   LISTES PARTAGÉES (courses, à faire)
+   ========================================== */
+.vue-dashboard .listes-zone{
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+.vue-dashboard .widget-emoji{ font-size: 1.4rem; line-height: 1; }
+.vue-dashboard .liste-outils{ display: flex; gap: 0.6rem; margin-bottom: 1rem; align-items: center; }
+.vue-dashboard .liste-choix{
+    flex: 1; min-width: 0; padding: 0.6rem 0.8rem; border: 2px solid var(--line); border-radius: 12px;
+    background: var(--field-bg); color: var(--text-main); font-weight: 700; font-size: 0.95rem;
+}
+.vue-dashboard .liste-bouton{
+    border: 2px solid var(--line); background: var(--card-bg); color: var(--text-main);
+    border-radius: 12px; padding: 0.55rem 0.9rem; min-height: 42px; font-weight: 700; font-size: 0.9rem;
+    cursor: pointer; white-space: nowrap;
+}
+.vue-dashboard .liste-bouton:hover{ border-color: var(--text-muted); }
+.vue-dashboard .liste-bouton.principal{ background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.vue-dashboard .liste-bouton.petit{ min-height: 36px; padding: 0.35rem 0.8rem; font-size: 0.85rem; }
+.vue-dashboard .liste-import{
+    display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; justify-content: space-between;
+    background: var(--hover-bg); border-radius: 12px; padding: 0.7rem 0.9rem; margin-bottom: 1rem; font-size: 0.9rem;
+}
+.vue-dashboard .liste-import[hidden], .vue-dashboard .liste-outils[hidden], .vue-dashboard .liste-ajout[hidden], .vue-dashboard .liste-vide[hidden]{ display: none; }
+.vue-dashboard .liste-ajout{ display: flex; gap: 0.8rem; margin-bottom: 1rem; }
+.vue-dashboard .liste-ajout input{
+    flex: 1 1 auto; min-width: 0; padding: 0.9rem 1rem; border: 2px solid var(--line); border-radius: 12px;
+    font-size: 1rem; background: var(--field-bg); color: var(--text-main); transition: border-color 0.2s;
+}
+.vue-dashboard .liste-ajout input:focus{ outline: none; border-color: var(--accent); background: var(--field-focus); }
+.vue-dashboard .liste-ajout button{
+    flex: none; width: 3.3rem; border: none; border-radius: 12px; cursor: pointer;
+    background: var(--accent); color: var(--on-accent); font-size: 1.8rem; font-weight: 700; line-height: 1;
+    transition: background 0.2s, transform 0.2s;
+}
+.vue-dashboard .liste-ajout button:hover{ background: var(--accent-hover); }
+.vue-dashboard .liste-articles{ list-style: none; display: flex; flex-direction: column; gap: 0.5rem; max-height: 420px; overflow-y: auto; }
+.vue-dashboard .liste-article{
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.2rem 0.3rem 0.2rem 0.9rem; border-radius: 12px;
+    background: var(--field-bg); border: 1px solid var(--line-soft);
+}
+.vue-dashboard .liste-label{ display: flex; align-items: center; gap: 0.8rem; flex: 1; min-width: 0; padding: 0.55rem 0; cursor: pointer; }
+.vue-dashboard .liste-label input{ width: 22px; height: 22px; flex: none; accent-color: var(--accent); cursor: pointer; }
+.vue-dashboard .liste-label span{ font-weight: 500; overflow-wrap: anywhere; }
+.vue-dashboard .liste-article.coche .liste-label span{ text-decoration: line-through; color: var(--text-muted); }
+.vue-dashboard .liste-suppr{
+    flex: none; width: 40px; height: 40px; border: none; background: none; cursor: pointer;
+    color: #ff7675; font-size: 1.7rem; line-height: 1; opacity: 0.6; border-radius: 10px;
+}
+.vue-dashboard .liste-suppr:hover{ opacity: 1; }
+.vue-dashboard .liste-vide{ text-align: center; color: var(--text-muted); padding: 0.6rem 0 0; display: flex; flex-direction: column; align-items: center; gap: 0.7rem; }
+
+@media (max-width: 700px) {
+    .vue-dashboard .listes-zone{ order: 3; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+    .vue-dashboard .liste-articles{ max-height: none; overflow: visible; }
+    .vue-dashboard .liste-label input{ width: 24px; height: 24px; }
+    .vue-dashboard .liste-suppr{ width: 44px; height: 44px; }
+    .vue-dashboard .liste-bouton{ padding: 0.5rem 0.7rem; }
 }

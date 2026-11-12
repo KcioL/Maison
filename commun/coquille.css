@@ -1,108 +1,216 @@
 /* ==========================================
-   COQUILLE DU SITE : barre des applis, bouton clair / sombre,
-   vues des applis et passage de l'une à l'autre.
-   (La logique est dans coquille.js.)
+   COQUILLE DU SITE
+   Barre du haut (compte, clair / sombre), barre des applis en capsule,
+   glissement entre applis, écran de connexion, panneaux et messages communs.
+   (La logique est dans coquille.js, compte.js, partage.js et ui.js.)
    ========================================== */
-/* ---------- Couleurs de la barre : identiques dans toutes les applis ---------- */
+
+/* ---------- Couleurs de la barre des applis ---------- */
 :root {
-    --nav-fond: #ffffff; --nav-verre: rgba(255, 255, 255, 0.88); --nav-texte: #4a443c; --nav-doux: #a3988f;
-    --nav-survol: #f4eee8; --nav-ligne: #eeeeee; --nav-accent: #e07a5f; --nav-sur-accent: #ffffff;
-    --nav-fort: #4a443c; --nav-fort-survol: #2d2924; --nav-sur-fort: #ffffff;
-    --nav-ombre: 0 12px 35px rgba(138, 121, 104, 0.12);
+    --dock-verre: rgba(255, 255, 255, 0.55);
+    --dock-bord: rgba(255, 255, 255, 0.75);
+    --dock-ombre: 0 14px 40px rgba(74, 60, 48, 0.22);
+    --dock-bouton: rgba(255, 255, 255, 0.6);
+    --dock-texte: #4a443c;
+    --dock-anneau: #4a443c;
+    --dock-sep: rgba(74, 68, 60, 0.18);
+    --hauteur-onglets: calc(88px + env(safe-area-inset-bottom, 0px));
 }
 :root[data-theme="sombre"] {
-    --nav-fond: #26211d; --nav-verre: rgba(38, 33, 29, 0.88); --nav-texte: #efe7dd; --nav-doux: #a99d91;
-    --nav-survol: #3a322c; --nav-ligne: #3b342e; --nav-accent: #e98a6e; --nav-sur-accent: #1b1714;
-    --nav-fort: #efe7dd; --nav-fort-survol: #ffffff; --nav-sur-fort: #1b1714;
-    --nav-ombre: 0 12px 35px rgba(0, 0, 0, 0.35);
+    --dock-verre: rgba(40, 33, 28, 0.55);
+    --dock-bord: rgba(255, 255, 255, 0.14);
+    --dock-ombre: 0 14px 40px rgba(0, 0, 0, 0.45);
+    --dock-bouton: rgba(255, 255, 255, 0.08);
+    --dock-texte: #efe7dd;
+    --dock-anneau: #ffffff;
+    --dock-sep: rgba(255, 255, 255, 0.18);
 }
 
-/* ---------- Passage d'une appli à l'autre en fondu (même page) ---------- */
-.app-nav { view-transition-name: barre-applis; }
-.barre-theme .theme-toggle { view-transition-name: bouton-theme; }
-::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.16s; }
+body.connecte { padding-bottom: calc(var(--hauteur-onglets) + 1rem); }
+body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
 
-/* ---------- Barre des applis (ordinateur : en haut) ---------- */
-.app-nav {
-    display: flex; align-items: center; gap: 0.3rem;
-    max-width: 1200px; margin: 1rem auto 1.5rem; padding: 0.5rem; width: calc(100% - 2rem); box-sizing: border-box;
-    background: var(--nav-verre);
-    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
-    border-radius: 999px; box-shadow: var(--nav-ombre);
-    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 15px; line-height: 1.2;
+/* ---------- Barre du haut ---------- */
+.barre-haut {
+    display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem;
+    max-width: 1200px; margin: 0 auto;
+    padding: max(0.8rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px)) 0.4rem max(1rem, env(safe-area-inset-left, 0px));
 }
-.app-nav a, .app-nav button {
+.theme-toggle, .puce-compte {
     display: inline-flex; align-items: center; gap: 0.4rem;
-    text-decoration: none; color: var(--nav-texte); font: inherit; font-weight: 500;
-    padding: 0.5rem 1rem; border: none; background: none; cursor: pointer;
-    border-radius: 999px; white-space: nowrap;
-    transition: background 0.2s, color 0.2s;
+    border: 1px solid var(--dock-bord); cursor: pointer;
+    font: 700 0.85rem/1.2 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--dock-verre); color: var(--dock-texte);
+    padding: 0.35rem 0.85rem; border-radius: 999px; min-height: 36px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    -webkit-backdrop-filter: blur(14px) saturate(1.4); backdrop-filter: blur(14px) saturate(1.4);
     -webkit-tap-highlight-color: transparent; touch-action: manipulation;
 }
-.app-nav a:hover, .app-nav button:hover { background: var(--nav-survol); }
-.app-nav a:focus-visible, .app-nav button:focus-visible { outline: 2px solid var(--nav-accent); outline-offset: 2px; }
-.app-nav .app-nav-home { background: var(--nav-fort); color: var(--nav-sur-fort); font-weight: 700; margin-right: 0.5rem; }
-.app-nav .app-nav-home:hover { background: var(--nav-fort-survol); }
-.app-nav a.active { background: var(--nav-accent); color: var(--nav-sur-accent); }
-.app-nav .app-nav-theme { margin-left: auto; }
-.app-nav .nav-court { display: none; }
-.app-nav .nav-ico img { width: 22px; height: 22px; display: block; border-radius: 50%; }
-.app-nav .app-nav-home .nav-ico img { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.6); }
+.puce-compte { padding-left: 0.3rem; }
+.puce-compte[hidden] { display: none; }
+.puce-compte .avatar { width: 26px; height: 26px; font-size: 0.8rem; }
+.puce-nom { max-width: 9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.theme-toggle:focus-visible, .puce-compte:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* ---------- Petit bouton clair / sombre en haut (téléphone) ---------- */
-.barre-theme {
-    display: none; justify-content: flex-end;
-    padding: max(0.6rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px)) 0.4rem 1rem;
+/* ---------- Barre des applis : capsule flottante ---------- */
+.dock {
+    position: fixed; z-index: 1000;
+    left: 50%; transform: translateX(-50%);
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    display: flex; align-items: center; gap: 10px;
+    max-width: calc(100% - 24px);
+    padding: 8px 10px;
+    border-radius: 999px;
+    background: var(--dock-verre);
+    border: 1px solid var(--dock-bord);
+    box-shadow: var(--dock-ombre);
+    -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5);
 }
-.theme-toggle {
-    display: inline-flex; align-items: center; gap: 0.35rem;
-    border: none; cursor: pointer; font: 700 0.85rem/1.2 "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: var(--nav-verre); color: var(--nav-texte);
-    padding: 0.45rem 0.85rem; border-radius: 999px;
-    box-shadow: var(--nav-ombre);
-    -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+.dock-appli {
+    position: relative; z-index: 1;
+    display: grid; place-items: center; flex: none;
+    width: 52px; height: 52px; border-radius: 50%;
+    color: var(--dock-texte); text-decoration: none; font-size: 1.5rem;
+    transition: transform 0.25s cubic-bezier(.3, 1.4, .5, 1);
     -webkit-tap-highlight-color: transparent; touch-action: manipulation;
 }
-.theme-toggle:focus-visible { outline: 2px solid var(--nav-accent); outline-offset: 2px; }
+.dock-appli img { width: 46px; height: 46px; border-radius: 50%; display: block; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2); }
+.dock-menu { background: var(--dock-bouton); }
+.dock-appli:active { transform: scale(0.9); }
+.dock-appli.active { transform: scale(1.06); }
+.dock-appli:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.dock-point {
+    position: absolute; right: 3px; bottom: 3px;
+    width: 11px; height: 11px; border-radius: 50%;
+    background: var(--c); border: 2px solid var(--dock-verre);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.dock-sep { width: 1px; height: 30px; background: var(--dock-sep); flex: none; }
+
+/* l'anneau qui glisse vers l'appli ouverte */
+.dock-anneau {
+    position: absolute; left: 0; top: 0; z-index: 2; pointer-events: none;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 3px var(--dock-anneau), 0 0 14px rgba(255, 255, 255, 0.25);
+    opacity: 0;
+    transition: transform 0.42s cubic-bezier(.34, 1.35, .5, 1), opacity 0.2s;
+}
+.dock-anneau.visible { opacity: 1; }
+
+@media (max-width: 380px) {
+    .dock { gap: 6px; padding: 7px 8px; }
+    .dock-appli { width: 46px; height: 46px; }
+    .dock-appli img { width: 40px; height: 40px; }
+}
+
+/* ---------- Vues des applis et glissement de l'une à l'autre ---------- */
+#vues { position: relative; overflow-x: clip; }
+.vue[hidden] { display: none !important; }
+.vue { position: relative; }
+/* « left » plutôt qu'une transformation : les éléments fixés à l'écran
+   (bouton +, barres du bas…) restent à leur place pendant le glissement */
+.vue.sortie { position: absolute; left: 0; right: 0; pointer-events: none; animation: vue-sortie 0.32s cubic-bezier(.4, 0, .2, 1) both; }
+.vue.entree { animation: vue-entree 0.32s cubic-bezier(.2, .8, .2, 1) both; }
+#vues[data-sens="suivant"] { --depart: 18%; --arrivee: -18%; }
+#vues[data-sens="precedent"] { --depart: -18%; --arrivee: 18%; }
+@keyframes vue-entree { from { left: var(--depart); opacity: 0; } to { left: 0; opacity: 1; } }
+@keyframes vue-sortie { from { left: 0; opacity: 1; } to { left: var(--arrivee); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+    .vue.sortie, .vue.entree { animation: none; }
+    .dock-anneau, .dock-appli { transition: none; }
+}
+
+/* ---------- Écran de connexion ---------- */
+.vue-connexion { display: grid; place-items: center; min-height: 70vh; }
+.carte-connexion { width: 100%; max-width: 420px; gap: 1rem; text-align: center; }
+.carte-connexion form { display: flex; flex-direction: column; gap: 1rem; text-align: left; }
+.connexion-logo { width: 110px; height: 110px; margin: 0 auto -0.3rem; filter: drop-shadow(0 8px 18px rgba(74, 68, 60, 0.2)); }
+.connexion-liens { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 0.4rem; }
+.erreur { color: #d1495b; font-weight: 500; font-size: 0.9rem; }
+
+/* ---------- Éléments communs (connexion, panneaux, partage) ---------- */
+.muet { color: var(--text-muted); }
+.petit { font-size: 0.88rem; }
+.champ { display: flex; flex-direction: column; gap: 0.35rem; min-width: 0; }
+.ligne-form .champ { flex: 1 1 220px; }
+.champ > span { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 700; color: var(--text-muted); }
+.champ input, .champ select {
+    width: 100%; min-width: 0; padding: 0.75rem 0.9rem; border: 2px solid var(--line); border-radius: 12px;
+    background: var(--field-bg); color: var(--text-main); font: inherit; font-size: 0.95rem;
+}
+.champ input:focus, .champ select:focus { outline: none; border-color: var(--accent); background: var(--field-focus); }
+.bouton {
+    border: 2px solid var(--line); background: var(--card-bg); color: var(--text-main);
+    border-radius: 12px; padding: 0.65rem 1.1rem; min-height: 44px; font: inherit; font-weight: 700; font-size: 0.95rem;
+    cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+}
+.bouton:hover { border-color: var(--text-muted); }
+.bouton.principal { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.bouton.principal:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+.bouton.petit { min-height: 36px; padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 10px; }
+.bouton.large { width: 100%; }
+.bouton.danger { color: #d1495b; }
+.bouton.danger.arme, .lien-bouton.arme { background: #d1495b; border-color: #d1495b; color: #fff; }
+.bouton:disabled { opacity: 0.5; cursor: default; }
+.lien-bouton { background: none; border: none; color: var(--text-muted); font: inherit; font-weight: 500; font-size: 0.9rem; cursor: pointer; padding: 0.45rem 0.6rem; border-radius: 8px; }
+.lien-bouton:hover { color: var(--text-main); background: var(--hover-bg); }
+.ligne-form { display: flex; flex-wrap: wrap; gap: 0.8rem; align-items: flex-end; }
+.note { background: var(--hover-bg); border-radius: 12px; padding: 0.8rem 1rem; font-size: 0.9rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.note .boutons { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.separation { border: none; border-top: 2px dashed var(--line); margin: 0.2rem 0; }
+.personnes { display: flex; flex-direction: column; gap: 0.5rem; }
+.personne { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 0.8rem; border-radius: 12px; background: var(--field-bg); border: 1px solid var(--line-soft); flex-wrap: wrap; }
+.personne-txt { flex: 1 1 140px; min-width: 0; display: flex; flex-direction: column; }
+.personne-txt b, .personne-txt small { overflow-wrap: anywhere; }
+.personne-txt small { color: var(--text-muted); }
+.avatar { width: 2.2rem; height: 2.2rem; border-radius: 50%; display: inline-grid; place-items: center; color: #fff; font-weight: 800; flex: none; font-family: "Inter", system-ui, sans-serif; }
+.etiquette { font-size: 0.75rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px; color: var(--text-muted); background: var(--hover-bg); white-space: nowrap; }
+.etiquette.ok { color: #5e9a72; background: rgba(94, 154, 114, 0.15); }
+
+/* ---------- Panneau par-dessus la page ---------- */
+.feuille-fond {
+    position: fixed; inset: 0; z-index: 3000;
+    background: rgba(20, 16, 13, 0.45);
+    display: flex; align-items: center; justify-content: center; padding: 1rem;
+    animation: fond-apparait 0.18s ease-out both;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--text-main);
+}
+.feuille {
+    width: 100%; max-width: 520px; max-height: 88vh; overflow-y: auto; overscroll-behavior: contain;
+    background: var(--card-bg); border-radius: 24px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
+    padding: 1.3rem 1.3rem 1.5rem; animation: feuille-monte 0.24s cubic-bezier(.2, .8, .2, 1) both;
+}
+.feuille-tete { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.feuille-tete h2 { font-size: 1.15rem; font-weight: 800; margin: 0; overflow-wrap: anywhere; }
+.feuille-fermer { flex: none; width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--hover-bg); color: var(--text-main); font-size: 1rem; cursor: pointer; }
+.feuille-corps { display: flex; flex-direction: column; gap: 1rem; }
+.feuille-corps p { margin: 0; }
+.feuille-fond.sortie { animation: fond-disparait 0.18s ease-in both; }
+@keyframes fond-apparait { from { opacity: 0; } }
+@keyframes fond-disparait { to { opacity: 0; } }
+@keyframes feuille-monte { from { transform: translateY(30px); opacity: 0; } }
+
+/* ---------- Message en bas de l'écran ---------- */
+.toast-site {
+    position: fixed; left: 50%; z-index: 4000;
+    bottom: calc(var(--hauteur-onglets) + 0.6rem);
+    transform: translate(-50%, 20px); opacity: 0; pointer-events: none;
+    background: var(--strong-bg); color: var(--strong-text);
+    padding: 0.8rem 1.2rem; border-radius: 14px; font: 500 0.95rem/1.35 "Inter", system-ui, sans-serif;
+    max-width: min(92vw, 460px); text-align: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    transition: opacity 0.2s, transform 0.2s;
+}
+.toast-site.visible { opacity: 1; transform: translate(-50%, 0); }
 
 @media (max-width: 700px) {
-    :root { --hauteur-onglets: calc(4rem + env(safe-area-inset-bottom, 0px)); }
-    .barre-theme { display: flex; }
-    .app-nav .app-nav-theme { display: none; }
-    .app-nav .nav-long { display: none; }
-    .app-nav .nav-court { display: inline; }
-
-    /* Barre d'onglets en bas de l'écran */
-    .app-nav {
-        position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000;
-        box-sizing: border-box; height: var(--hauteur-onglets); width: auto;
-        max-width: none; margin: 0; border-radius: 0; gap: 0; align-items: stretch;
-        padding: 0.35rem max(6px, env(safe-area-inset-right, 0px)) calc(0.35rem + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px));
-        background: var(--nav-fond);
-        border-top: 1px solid var(--nav-ligne);
-        box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.08);
+    .feuille-fond { align-items: flex-end; padding: 0; }
+    .feuille {
+        max-width: none; border-radius: 24px 24px 0 0;
+        padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
     }
-    .app-nav a {
-        flex: 1 1 0; min-width: 0; flex-direction: column; justify-content: center; gap: 0.15rem;
-        padding: 0 0.1rem; margin: 0; border-radius: 14px;
-        font-size: 11px; font-weight: 600; color: var(--nav-doux);
-    }
-    .app-nav .nav-ico {
-        font-size: 1.3rem; line-height: 1; width: 3.2rem; height: 2.1rem; border-radius: 999px;
-        display: grid; place-items: center; transition: background 0.2s;
-    }
-    .app-nav .nav-ico img { width: 28px; height: 28px; box-shadow: none !important; }
-    .app-nav a:hover { background: none; }
-    .app-nav .app-nav-home, .app-nav .app-nav-home:hover { background: none; color: var(--nav-doux); }
-    .app-nav a.active { background: none; color: var(--nav-accent); }
-    .app-nav a.active .nav-ico { background: color-mix(in srgb, var(--nav-accent) 18%, transparent); }
-    body.avec-onglets { padding-bottom: calc(var(--hauteur-onglets) + 1.5rem); }
+    .ligne-form { display: grid; grid-template-columns: 1fr; }
+    .ligne-form .bouton { width: 100%; }
 }
-@media (prefers-reduced-motion: reduce) { .app-nav * { transition: none !important; } }
-
-/* ---------- Vues des applis ----------
-   Chaque appli a sa vue ; une seule est affichée à la fois. */
-.vue[hidden] { display: none !important; }
 @media (prefers-reduced-motion: reduce) {
-    ::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+    .feuille, .feuille-fond { animation: none; }
 }

@@ -1,33 +1,9 @@
 <!-- GESTION DES STOCKS : contenu affiché dans la page principale (voir app.js) -->
 <div class="st-app">
 
-    <!-- ============ CONNEXION ============ -->
-    <section id="auth-view" class="st-auth" hidden>
-        <div class="widget st-auth-card">
-            <img class="st-auth-logo" src="commun/logos/stock-192.png" alt="" width="96" height="96">
-            <h1 class="st-auth-title">Gestion des stocks</h1>
-            <p class="st-muted" id="auth-intro">Connecte-toi avec ton compte pour retrouver ton stock.</p>
-            <form id="auth-form" autocomplete="on">
-                <label class="st-field">
-                    <span class="st-label">E-mail</span>
-                    <input id="auth-email" type="email" required autocomplete="email">
-                </label>
-                <label class="st-field">
-                    <span class="st-label">Mot de passe</span>
-                    <input id="auth-password" type="password" required minlength="6" autocomplete="current-password">
-                </label>
-                <p id="auth-error" class="st-error" hidden></p>
-                <button class="st-btn st-primary st-wide" type="submit" id="auth-submit">Se connecter</button>
-            </form>
-            <div class="st-auth-links">
-                <button type="button" class="st-link" id="auth-toggle">Pas encore de compte ? Créer un compte</button>
-                <button type="button" class="st-link" id="auth-forgot">Mot de passe oublié ?</button>
-            </div>
-        </div>
-    </section>
 
     <!-- ============ APPLI ============ -->
-    <section id="app-view" hidden>
+    <section id="app-view">
         <header class="st-top">
             <div class="st-top-title">
                 <h1 class="titre-logo"><img src="commun/logos/stock-192.png" alt="" width="48" height="48"> <span id="stock-title">Stocks</span></h1>
@@ -35,16 +11,13 @@
             </div>
             <div class="st-top-actions">
                 <select id="stock-select" class="st-select" aria-label="Choisir un stock" hidden></select>
-                <button id="btn-access" class="st-btn" type="button" hidden>👥 Accès</button>
+                <button id="btn-access" class="st-btn" type="button" hidden>👥 Partager</button>
                 <button id="btn-add-storage" class="st-btn st-primary" type="button" hidden>+ Rangement</button>
             </div>
         </header>
-        <p class="st-account"><span id="account-email"></span> · <button type="button" class="st-link" id="btn-logout">Se déconnecter</button></p>
 
         <div id="banner" class="st-banner" hidden></div>
 
-        <!-- Panneau accès / partage -->
-        <section id="access-panel" class="widget st-panel st-sheet" hidden></section>
 
         <!-- Nouveau stock -->
         <form id="new-stock" class="widget st-panel st-sheet" hidden autocomplete="off">
@@ -119,7 +92,6 @@
         </main>
     </section>
 
-    <p id="boot" class="st-boot">Connexion…</p>
 </div>
 
 <div id="toast" class="st-toast" role="status" hidden></div>
