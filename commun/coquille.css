@@ -74,6 +74,9 @@ body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
 }
 .dock-appli img { width: 46px; height: 46px; border-radius: 50%; display: block; box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2); transition: transform 0.25s cubic-bezier(.3, 1.4, .5, 1); }
 .dock-menu { background: var(--dock-bouton); }
+.dock-appli.sans-logo { background: var(--dock-bouton); }
+.dock-emoji { font-size: 1.55rem; line-height: 1; transition: transform 0.25s cubic-bezier(.3, 1.4, .5, 1); }
+.dock-appli.active .dock-emoji { transform: scale(1.1); }
 .dock-appli:active img, .dock-appli:active svg { transform: scale(0.9); }
 .dock-appli.active img { transform: scale(1.06); }
 /* (le zoom est mis sur l'image, pas sur le bouton : sinon le petit point

@@ -1,0 +1,13 @@
+<!-- MUSCU : contenu affiché dans la page principale (voir app.js) -->
+<div id="muscu-app"></div>
+
+<!-- Minuteur de repos (s'affiche après chaque série cochée) -->
+<div id="mu-minuteur" class="mu-minuteur" hidden role="timer" aria-live="polite">
+    <div class="mu-min-barre"><span></span></div>
+    <div class="mu-min-texte">
+        <span class="mu-etiquette">Repos</span>
+        <span class="mu-min-temps">0:00</span>
+    </div>
+    <button type="button" class="mu-bouton" data-action="min-plus">+15 s</button>
+    <button type="button" class="mu-bouton principal" data-action="min-passer">Passer</button>
+</div>

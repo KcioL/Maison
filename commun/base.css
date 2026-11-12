@@ -76,6 +76,7 @@
     --weather-desc: #b8c2ca;
 }
 
+*, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 
 body {

@@ -66,5 +66,16 @@ export const APPS = [
         desc: "Les carnets de recettes, avec les photos et les liens d'inspiration.",
         dossier: "recettes",
         color: "#9c88d8"
+    },
+    {
+        id: "muscu",
+        name: "Muscu",
+        short: "Muscu",
+        icon: "🏋️",
+        logo: "commun/logos/muscu-192.png",
+        desc: "Tes programmes d'entraînement : séries, répétitions, poids, repos et minuteur.",
+        dossier: "muscu",
+        style: "maison",
+        color: "#5b8fb9"
     }
 ];

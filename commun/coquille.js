@@ -108,7 +108,12 @@ function dessinerDock() {
                 const img = document.createElement("img");
                 img.src = new URL(a.logo, racineSite).href; img.alt = ""; img.width = 44; img.height = 44;
                 lien.appendChild(img);
-            } else lien.textContent = a.icon;
+            } else {
+                lien.classList.add("sans-logo");   // emoji sur un rond, en attendant un logo
+                const ico = document.createElement("span");
+                ico.className = "dock-emoji"; ico.textContent = a.icon;
+                lien.appendChild(ico);
+            }
             const point = document.createElement("span");
             point.className = "dock-point";
             point.style.setProperty("--c", a.color || "var(--accent)");
@@ -122,6 +127,23 @@ function dessinerDock() {
         }
     }
     document.body.appendChild(dock);
+
+    // Comme dans une appli : la barre ramène là où on en était dans chaque appli
+    // (une recette ouverte, une séance en cours…) ; un 2e appui revient à son accueil.
+    dock.addEventListener("click", (e) => {
+        const lien = e.target.closest(".dock-appli"); if (!lien) return;
+        const id = lien.dataset.appli;
+        if (id === "menu") return;
+        const dernier = etats.get(id)?.dernierChemin;
+        if (id !== courant && dernier) {
+            e.preventDefault();
+            location.hash = `#/${id}/${dernier}`;
+        } else if (id === courant) {
+            e.preventDefault();
+            if (location.hash !== `#/${id}`) location.hash = `#/${id}`;
+            else window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    });
     window.addEventListener("resize", () => placerAnneau(false));
 }
 
@@ -279,6 +301,7 @@ async function router() {
     const { def, chemin } = lireAdresse();
     const etat = await charger(def);
     if (lireAdresse().def.id !== def.id) return;   // l'adresse a changé entre-temps
+    etat.dernierChemin = chemin;   // pour y revenir depuis la barre des applis
 
     if (courant === def.id) {
         etat.module?.afficher?.(chemin);   // page interne de la même appli
