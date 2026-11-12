@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Partagé</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-app="dashboard">
+
+    <header>
+        <h1>👋 Dashboard</h1>
+    </header>
+
+    <div class="dashboard-grid">
+        <div class="widget wheel-widget">
+            <h2 class="widget-title">🎡 La Roue du Destin</h2>
+            <div class="wheel-content">
+                <div id="wheel-result">On fait quoi ce week-end ?</div>
+                <button id="spin-btn">Tirer au sort !</button>
+            </div>
+        </div>
+        <div class="widget time-widget">
+            <div id="clock">00:00</div>
+            <div id="date">Chargement...</div>
+        </div>
+
+        <!-- Widget Météo mis à jour (Cliquable) -->
+        <div class="widget weather-widget-container" id="weather-widget" title="Cliquez pour les prévisions !">
+            <h2 class="widget-title">🌤️ Météo (<span id="current-city-name">Pau</span>)</h2>
+            <div class="weather-info">
+                <div class="weather-temp" id="weather-temp">--°C</div>
+                <div style="text-align: right;">
+                    <div class="weather-desc" id="weather-desc">Chargement...</div>
+                    <div style="font-size: 0.8rem; color: #65676b;" id="weather-minmax">Min: --° Max: --°</div>
+                </div>
+            </div>
+            <!-- Petite icône indicative -->
+            <div style="text-align: center; margin-top: 10px; font-size: 0.8rem; color: var(--accent);">
+                👆 Voir les prévisions
+            </div>
+        </div>
+
+        <!-- Widget de Courses connecté à Firebase -->
+        <div class="widget shopping-widget">
+            <h2 class="widget-title">🛒 Courses</h2>
+            <div class="shopping-input-group">
+                <input type="text" id="shopping-input" placeholder="Ajouter un article...">
+                <button id="add-item-btn">+</button>
+            </div>
+            
+            <div id="list-loader">Connexion à la base de données...</div>
+            <ul class="shopping-list" id="shopping-list"></ul>
+        </div>
+    </div>
+
+    <!-- Modale (Fenêtre pop-up) pour les prévisions météo -->
+    <div id="weather-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" id="close-modal">&times;</span>
+            <h2>Prévisions Météo</h2>
+            
+            <div class="city-selector">
+                <input type="text" id="city-input" placeholder="Tapez une ville (ex: Tokyo, Pau...)" />
+                <button id="search-city-btn">Rechercher</button>
+            </div>
+
+            <div id="forecast-loader" style="text-align: center; margin: 20px 0;">Chargement des prévisions...</div>
+            
+            <div id="forecast-container" class="forecast-grid">
+                <!-- Les prévisions 5 jours apparaîtront ici -->
+            </div>
+            <!-- NOUVEAU : Conteneur pour les prévisions détaillées (caché par défaut) -->
+            <div id="hourly-container" style="display: none; margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
+                <h3 id="hourly-title" style="margin-bottom: 15px; font-size: 1.1rem; color: var(--text-main);">Détails</h3>
+                <div id="hourly-forecast-list" class="hourly-grid">
+                    <!-- Les prévisions toutes les 3h s'afficheront ici -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="nav.js"></script>
+    <script type="module" src="script.js"></script>
+</body>
+</html>

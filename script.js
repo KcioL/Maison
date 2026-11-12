@@ -1,23 +1,12 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } 
+import { collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, query, orderBy } 
 from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // ==========================================
-// 1. CONFIGURATION FIREBASE
+// 1. CONFIGURATION FIREBASE (partagée dans firebase.js)
 // ==========================================
-const firebaseConfig = {
-    apiKey: "AIzaSyDmOiHUetoxS2Yzyou-rzehbPTIHmPrU6Q",
-    authDomain: "dash-board-maison.firebaseapp.com",
-    projectId: "dash-board-maison",
-    storageBucket: "dash-board-maison.firebasestorage.app",
-    messagingSenderId: "284538658677",
-    appId: "1:284538658677:web:d044a7435d12467bbfbd3c"
-};
-
-let app, db;
+let db;
 try {
-    app = initializeApp(firebaseConfig);
-    db = getFirestore(app);
+    ({ db } = await import("./firebase.js"));
 } catch (e) {
     document.getElementById('list-loader').textContent = "Erreur de configuration Firebase.";
 }
