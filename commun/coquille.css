@@ -150,6 +150,9 @@ body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
 .bouton.petit { min-height: 36px; padding: 0.4rem 0.8rem; font-size: 0.85rem; border-radius: 10px; }
 .bouton.large { width: 100%; }
 .bouton.danger { color: #d1495b; }
+.bouton.danger.plein { background: #d1495b; border-color: #d1495b; color: #fff; }
+.boutons-fin { display: flex; justify-content: flex-end; gap: 0.6rem; flex-wrap: wrap; }
+.boutons-fin .bouton { flex: 0 1 auto; }
 .bouton.danger.arme, .lien-bouton.arme { background: #d1495b; border-color: #d1495b; color: #fff; }
 .bouton:disabled { opacity: 0.5; cursor: default; }
 .lien-bouton { background: none; border: none; color: var(--text-muted); font: inherit; font-weight: 500; font-size: 0.9rem; cursor: pointer; padding: 0.45rem 0.6rem; border-radius: 8px; }
@@ -211,6 +214,7 @@ body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
     }
     .ligne-form { display: grid; grid-template-columns: 1fr; }
     .ligne-form .bouton { width: 100%; }
+    .boutons-fin .bouton { flex: 1 1 0; }
 }
 @media (prefers-reduced-motion: reduce) {
     .feuille, .feuille-fond { animation: none; }

@@ -3,6 +3,7 @@
 //   toast("…")              message en bas de l'écran
 //   ouvrirFeuille({ titre }) panneau par-dessus la page (bas de l'écran sur téléphone,
 //                           au centre sur ordinateur) ; renvoie { corps, fermer }
+//   confirmer({ … })        fenêtre « Annuler / Supprimer » ; renvoie true si confirmé
 //   esc(texte)              texte sûr à insérer dans du HTML
 // Styles dans coquille.css (.toast-site, .feuille…)
 // ==========================================
@@ -46,6 +47,25 @@ export function ouvrirFeuille({ titre, quandFerme } = {}) {
     document.addEventListener("keydown", surTouche);
     document.body.appendChild(fond);
     return { fond, feuille, corps, fermer, titre: (t) => { fond.querySelector("h2").textContent = t; } };
+}
+
+// Fenêtre de confirmation : renvoie une promesse (true si confirmé)
+//   await confirmer({ titre, message, bouton: "Supprimer", danger: true })
+export function confirmer({ titre, message, bouton = "Confirmer", danger = false }) {
+    return new Promise(resolve => {
+        let reponse = false;
+        const f = ouvrirFeuille({ titre, quandFerme: () => resolve(reponse) });
+        f.corps.innerHTML = `<p></p>
+            <div class="boutons-fin">
+                <button type="button" class="bouton" data-r="non">Annuler</button>
+                <button type="button" class="bouton ${danger ? "danger plein" : "principal"}" data-r="oui"></button>
+            </div>`;
+        f.corps.querySelector("p").textContent = message;
+        f.corps.querySelector('[data-r="oui"]').textContent = bouton;
+        f.corps.querySelector('[data-r="non"]').addEventListener("click", () => f.fermer());
+        f.corps.querySelector('[data-r="oui"]').addEventListener("click", () => { reponse = true; f.fermer(); });
+        f.corps.querySelector('[data-r="non"]').focus();
+    });
 }
 
 // Bouton « en deux temps » : un premier appui arme, un second confirme (4 s)

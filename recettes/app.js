@@ -17,7 +17,7 @@ const TITRE = "Les recettes de Jenigger";
 
 import { db } from "../commun/firebase.js";
 import { compte } from "../commun/compte.js";
-import { ecouterMesPartages, creerPartage, ouvrirAcces } from "../commun/partage.js";
+import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter } from "../commun/partage.js";
 import { ouvrirFeuille, toast as toastSite } from "../commun/ui.js";
 import {
   collection, doc, getDoc, getDocs, getDocsFromCache, getDocsFromServer, setDoc, updateDoc, deleteDoc, writeBatch,
@@ -266,11 +266,24 @@ function outilsCarnet() {
         <option value="__nouveau">+ Nouveau carnet…</option>
       </select>
       <button type="button" class="btn btn-clair" id="partager-carnet">👥 Partager</button>
+      ${boutonSupprimerCarnet()}
     </div>`;
+}
+
+// « Supprimer » si le carnet est à moi, « Quitter » s'il m'a été partagé
+function boutonSupprimerCarnet() {
+  const c = carnet();
+  if (!c) return "";
+  const mien = c.ownerId === compte.uid;
+  const titre = mien ? "Supprimer ce carnet" : "Quitter ce carnet (il est partagé avec toi)";
+  return `<button type="button" class="btn btn-clair btn-icone" id="supprimer-carnet" title="${esc(titre)}" aria-label="${esc(titre)}">${mien ? icones.poubelle : "🚪"}</button>`;
 }
 
 function brancherOutilsCarnet() {
   brancherChoix();
+  $id("supprimer-carnet")?.addEventListener("click", () => {
+    supprimerOuQuitter({ collection: "carnets", partage: carnet(), quoi: "ce carnet", supprimerContenu: viderCarnet });
+  });
   $id("partager-carnet")?.addEventListener("click", () => {
     if (!carnetId) return;
     ouvrirAcces({ collection: "carnets", id: carnetId, quoi: "ce carnet", supprimerContenu: viderCarnet });
@@ -292,7 +305,6 @@ function changerCarnet(id) {
   recettesCache = null;
   recherche = "";
   scrollAccueil = 0;
-  importVerifie = false;
   if (cheminCourant) aller("", { remplacer: true }); else route();
 }
 
@@ -352,66 +364,6 @@ function pageSansCarnet() {
   $id("creer-carnet").addEventListener("click", (e) => { e.currentTarget.disabled = true; creerCarnet("Les recettes de Jenigger"); });
 }
 
-/* ---- Recettes d'avant les comptes : import (une seule fois) ---- */
-let importVerifie = false;
-let anciennesEnAttente = 0;   // nombre d'anciennes recettes encore à importer
-async function proposerImport() {
-  const c = carnet();
-  if (!c || c.ownerId !== compte.uid) return;
-  if (!importVerifie) {
-    importVerifie = true;
-    try { anciennesEnAttente = (await getDocs(collection(db, "recettes"))).size; }
-    catch { anciennesEnAttente = 0; /* ancienne collection inaccessible */ }
-  }
-  const zone = $id("zone-import");
-  if (!zone || !anciennesEnAttente || carnet()?.id !== c.id) return;
-  const anciennes = { size: anciennesEnAttente };
-  {
-    zone.hidden = false;
-    zone.className = "note-import";
-    zone.innerHTML = `<span>Tu as <b>${anciennes.size}</b> recette${anciennes.size > 1 ? "s" : ""} de l'ancien carnet (avant les comptes).</span>
-      <button type="button" class="btn" id="importer">Les mettre dans « ${esc(c.name)} »</button>`;
-    $id("importer").addEventListener("click", importerAnciennes);
-  }
-}
-
-async function importerAnciennes(e) {
-  const bouton = e.currentTarget;
-  bouton.disabled = true;
-  try {
-    const anciennes = await getDocs(collection(db, "recettes"));
-    let n = 0;
-    for (const d of anciennes.docs) {
-      bouton.textContent = `Import ${++n}/${anciennes.size}…`;
-      const photos = await getDocs(collection(d.ref, "photos"));
-      const cible = doc(recettesCol(), d.id);
-      for (const p of photos.docs) await setDoc(doc(cible, "photos", p.id), p.data());
-      const r = d.data();
-      await setDoc(cible, {
-        titre: r.titre || "Sans titre",
-        ingredients: r.ingredients || [], etapes: r.etapes || [],
-        source: r.source ?? null, notes: r.notes ?? null,
-        photos: r.photos || [], miniature: r.miniature ?? null,
-        creeLe: r.creeLe || serverTimestamp(), modifieLe: r.modifieLe || serverTimestamp(),
-      });
-      // l'ancienne copie n'est supprimée qu'une fois la nouvelle enregistrée
-      const lot = writeBatch(db);
-      photos.forEach((p) => lot.delete(p.ref));
-      lot.delete(d.ref);
-      await lot.commit();
-    }
-    toastSite("Recettes importées ✔");
-    anciennesEnAttente = 0;
-    recettesCache = null;
-    route();
-  } catch (err) {
-    console.error(err);
-    bouton.disabled = false;
-    bouton.textContent = "Réessayer l'import";
-    toastSite("L'import n'a pas pu aller jusqu'au bout. Réessaie : rien n'est perdu.");
-  }
-}
-
 /* =========================================================
    Routeur (page interne d'après cheminCourant)
    ========================================================= */
@@ -452,7 +404,6 @@ async function pageAccueil() {
       ${outilsCarnet()}
     </header>
     <main class="page" id="page">
-      <div id="zone-import" hidden></div>
       ${
         recettes.length === 0
           ? `<div class="vide seyes avec-marge">
@@ -479,7 +430,6 @@ async function pageAccueil() {
     </div>`;
 
   brancherOutilsCarnet();
-  proposerImport();
   if (recettes.length === 0) return;
 
   const page = $id("page");

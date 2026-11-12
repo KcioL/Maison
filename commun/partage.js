@@ -9,10 +9,12 @@
 //   ecouterMesPartages("listes", (liste) => …)    ce que je possède ou qu'on m'a partagé
 //   creerPartage("listes", { name, type })          crée, avec moi comme propriétaire
 //   ouvrirAcces({ collection, id, quoi, supprimerContenu })   panneau « Qui a accès »
+//   supprimerOuQuitter({ collection, partage, quoi, supprimerContenu })
+//       propriétaire : supprime (avec tout son contenu) ; membre : quitte. Demande confirmation.
 // ==========================================
 import { db } from "./firebase.js";
 import { compte, chercherParEmail, nomDe, emailCle, envoyerVerification, actualiserVerification } from "./compte.js";
-import { esc, toast, ouvrirFeuille, boutonConfirmation } from "./ui.js";
+import { esc, toast, ouvrirFeuille, boutonConfirmation, confirmer } from "./ui.js";
 import {
     collection, doc, query, where, onSnapshot, addDoc, updateDoc, deleteDoc, deleteField
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -46,6 +48,43 @@ export async function creerPartage(nomCollection, champs) {
 }
 
 const estProprietaire = (d) => d && d.ownerId === compte.uid;
+export { estProprietaire };
+
+function erreurPartage(e) {
+    console.error(e);
+    toast(e?.code === "permission-denied" ? "Action refusée : tu n'as peut-être plus accès." : "Modification impossible. Réessaie.");
+}
+
+// Supprime (si je suis propriétaire) ou quitte (si je suis membre), après confirmation.
+//   partage : le document ({ id, name, ownerId, memberIds… })
+//   quoi    : "cette liste", "ce carnet"… (pour les phrases)
+export async function supprimerOuQuitter({ collection: nomCollection, partage, quoi, supprimerContenu }) {
+    if (!partage) return false;
+    const ref = doc(db, nomCollection, partage.id);
+    if (estProprietaire(partage)) {
+        const autres = (partage.memberIds || []).length - 1;
+        const ok = await confirmer({
+            titre: `Supprimer « ${partage.name} » ?`,
+            message: `Tout son contenu sera effacé définitivement`
+                + (autres > 0 ? `, y compris pour ${autres === 1 ? "la personne" : `les ${autres} personnes`} avec qui tu le partages.` : "."),
+            bouton: "Supprimer définitivement", danger: true
+        });
+        if (!ok) return false;
+        try { await supprimerContenu?.(partage.id); await deleteDoc(ref); toast(`« ${partage.name} » supprimé.`); return true; }
+        catch (e) { erreurPartage(e); return false; }
+    }
+    const ok = await confirmer({
+        titre: `Quitter « ${partage.name} » ?`,
+        message: `Tu n'y auras plus accès. Le propriétaire pourra te le repartager.`,
+        bouton: `Quitter ${quoi}`, danger: true
+    });
+    if (!ok) return false;
+    try {
+        await updateDoc(ref, { memberIds: partage.memberIds.filter(x => x !== compte.uid), ["members." + compte.uid]: deleteField() });
+        toast(`Tu as quitté « ${partage.name} ».`);
+        return true;
+    } catch (e) { erreurPartage(e); return false; }
+}
 
 // Panneau « Qui a accès »
 //   collection : "stocks" | "listes" | "carnets"
@@ -116,19 +155,9 @@ export function ouvrirAcces({ collection: nomCollection, id, quoi = "ceci", supp
             const nom = e.target.nom.value.trim(); if (!nom) return;
             try { await updateDoc(ref, { name: nom }); toast("Renommé."); } catch (err) { erreur(err); }
         });
-        const bSuppr = corps.querySelector('[data-action="supprimer"]');
-        if (bSuppr) boutonConfirmation(bSuppr, "Supprimer définitivement, avec tout son contenu ?", async () => {
-            feuille.fermer();
-            try { await supprimerContenu?.(id); await deleteDoc(ref); toast("Supprimé."); } catch (err) { erreur(err); }
-        });
-        const bQuitter = corps.querySelector('[data-action="quitter"]');
-        if (bQuitter) boutonConfirmation(bQuitter, `Confirmer : quitter ${quoi}`, async () => {
-            feuille.fermer();
-            try {
-                await updateDoc(ref, { memberIds: donnees.memberIds.filter(x => x !== compte.uid), ["members." + compte.uid]: deleteField() });
-                toast(`Tu as quitté ${quoi}.`);
-            } catch (err) { erreur(err); }
-        });
+        corps.querySelectorAll('[data-action="supprimer"], [data-action="quitter"]').forEach(b => b.addEventListener("click", async () => {
+            if (await supprimerOuQuitter({ collection: nomCollection, partage: donnees, quoi, supprimerContenu })) feuille.fermer();
+        }));
         corps.querySelector('[data-action="envoyer"]')?.addEventListener("click", () =>
             envoyerVerification().then(() => toast(`E-mail envoyé à ${compte.email} (regarde aussi les spams).`))
                 .catch(e => toast(e.code === "auth/too-many-requests" ? "Déjà envoyé il y a peu : attends quelques minutes." : "Envoi impossible pour le moment.")));
@@ -138,10 +167,7 @@ export function ouvrirAcces({ collection: nomCollection, id, quoi = "ceci", supp
         });
     };
 
-    const erreur = (e) => {
-        console.error(e);
-        toast(e?.code === "permission-denied" ? "Action refusée : tu n'as peut-être plus accès." : "Modification impossible. Réessaie.");
-    };
+    const erreur = erreurPartage;
 
     dessiner();
     const arreter = onSnapshot(ref, s => {

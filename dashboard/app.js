@@ -8,7 +8,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../commun/firebase.js";
 import { compte, nomDe } from "../commun/compte.js";
-import { ecouterMesPartages, creerPartage, ouvrirAcces } from "../commun/partage.js";
+import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter } from "../commun/partage.js";
 import { esc, toast, ouvrirFeuille } from "../commun/ui.js";
 
 // Réglages de chaque sorte de liste
@@ -29,6 +29,16 @@ const SORTES = {
 const lireMemoire = k => { try { return localStorage.getItem(k); } catch { return null; } };
 const ecrireMemoire = (k, v) => { try { localStorage.setItem(k, v); } catch { } };
 
+// Supprime tous les articles d'une liste (avant de supprimer la liste elle-même)
+async function viderListe(idListe) {
+    const snap = await getDocs(collection(db, "listes", idListe, "articles"));
+    for (let i = 0; i < snap.docs.length; i += 400) {
+        const lot = writeBatch(db);
+        snap.docs.slice(i, i + 400).forEach(d => lot.delete(d.ref));
+        await lot.commit();
+    }
+}
+
 // Un bloc de liste (courses ou à faire) : choix de la liste, partage, articles
 function widgetListe(el) {
     const type = el.dataset.type, sorte = SORTES[type];
@@ -37,7 +47,7 @@ function widgetListe(el) {
     const vide = el.querySelector(".liste-vide");
     const form = el.querySelector(".liste-ajout");
     const champ = form.querySelector("input");
-    const zoneImport = el.querySelector(".liste-import");
+    const boutonSuppr = el.querySelector('[data-action="supprimer"]');
     let listes = [], id = null, arreterArticles = null, articles = [], charge = false;
     let voulue = null;   // liste tout juste créée, à ouvrir dès qu'elle arrive
 
@@ -61,6 +71,10 @@ function widgetListe(el) {
             + `<option value="__nouvelle">+ Nouvelle liste…</option>`;
         if (id) choix.value = id;
         el.querySelector(".liste-outils").hidden = !listes.length;
+        const l = liste(), mienne = l && l.ownerId === compte.uid;
+        boutonSuppr.textContent = mienne ? "🗑️" : "🚪";
+        boutonSuppr.title = mienne ? "Supprimer cette liste" : "Quitter cette liste (elle est partagée avec toi)";
+        boutonSuppr.setAttribute("aria-label", boutonSuppr.title);
         form.hidden = !listes.length;
     }
 
@@ -72,7 +86,6 @@ function widgetListe(el) {
         dessiner();
         if (!id) return;
         ecouterArticles(id, 0);
-        if (type === "courses") proposerImport();
     }
 
     function ecouterArticles(pour, essai) {
@@ -134,38 +147,6 @@ function widgetListe(el) {
         } catch (e) { console.error(e); toast("Création impossible. Réessaie."); }
     }
 
-    // ---- ancienne liste de courses (avant les comptes) : import une seule fois
-    let importVerifie = false;
-    async function proposerImport() {
-        if (importVerifie) return; importVerifie = true;
-        try {
-            const anciens = await getDocs(collection(db, "courses"));
-            if (anciens.empty) return;
-            const l = liste(); if (!l || l.ownerId !== compte.uid) { importVerifie = false; return; }
-            zoneImport.hidden = false;
-            zoneImport.innerHTML = `<span>Ton ancienne liste de courses contient <b>${anciens.size}</b> article${anciens.size > 1 ? "s" : ""}.</span>
-                <button type="button" class="liste-bouton principal petit" data-action="importer">Les mettre dans « ${esc(l.name)} »</button>`;
-        } catch { /* ancienne collection inaccessible : rien à proposer */ }
-    }
-    async function importer(bouton) {
-        if (!id) { toast("Ouvre d'abord la liste où mettre les articles."); return; }
-        bouton.disabled = true; bouton.textContent = "Import…";
-        try {
-            const anciens = await getDocs(collection(db, "courses"));
-            for (const d of anciens.docs) {
-                const a = d.data();
-                const quand = a.createdAt?.toMillis ? a.createdAt.toMillis() : Date.now();
-                await addDoc(articlesCol(), { texte: String(a.text || "").slice(0, 200) || "Article", coche: !!a.checked, creeLe: quand, creePar: compte.uid });
-                await deleteDoc(d.ref);
-            }
-            zoneImport.hidden = true;
-            toast("Ancienne liste importée ✔");
-        } catch (e) {
-            console.error(e); bouton.disabled = false; bouton.textContent = "Réessayer l'import";
-            toast("L'import n'a pas pu aller jusqu'au bout. Réessaie.");
-        }
-    }
-
     // ---- actions
     choix.addEventListener("change", () => {
         if (choix.value === "__nouvelle") { choix.value = id || ""; nouvelleListe(); return; }
@@ -190,22 +171,14 @@ function widgetListe(el) {
             deleteDoc(doc(articlesCol(), li.dataset.id)).catch(() => toast("Suppression impossible."));
         } else if (b.dataset.action === "creer") creer(sorte.nomDefaut);
         else if (b.dataset.action === "partager" && id) {
-            ouvrirAcces({
-                collection: "listes", id, quoi: "cette liste",
-                supprimerContenu: async (lid) => {
-                    const snap = await getDocs(collection(db, "listes", lid, "articles"));
-                    for (let i = 0; i < snap.docs.length; i += 400) {
-                        const lot = writeBatch(db);
-                        snap.docs.slice(i, i + 400).forEach(d => lot.delete(d.ref));
-                        await lot.commit();
-                    }
-                }
-            });
+            ouvrirAcces({ collection: "listes", id, quoi: "cette liste", supprimerContenu: viderListe });
         } else if (b.dataset.action === "vider-coches") {
             const lot = writeBatch(db);
             articles.filter(a => a.coche).forEach(a => lot.delete(doc(articlesCol(), a.id)));
             lot.commit().catch(() => toast("Suppression impossible."));
-        } else if (b.dataset.action === "importer") importer(b);
+        } else if (b.dataset.action === "supprimer" && id) {
+            supprimerOuQuitter({ collection: "listes", partage: liste(), quoi: "cette liste", supprimerContenu: viderListe });
+        }
     });
     champ.placeholder = sorte.placeholder;
 
