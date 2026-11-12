@@ -2,7 +2,8 @@
 // LISTE DES APPLIS DU SITE
 // Pour ajouter une appli :
 //   1. crée son dossier avec une page principale (ex. budget/index.html)
-//   2. dans cette page : <body data-app="budget">
+//   2. dans cette page : <script src="../commun/theme.js"></script> dans le <head>,
+//      <body data-app="budget">
 //      et <script type="module" src="../commun/nav.js"></script>
 //   3. ajoute un bloc ci-dessous avec href: "budget/"
 // Elle apparaîtra dans le menu et dans la barre du haut.

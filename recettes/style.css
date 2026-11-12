@@ -536,3 +536,66 @@ body:has(.barre-bas:not([hidden])) .toast { bottom: calc(5.5rem + env(safe-area-
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* =========================================================
+   Barre « Menu » du site (commun/nav.js) : couleurs du carnet
+   ========================================================= */
+:root {
+  --card-bg: var(--blanc);
+  --text-main: var(--texte);
+  --hover-bg: var(--ligne-legere);
+  --strong-bg: var(--encre);
+  --strong-hover: #3a3072;
+  --strong-text: var(--blanc);
+  --accent: var(--bouton);
+  --on-accent: var(--bouton-texte);
+}
+
+/* =========================================================
+   MODE SOMBRE (activé par commun/theme.js)
+   Même carnet, papier nuit et pastels assourdis
+   ========================================================= */
+:root[data-theme="sombre"] {
+  --papier: #1d1a26;
+  --blanc: #2a2536;
+  --ligne: #3d3650;
+  --ligne-legere: #2f2a3d;
+  --encre: #cbbff5;
+  --texte: #e7e3f0;
+  --doux: #a7a0bd;
+  --marge: #b8607f;
+
+  --lavande: #3a3157;
+  --menthe: #23423a;
+  --peche: #4a3227;
+  --beurre: #433c22;
+  --rose: #4a2836;
+  --ciel: #243a52;
+
+  --bouton: #6f5bb8;
+  --bouton-survol: #8370cc;
+  --bouton-texte: #f4f0ff;
+  --focus: #a995f0;
+
+  --strong-hover: #e2dafc;
+}
+[data-theme="sombre"] .seyes {
+  background-image:
+    linear-gradient(to bottom, rgba(203, 191, 245, .10) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(203, 191, 245, .04) 1px, transparent 1px),
+    linear-gradient(to right, rgba(203, 191, 245, .04) 1px, transparent 1px);
+}
+[data-theme="sombre"] .barre { background: rgba(29, 26, 38, .92); }
+[data-theme="sombre"] .barre-enregistrer,
+[data-theme="sombre"] .barre-bas { background: rgba(29, 26, 38, .95); }
+[data-theme="sombre"] .btn-danger { color: #f08aa8; }
+[data-theme="sombre"] .btn-supprimer { background: #5a2236; color: #ffd3e1; }
+[data-theme="sombre"] .btn-supprimer:hover { background: #6b2942; }
+[data-theme="sombre"] .fiche-coche { background: rgba(42, 37, 54, .92); }
+[data-theme="sombre"] .photos-compteur { background: rgba(42, 37, 54, .88); }
+[data-theme="sombre"] .interrupteur .piste { background: rgba(42, 37, 54, .8); box-shadow: inset 0 0 0 1.5px rgba(203, 191, 245, .25); }
+[data-theme="sombre"] .interrupteur .piste::after { background: #6e6390; }
+[data-theme="sombre"] .interrupteur input:checked + .piste::after { background: #3FA67A; }
+[data-theme="sombre"] .vignette .retirer { color: #ffb3c9; }
+[data-theme="sombre"] .erreur { color: #ffd3e1; }
+[data-theme="sombre"] input, [data-theme="sombre"] textarea { color: var(--texte); }

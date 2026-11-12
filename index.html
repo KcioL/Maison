@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Maison</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;800&display=swap" rel="stylesheet">
+    <script src="commun/theme.js"></script>
     <link rel="stylesheet" href="commun/base.css">
 </head>
 <body class="menu-page">
+
+    <div class="menu-tools" id="menu-tools"></div>
 
     <header class="menu-header">
         <h1>👋 Salut !</h1>
@@ -19,6 +22,8 @@
 
     <script type="module">
         import { APPS } from "./commun/apps.js";
+
+        document.getElementById("menu-tools").appendChild(window.Theme.bouton());
 
         const grid = document.getElementById("app-grid");
         APPS.forEach(a => {

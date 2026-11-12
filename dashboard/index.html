@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Partagé</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <script src="../commun/theme.js"></script>
     <link rel="stylesheet" href="../commun/base.css">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -34,7 +35,7 @@
                 <div class="weather-temp" id="weather-temp">--°C</div>
                 <div style="text-align: right;">
                     <div class="weather-desc" id="weather-desc">Chargement...</div>
-                    <div style="font-size: 0.8rem; color: #65676b;" id="weather-minmax">Min: --° Max: --°</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);" id="weather-minmax">Min: --° Max: --°</div>
                 </div>
             </div>
             <!-- Petite icône indicative -->
@@ -73,7 +74,7 @@
                 <!-- Les prévisions 5 jours apparaîtront ici -->
             </div>
             <!-- NOUVEAU : Conteneur pour les prévisions détaillées (caché par défaut) -->
-            <div id="hourly-container" style="display: none; margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
+            <div id="hourly-container" style="display: none; margin-top: 25px; padding-top: 20px; border-top: 1px solid var(--line);">
                 <h3 id="hourly-title" style="margin-bottom: 15px; font-size: 1.1rem; color: var(--text-main);">Détails</h3>
                 <div id="hourly-forecast-list" class="hourly-grid">
                     <!-- Les prévisions toutes les 3h s'afficheront ici -->

@@ -48,23 +48,23 @@
     flex: 1 1 auto; 
     min-width: 0; 
     padding: 1rem; 
-    border: 2px solid #eee; 
+    border: 2px solid var(--line); 
     border-radius: 12px; 
     font-size: 1rem;
     transition: border-color 0.2s;
-    background-color: #fafafa;
+    background-color: var(--field-bg);
 }
 
 #shopping-input:focus {
     outline: none;
     border-color: var(--accent);
-    background-color: white;
+    background-color: var(--field-focus);
 }
 
 #add-item-btn { 
     flex: 0 0 auto; 
     background: var(--accent); 
-    color: white; 
+    color: var(--on-accent); 
     border: none; 
     width: 3.5rem; 
     border-radius: 12px; 
@@ -93,16 +93,16 @@
     padding-right: 5px; 
 }
 .shopping-list::-webkit-scrollbar { width: 6px; }
-.shopping-list::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 10px; }
+.shopping-list::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 10px; }
 
 /* Design des éléments mis à jour pour s'adapter aux colonnes */
 .shopping-item { 
     display: flex; 
     align-items: center; 
     padding: 0.8rem 1.2rem; 
-    background-color: #fafafa; /* Fond coloré au lieu d'une simple ligne en bas */
+    background-color: var(--field-bg); /* Fond coloré au lieu d'une simple ligne en bas */
     border-radius: 12px;
-    border: 1px solid #f0f0f0;
+    border: 1px solid var(--line-soft);
     transition: transform 0.2s, box-shadow 0.2s;
 }
 .shopping-item:hover {
@@ -153,24 +153,25 @@
 }
 .close-btn {
     position: absolute; top: 20px; right: 25px;
-    font-size: 2.5rem; font-weight: bold; color: #ccc; cursor: pointer; line-height: 1;
+    font-size: 2.5rem; font-weight: bold; color: var(--muted-icon); cursor: pointer; line-height: 1;
     transition: color 0.2s;
 }
 .close-btn:hover { color: var(--text-main); }
-.modal h2 { margin-bottom: 1.5rem; color: var(--text-main); border-bottom: 2px dashed #eee; padding-bottom: 0.8rem; }
+.modal h2 { margin-bottom: 1.5rem; color: var(--text-main); border-bottom: 2px dashed var(--line); padding-bottom: 0.8rem; }
 
 /* --- RECHERCHE VILLE --- */
+.modal-content input, #shopping-input { color: var(--text-main); }
 .city-selector { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 2rem; }
 #city-input {
-    flex-grow: 1; padding: 1rem; border-radius: 12px; border: 2px solid #eee;
-    font-size: 1rem; font-family: inherit; transition: border-color 0.2s; background-color: #fafafa;
+    flex-grow: 1; padding: 1rem; border-radius: 12px; border: 2px solid var(--line);
+    font-size: 1rem; font-family: inherit; transition: border-color 0.2s; background-color: var(--field-bg);
 }
-#city-input:focus { outline: none; border-color: var(--accent); background-color: white;}
+#city-input:focus { outline: none; border-color: var(--accent); background-color: var(--field-focus);}
 #search-city-btn {
-    background: var(--text-main); color: white; border: none; padding: 1rem 1.5rem;
+    background: var(--strong-bg); color: var(--strong-text); border: none; padding: 1rem 1.5rem;
     border-radius: 12px; cursor: pointer; font-weight: bold; transition: background 0.2s;
 }
-#search-city-btn:hover { background: #2d2924; }
+#search-city-btn:hover { background: var(--strong-hover); }
 
 /* --- PRÉVISIONS 5 JOURS --- */
 .forecast-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 1rem; }
@@ -193,7 +194,7 @@
 .forecast-date { font-weight: 800; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-main); }
 .forecast-icon { width: 55px; height: 55px; filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.1)); }
 .forecast-temp { font-weight: 800; color: var(--text-main); margin: 0.5rem 0; font-size: 1.2rem; }
-.forecast-desc { font-size: 0.75rem; color: #5a6268; text-transform: capitalize; font-weight: 600; }
+.forecast-desc { font-size: 0.75rem; color: var(--weather-desc); text-transform: capitalize; font-weight: 600; }
 
 /* --- DÉTAILS 3H (HOURLY) --- */
 .hourly-grid { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 15px; }
@@ -210,7 +211,7 @@
 .hourly-temp { color: var(--text-main); font-weight: 800; font-size: 1.1rem; }
 
 .hourly-grid::-webkit-scrollbar { height: 8px; }
-.hourly-grid::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.hourly-grid::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 10px; }
 /* --- WIDGET ROUE DU DESTIN --- */
 .wheel-widget {
     text-align: center;
@@ -229,8 +230,8 @@
     font-size: 1.3rem;
     font-weight: 800;
     color: var(--accent);
-    background: #fafafa;
-    border: 2px dashed #e0e0e0;
+    background: var(--field-bg);
+    border: 2px dashed var(--line-dash);
     padding: 1.5rem;
     border-radius: 16px;
     width: 100%;
@@ -254,8 +255,8 @@
 }
 
 #spin-btn {
-    background: var(--text-main);
-    color: white;
+    background: var(--strong-bg);
+    color: var(--strong-text);
     border: none;
     padding: 1rem 2rem;
     border-radius: 12px;
@@ -267,7 +268,7 @@
 }
 
 #spin-btn:hover {
-    background: #2d2924;
+    background: var(--strong-hover);
     transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(0,0,0,0.15);
 }

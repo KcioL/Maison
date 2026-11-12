@@ -21,6 +21,58 @@
 
     /* Couleur des cartes météo (pour faire ressortir les nuages blancs) */
     --weather-card-bg: #d4dde4; 
+
+    /* Voile posé sur la photo de fond (plus il est opaque, plus la page est claire) */
+    --overlay: rgba(253, 251, 247, 0.58);
+
+    /* Champs, bordures et surfaces */
+    --field-bg: #fafafa;
+    --field-focus: #ffffff;
+    --line: #eeeeee;
+    --line-soft: #f0f0f0;
+    --line-dash: #e4dcd3;
+    --hover-bg: #f4eee8;
+    --glass: rgba(255, 255, 255, 0.85);
+    --glass-soft: rgba(255, 255, 255, 0.55);
+    --tint: #ffffff;              /* base des teintes colorées (color-mix) */
+    --strong-bg: #4a443c;         /* boutons foncés (Menu, Rechercher…) */
+    --strong-hover: #2d2924;
+    --strong-text: #ffffff;
+    --on-accent: #ffffff;         /* texte posé sur la couleur d'accent */
+    --scroll-thumb: #e0e0e0;
+    --muted-icon: #cccccc;
+    --weather-desc: #5a6268;
+}
+
+/* ---------- MODE SOMBRE (activé par commun/theme.js) ---------- */
+:root[data-theme="sombre"] {
+    --bg-color: #1b1714;
+    --card-bg: #26211d;
+    --text-main: #efe7dd;
+    --text-muted: #a99d91;
+    --accent: #e98a6e;
+    --accent-hover: #f29c82;
+    --card-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+    --weather-card-bg: #35414b;
+
+    --overlay: rgba(24, 20, 17, 0.74);
+
+    --field-bg: #2e2823;
+    --field-focus: #352e29;
+    --line: #3b342e;
+    --line-soft: #362f2a;
+    --line-dash: #4a4139;
+    --hover-bg: #3a322c;
+    --glass: rgba(38, 33, 29, 0.85);
+    --glass-soft: rgba(38, 33, 29, 0.6);
+    --tint: #26211d;
+    --strong-bg: #efe7dd;
+    --strong-hover: #ffffff;
+    --strong-text: #1b1714;
+    --on-accent: #1b1714;
+    --scroll-thumb: #4a4139;
+    --muted-icon: #6b6158;
+    --weather-desc: #b8c2ca;
 }
 
 * { 
@@ -36,7 +88,7 @@ body {
     
     /* Image de fond locale avec un calque crème transparent (rgba) par-dessus */
     background-image: 
-        linear-gradient(rgba(253, 251, 247, 0.75), rgba(253, 251, 247, 0.75)), 
+        linear-gradient(var(--overlay), var(--overlay)), 
         url('salon.jpg');
     
     background-size: cover;
@@ -86,7 +138,7 @@ h1 {
     display: flex; 
     align-items: center; 
     gap: 0.5rem;
-    border-bottom: 2px dashed #eee; 
+    border-bottom: 2px dashed var(--line); 
     padding-bottom: 0.8rem;
     color: var(--text-main);
 }
@@ -95,7 +147,8 @@ h1 {
    PAGE MENU (index.html à la racine)
    ========================================== */
 .menu-header { text-align: center; margin: 2rem 0 3rem; }
-.menu-header p { color: var(--text-muted); font-weight: 500; margin-top: 0.4rem; }
+.menu-header p { color: var(--text-main); opacity: 0.75; font-weight: 500; margin-top: 0.4rem; }
+.menu-header .menu-subtitle { opacity: 1; }
 .menu-header .menu-subtitle { color: var(--text-main); font-size: 1.15rem; margin-top: 1.2rem; }
 
 .app-grid {
@@ -130,17 +183,31 @@ a.app-tile:hover, a.app-tile:focus-visible {
     width: 4rem; height: 4rem;
     display: grid; place-items: center;
     border-radius: 18px;
-    background: color-mix(in srgb, var(--tile-color) 18%, white);
+    background: color-mix(in srgb, var(--tile-color) 18%, var(--tint));
 }
 .app-tile-name { font-size: 1.4rem; font-weight: 800; margin-top: 0.4rem; }
 .app-tile-desc { color: var(--text-muted); line-height: 1.45; }
 .app-tile-go { margin-top: auto; padding-top: 0.6rem; font-weight: 700; color: var(--accent); }
 .app-tile-soon {
-    background: rgba(255, 255, 255, 0.55);
-    border: 2px dashed #e4dcd3;
+    background: var(--glass-soft);
+    border: 2px dashed var(--line-dash);
     box-shadow: none;
 }
-.app-tile-soon .app-tile-icon { background: #f4eee8; }
+.app-tile-soon .app-tile-icon { background: var(--hover-bg); }
+
+/* Bouton clair / sombre de la page menu */
+.menu-tools { display: flex; justify-content: flex-end; max-width: 1000px; margin: 0 auto; }
+.theme-toggle {
+    border: none; cursor: pointer;
+    background: var(--glass); color: var(--text-main);
+    font-weight: 700; font-size: 0.95rem;
+    padding: 0.55rem 1rem; border-radius: 999px;
+    box-shadow: var(--card-shadow);
+    backdrop-filter: blur(6px);
+    transition: background 0.2s;
+}
+.theme-toggle:hover { background: var(--hover-bg); }
+.theme-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 @media (max-width: 600px) {
     body { padding: 1rem; }
