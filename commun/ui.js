@@ -4,6 +4,7 @@
 //   ouvrirFeuille({ titre }) panneau par-dessus la page (bas de l'écran sur téléphone,
 //                           au centre sur ordinateur) ; renvoie { corps, fermer }
 //   confirmer({ … })        fenêtre « Annuler / Supprimer » ; renvoie true si confirmé
+//   demanderTexte({ … })    fenêtre pour saisir un nom ; renvoie le texte ou null
 //   esc(texte)              texte sûr à insérer dans du HTML
 // Styles dans coquille.css (.toast-site, .feuille…)
 // ==========================================
@@ -65,6 +66,28 @@ export function confirmer({ titre, message, bouton = "Confirmer", danger = false
         f.corps.querySelector('[data-r="non"]').addEventListener("click", () => f.fermer());
         f.corps.querySelector('[data-r="oui"]').addEventListener("click", () => { reponse = true; f.fermer(); });
         f.corps.querySelector('[data-r="non"]').focus();
+    });
+}
+
+// Petite fenêtre pour saisir un nom : renvoie le texte, ou null si on annule
+//   await demanderTexte({ titre, etiquette, valeur, exemple, bouton })
+export function demanderTexte({ titre, etiquette = "Nom", valeur = "", exemple = "", bouton = "Valider", max = 60 }) {
+    return new Promise(resolve => {
+        let texte = null;
+        const f = ouvrirFeuille({ titre, quandFerme: () => resolve(texte) });
+        f.corps.innerHTML = `<form class="ligne-form" autocomplete="off">
+            <label class="champ"><span></span><input name="t" required></label>
+            <button class="bouton principal" type="submit"></button></form>`;
+        const input = f.corps.querySelector("input");
+        f.corps.querySelector(".champ span").textContent = etiquette;
+        f.corps.querySelector("button").textContent = bouton;
+        input.maxLength = max; input.placeholder = exemple; input.value = valeur;
+        input.focus(); input.select();
+        f.corps.querySelector("form").addEventListener("submit", e => {
+            e.preventDefault();
+            texte = input.value.trim() || null;
+            f.fermer();
+        });
     });
 }
 

@@ -60,11 +60,19 @@ body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
     max-width: calc(100% - 24px);
     padding: 8px 10px;
     border-radius: 999px;
+    /* s'il y a trop d'applis pour la largeur de l'écran, la barre défile au doigt */
+    overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+    overscroll-behavior-x: contain; -webkit-overflow-scrolling: touch;
     background: var(--dock-verre);
     border: 1px solid var(--dock-bord);
     box-shadow: var(--dock-ombre);
     -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5);
 }
+.dock::-webkit-scrollbar { display: none; }
+/* fondu sur le bord quand il reste des applis à voir */
+.dock.deborde-droite { -webkit-mask-image: linear-gradient(to right, #000 85%, transparent); mask-image: linear-gradient(to right, #000 85%, transparent); }
+.dock.deborde-gauche { -webkit-mask-image: linear-gradient(to left, #000 85%, transparent); mask-image: linear-gradient(to left, #000 85%, transparent); }
+.dock.deborde-gauche.deborde-droite { -webkit-mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent); mask-image: linear-gradient(to right, transparent, #000 15%, #000 85%, transparent); }
 .dock-appli {
     position: relative;
     display: grid; place-items: center; flex: none;
@@ -100,6 +108,11 @@ body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
 }
 .dock-anneau.visible { opacity: 1; }
 
+@media (max-width: 480px) {
+    .dock { gap: 7px; padding: 7px 8px; }
+    .dock-appli { width: 48px; height: 48px; }
+    .dock-appli img { width: 42px; height: 42px; }
+}
 @media (max-width: 380px) {
     .dock { gap: 6px; padding: 7px 8px; }
     .dock-appli { width: 46px; height: 46px; }
@@ -221,4 +234,25 @@ body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
     .feuille, .feuille-fond { animation: none; }
+}
+
+/* ---------- Barre « choix + Partager + Renommer + Supprimer » (commun/selecteur.js) ---------- */
+.barre-partage { display: flex; gap: 0.5rem; align-items: center; max-width: 1000px; margin: 0 auto 1.2rem; }
+.choix-partage {
+    flex: 1; min-width: 0; min-height: 44px; padding: 0.6rem 0.9rem;
+    border: 2px solid var(--line); border-radius: 12px;
+    background: var(--card-bg); color: var(--text-main); font: inherit; font-weight: 700; font-size: 0.95rem;
+}
+.bouton-partage {
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.3rem;
+    min-height: 44px; padding: 0.55rem 0.9rem; border-radius: 12px; cursor: pointer;
+    border: 2px solid var(--line); background: var(--card-bg); color: var(--text-main);
+    font: inherit; font-weight: 700; font-size: 0.92rem; white-space: nowrap;
+}
+.bouton-partage:hover { border-color: var(--text-muted); }
+.bouton-partage.icone { padding: 0.5rem 0.65rem; font-size: 1.05rem; }
+@media (max-width: 700px) {
+    .barre-partage { gap: 0.4rem; }
+    .bouton-partage { padding: 0.5rem 0.7rem; }
+    .bouton-partage .lbl { display: none; }   /* sur téléphone : icônes seules */
 }

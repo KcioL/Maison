@@ -68,6 +68,17 @@ export const APPS = [
         color: "#9c88d8"
     },
     {
+        id: "convertisseur",
+        name: "Convertisseur",
+        short: "Convertir",
+        icon: "⚖️",
+        logo: "commun/logos/convertisseur-192.png",
+        desc: "Ajuster les portions d'une recette, convertir cups et cuillères en grammes, adapter à la taille du moule.",
+        dossier: "convertisseur",
+        style: "maison",
+        color: "#a5576b"
+    },
+    {
         id: "muscu",
         name: "Muscu",
         short: "Muscu",
@@ -77,5 +88,27 @@ export const APPS = [
         dossier: "muscu",
         style: "maison",
         color: "#5b8fb9"
+    },
+    {
+        id: "abonnements",
+        name: "Abonnements",
+        short: "Abonnements",
+        icon: "💳",
+        logo: "commun/logos/abonnements-192.png",
+        desc: "Netflix, salle de sport, forfait… ce que ça coûte par mois, par an, et quand ça se renouvelle.",
+        dossier: "abonnements",
+        style: "maison",
+        color: "#3d8a8a"
+    },
+    {
+        id: "loyer",
+        name: "Loyer & charges",
+        short: "Loyer",
+        icon: "🔑",
+        logo: "commun/logos/loyer-192.png",
+        desc: "Partager le loyer (à parts égales, selon les revenus ou les chambres) et qui paie l'eau, l'électricité, le wifi…",
+        dossier: "loyer",
+        style: "maison",
+        color: "#d4a017"
     }
 ];

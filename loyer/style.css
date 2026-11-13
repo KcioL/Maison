@@ -1,0 +1,100 @@
+/* ==========================================
+   LOYER & CHARGES
+   Toutes les règles commencent par .vue-loyer : elles ne s'appliquent qu'à cette appli.
+   ========================================== */
+
+.vue-loyer .titre-emoji{ font-size: 1.4em; line-height: 1; }
+.vue-loyer .muet{ color: var(--text-muted); }
+.vue-loyer .petit{ font-size: 0.88rem; }
+.vue-loyer .chargement{ animation: apparait-si-lent 0.25s ease-out 0.45s both; }
+.vue-loyer .lo-bouton{
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; align-self: flex-start;
+    border: 2px solid var(--line); background: var(--card-bg); color: var(--text-main);
+    border-radius: 12px; padding: 0.6rem 1rem; min-height: 44px; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+}
+.vue-loyer .lo-bouton.principal{ background: var(--accent); border-color: var(--accent); color: var(--on-accent); align-self: center; }
+.vue-loyer .lo-vide{ text-align: center; color: var(--text-muted); padding: 1.5rem 1rem; }
+.vue-loyer .lo-vide-carte{ max-width: 560px; margin: 0 auto; text-align: center; gap: 0.9rem; align-items: center; }
+.vue-loyer .lo-grand{ font-size: 1.3rem; font-weight: 800; }
+
+.vue-loyer .lo-grille{ max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+.vue-loyer .lo-colonne{ display: flex; flex-direction: column; gap: 1.2rem; min-width: 0; }
+.vue-loyer .lo-bloc{ gap: 0.8rem; padding: 1.5rem; }
+.vue-loyer .lo-bloc .widget-title{ margin-bottom: 0.3rem; }
+.vue-loyer .lo-champ{ display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; flex: 1; }
+.vue-loyer .lo-champ > span{ font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--text-muted); }
+.vue-loyer .lo-champ input, .vue-loyer .lo-champ select, .vue-loyer .lo-charge-nom{
+    width: 100%; min-width: 0; padding: 0.65rem 0.8rem; border: 2px solid var(--line); border-radius: 12px;
+    background: var(--field-bg); color: var(--text-main); font-size: 0.95rem; font-family: inherit;
+}
+.vue-loyer .lo-champ input:focus, .vue-loyer .lo-champ select:focus, .vue-loyer .lo-charge-nom:focus{ outline: none; border-color: var(--accent); background: var(--field-focus); }
+.vue-loyer .lo-court{ max-width: 240px; }
+.vue-loyer .lo-ligne2{ display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+.vue-loyer .lo-ligne3{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.6rem; }
+
+.vue-loyer .lo-personnes, .vue-loyer .lo-charges{ list-style: none; display: flex; flex-direction: column; gap: 0.6rem; }
+.vue-loyer .lo-personne{ display: flex; gap: 0.6rem; align-items: flex-end; }
+.vue-loyer .lo-nom{ flex: 1.3; }
+.vue-loyer .lo-icone{
+    flex: none; width: 42px; height: 42px; border-radius: 12px; border: none; cursor: pointer;
+    background: var(--field-bg); color: var(--text-muted); font-size: 0.95rem; font-weight: 700;
+}
+.vue-loyer .lo-icone:hover{ color: #d1495b; background: var(--hover-bg); }
+.vue-loyer .lo-ajout{
+    border: 2px dashed var(--line-dash); background: transparent; border-radius: 12px; min-height: 44px;
+    color: var(--text-muted); font-weight: 700; cursor: pointer; font-size: 0.95rem;
+}
+.vue-loyer .lo-ajout:hover{ border-color: var(--accent); color: var(--accent); }
+
+.vue-loyer .lo-segments{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.3rem; background: var(--field-bg); padding: 0.3rem; border-radius: 14px; }
+.vue-loyer .lo-segment{
+    border: none; background: transparent; color: var(--text-main); border-radius: 10px; padding: 0.6rem 0.4rem;
+    font-weight: 700; font-size: 0.88rem; cursor: pointer; min-height: 44px; line-height: 1.2;
+}
+.vue-loyer .lo-segment.actif{ background: var(--card-bg); color: var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+.vue-loyer .lo-charge{ background: var(--field-bg); border: 1px solid var(--line-soft); border-radius: 14px; padding: 0.7rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.vue-loyer .lo-charge-haut{ display: flex; gap: 0.5rem; align-items: center; }
+.vue-loyer .lo-charge-nom{ font-weight: 700; background: var(--card-bg); }
+.vue-loyer .lo-charge .lo-icone{ background: var(--card-bg); }
+.vue-loyer .lo-charge .lo-champ input, .vue-loyer .lo-charge .lo-champ select{ background: var(--card-bg); padding: 0.55rem 0.6rem; font-size: 0.9rem; }
+.vue-loyer .lo-rapides{ display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.vue-loyer .lo-puce{
+    border: 2px solid var(--line); background: var(--card-bg); color: var(--text-main); border-radius: 999px;
+    padding: 0.4rem 0.8rem; font-weight: 600; font-size: 0.85rem; cursor: pointer; min-height: 38px;
+}
+.vue-loyer .lo-puce:hover{ border-color: var(--accent); }
+
+.vue-loyer .lo-resultat{ position: sticky; top: 1rem; gap: 0.6rem; padding: 1.5rem; }
+.vue-loyer .lo-alerte{ background: rgba(212, 160, 23, 0.15); color: var(--text-main); border-radius: 10px; padding: 0.6rem 0.8rem; font-size: 0.9rem; }
+.vue-loyer .lo-tableau{ overflow-x: auto; }
+.vue-loyer .lo-tableau table{ width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 0.95rem; }
+.vue-loyer .lo-tableau th{ text-align: right; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 0.4rem 0.3rem; }
+.vue-loyer .lo-tableau th:first-child, .vue-loyer .lo-tableau td:first-child{ text-align: left; }
+.vue-loyer .lo-tableau td{ text-align: right; padding: 0.6rem 0.3rem; border-top: 1px solid var(--line); white-space: nowrap; }
+.vue-loyer .lo-tableau td:first-child{ white-space: normal; }
+.vue-loyer .lo-tableau td small{ display: block; color: var(--text-muted); font-size: 0.78rem; font-weight: 500; }
+.vue-loyer .lo-tableau tfoot td{ font-weight: 700; color: var(--text-muted); border-top: 2px solid var(--line); }
+.vue-loyer .lo-sous-titre{ font-size: 1.05rem; font-weight: 800; margin-top: 0.6rem; }
+.vue-loyer .lo-virements{ list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+.vue-loyer .lo-virements li{ background: var(--hover-bg); border-radius: 12px; padding: 0.7rem 0.9rem; }
+.vue-loyer .lo-somme{ color: var(--accent); }
+.vue-loyer .lo-ok{ color: #5e9a72; font-weight: 700; }
+
+@media (max-width: 900px) {
+    .vue-loyer .lo-grille{ grid-template-columns: minmax(0, 1fr); }
+    .vue-loyer .lo-resultat{ position: static; }
+}
+@media (max-width: 700px) {
+    .vue-loyer .lo-bloc, .vue-loyer .lo-resultat{ padding: 1.2rem; }
+    .vue-loyer .lo-ligne2{ grid-template-columns: 1fr; }
+    .vue-loyer .lo-ligne3{ grid-template-columns: 1fr 1fr; }
+    .vue-loyer .lo-personne{ flex-wrap: wrap; }
+    .vue-loyer .lo-personne .lo-nom{ flex: 1 1 100%; }
+    .vue-loyer .lo-personne:has(.lo-champ:nth-of-type(2)) .lo-nom{ flex: 1 1 40%; }
+    .vue-loyer .lo-segment{ font-size: 0.8rem; }
+    .vue-loyer .lo-icone{ width: 44px; height: 44px; }
+    .vue-loyer .lo-tableau table{ font-size: 0.85rem; }
+    .vue-loyer .lo-tableau th, .vue-loyer .lo-tableau td{ padding-left: 0.15rem; padding-right: 0.15rem; }
+    .vue-loyer .lo-tableau th{ font-size: 0.65rem; letter-spacing: 0.03em; }
+}

@@ -145,6 +145,7 @@ function dessinerDock() {
         }
     });
     window.addEventListener("resize", () => placerAnneau(false));
+    dock.addEventListener("scroll", majBords, { passive: true });
 }
 
 function placerAnneau(anime = true) {
@@ -156,6 +157,19 @@ function placerAnneau(anime = true) {
     anneau.style.transform = `translate(${actif.offsetLeft}px, ${actif.offsetTop}px)`;
     anneau.classList.add("visible");
     if (!anime) { anneau.getBoundingClientRect(); anneau.style.transition = ""; }
+    // barre défilante : on amène l'appli ouverte à l'écran
+    const marge = 24;
+    if (actif.offsetLeft - marge < dock.scrollLeft) dock.scrollTo({ left: actif.offsetLeft - marge, behavior: anime ? "smooth" : "auto" });
+    else if (actif.offsetLeft + actif.offsetWidth + marge > dock.scrollLeft + dock.clientWidth)
+        dock.scrollTo({ left: actif.offsetLeft + actif.offsetWidth + marge - dock.clientWidth, behavior: anime ? "smooth" : "auto" });
+    majBords();
+}
+
+function majBords() {
+    if (!dock) return;
+    const max = dock.scrollWidth - dock.clientWidth;
+    dock.classList.toggle("deborde-gauche", dock.scrollLeft > 4);
+    dock.classList.toggle("deborde-droite", dock.scrollLeft < max - 4);
 }
 
 function majDock(id) {

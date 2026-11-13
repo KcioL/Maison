@@ -1,0 +1,74 @@
+/* ==========================================
+   ABONNEMENTS
+   Toutes les règles commencent par .vue-abonnements : elles ne s'appliquent
+   qu'à cette appli (sauf la fiche, en bas, qui s'ouvre par-dessus la page).
+   ========================================== */
+
+.vue-abonnements .titre-emoji{ font-size: 1.4em; line-height: 1; }
+.vue-abonnements .muet{ color: var(--text-muted); }
+.vue-abonnements .petit{ font-size: 0.88rem; }
+.vue-abonnements .chargement{ animation: apparait-si-lent 0.25s ease-out 0.45s both; }
+.vue-abonnements .ab-bouton{
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    border: 2px solid var(--line); background: var(--card-bg); color: var(--text-main);
+    border-radius: 12px; padding: 0.6rem 1rem; min-height: 44px; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+}
+.vue-abonnements .ab-bouton.principal{ background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.vue-abonnements .ab-bouton.principal:hover{ background: var(--accent-hover); }
+.vue-abonnements .ab-vide{ text-align: center; color: var(--text-muted); padding: 1.5rem 1rem; }
+.vue-abonnements .ab-vide-carte{ max-width: 560px; margin: 0 auto; text-align: center; gap: 0.9rem; align-items: center; }
+.vue-abonnements .ab-grand{ font-size: 1.3rem; font-weight: 800; }
+
+.vue-abonnements .ab-grille{ max-width: 1000px; margin: 0 auto 1.5rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.2rem; }
+.vue-abonnements .ab-total{ gap: 0.3rem; justify-content: center; background: linear-gradient(135deg, #6a9a76 0%, #3d8a8a 100%); color: #fff; }
+.vue-abonnements .ab-total .ab-etiquette{ color: rgba(255,255,255,0.85); }
+.vue-abonnements .ab-etiquette{ font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; font-weight: 700; color: var(--text-muted); }
+.vue-abonnements .ab-montant{ font-size: 2.8rem; font-weight: 800; letter-spacing: -1px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.vue-abonnements .ab-an{ font-size: 1rem; opacity: 0.95; }
+.vue-abonnements .ab-payeurs{ display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.6rem; }
+.vue-abonnements .ab-payeurs span{ background: rgba(255,255,255,0.18); border-radius: 999px; padding: 0.25rem 0.7rem; font-size: 0.85rem; }
+.vue-abonnements .ab-bientot ul{ list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+.vue-abonnements .ab-bientot li{ display: flex; align-items: center; gap: 0.6rem; }
+.vue-abonnements .ab-emoji{ font-size: 1.2rem; width: 1.6rem; text-align: center; flex: none; }
+.vue-abonnements .ab-nom{ flex: 1; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.vue-abonnements .ab-quand{ color: var(--text-muted); font-size: 0.85rem; white-space: nowrap; }
+.vue-abonnements .ab-quand.proche{ color: #d1495b; font-weight: 700; }
+.vue-abonnements .ab-cat{ display: grid; grid-template-columns: 1fr auto; gap: 0.2rem 0.6rem; margin-bottom: 0.7rem; font-size: 0.92rem; }
+.vue-abonnements .ab-barre{ grid-column: 1 / -1; height: 8px; border-radius: 999px; background: var(--field-bg); overflow: hidden; }
+.vue-abonnements .ab-barre span{ display: block; height: 100%; border-radius: 999px; }
+
+.vue-abonnements .ab-liste-zone{ max-width: 1000px; margin: 0 auto; }
+.vue-abonnements .ab-liste-tete{ display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 0.8rem; }
+.vue-abonnements .ab-liste-tete .ab-bouton{ white-space: nowrap; flex: none; }
+.vue-abonnements .ab-liste-tete h2{ font-size: 1.25rem; font-weight: 800; color: var(--text-main); background: var(--glass); padding: 0.3rem 0.9rem; border-radius: 999px; }
+.vue-abonnements .ab-liste{ list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 0.8rem; }
+.vue-abonnements .ab-ligne{ flex-direction: row; align-items: flex-start; gap: 0.8rem; padding: 1rem 1.1rem; }
+.vue-abonnements .ab-ligne.pause{ opacity: 0.6; }
+.vue-abonnements .ab-pastille{
+    flex: none; width: 2.6rem; height: 2.6rem; border-radius: 14px; display: grid; place-items: center; font-size: 1.3rem;
+    background: color-mix(in srgb, var(--c) 18%, var(--tint));
+}
+.vue-abonnements .ab-infos{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.vue-abonnements .ab-infos b{ font-size: 1.05rem; overflow-wrap: anywhere; }
+.vue-abonnements .ab-details{ display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.2rem; }
+.vue-abonnements .ab-chip{ font-size: 0.78rem; font-weight: 600; background: var(--field-bg); border-radius: 999px; padding: 0.15rem 0.6rem; white-space: nowrap; }
+.vue-abonnements .ab-chip.proche{ background: rgba(209, 73, 91, 0.15); color: #d1495b; }
+.vue-abonnements .ab-note{ font-size: 0.85rem; color: var(--text-muted); font-style: italic; }
+.vue-abonnements .ab-actions{ display: flex; flex-direction: column; gap: 0.25rem; }
+.vue-abonnements .ab-icone{ width: 38px; height: 38px; border: none; border-radius: 10px; background: var(--field-bg); cursor: pointer; font-size: 0.95rem; }
+.vue-abonnements .ab-icone:hover{ background: var(--hover-bg); }
+
+@media (max-width: 700px) {
+    .vue-abonnements .ab-grille{ grid-template-columns: minmax(0, 1fr); gap: 0.9rem; }
+    .vue-abonnements .ab-montant{ font-size: 2.3rem; }
+    .vue-abonnements .ab-liste-tete h2{ font-size: 1.05rem; }
+    .vue-abonnements .ab-liste{ grid-template-columns: minmax(0, 1fr); }
+    .vue-abonnements .ab-actions{ flex-direction: row; }
+    .vue-abonnements .ab-ligne{ flex-wrap: wrap; }
+    .vue-abonnements .ab-actions{ width: 100%; justify-content: flex-end; }
+    .vue-abonnements .ab-icone{ width: 44px; height: 44px; }
+}
+
+/* Fiche d'un abonnement (s'ouvre par-dessus la page) */
+.feuille .ab-fiche { display: flex; flex-direction: column; gap: 0.9rem; }
+.feuille .ab-fiche-ligne { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
