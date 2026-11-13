@@ -195,6 +195,28 @@
     display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.15rem 0.55rem; border-radius: 999px;
     color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent); white-space: nowrap; flex: none;
 }
+/* Exercices ajoutés par les membres : bouton pour retirer le sien */
+.feuille .mu-cat-ligne { display: flex; gap: 0.4rem; align-items: stretch; }
+.feuille .mu-cat-ligne .mu-cat-item { flex: 1; min-width: 0; }
+.feuille .mu-cat-suppr {
+    flex: none; width: 44px; border-radius: 12px; border: 1px solid var(--line-soft);
+    background: var(--field-bg); cursor: pointer; font-size: 1rem;
+}
+.feuille .mu-cat-suppr:hover { border-color: #d1495b; }
+.feuille .mu-partage-cat {
+    display: flex; gap: 0.7rem; align-items: flex-start; padding: 0.8rem 0.9rem;
+    border-radius: 12px; background: var(--hover-bg); cursor: pointer;
+}
+.feuille .mu-partage-cat input { width: 22px; height: 22px; flex: none; margin-top: 0.1rem; accent-color: var(--accent); }
+.feuille .mu-partage-cat span { display: flex; flex-direction: column; gap: 0.15rem; }
+.feuille .mu-partage-cat small { color: var(--text-muted); font-size: 0.82rem; }
+
+/* Sur ordinateur (souris), les catégories passent à la ligne :
+   la souris ne fait pas défiler une rangée horizontale */
+@media (hover: hover) and (pointer: fine) {
+    .feuille .mu-filtres { flex-wrap: wrap; overflow: visible; }
+}
+
 @media (max-width: 700px) {
     .feuille .mu-fiche-ligne { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }

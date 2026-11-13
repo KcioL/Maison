@@ -11,13 +11,15 @@
 //   programmes/{id}                      name, ownerId, memberIds, members, createdAt
 //   programmes/{id}/seances/{id}         nom, ordre, exercices[], modifieLe, modifiePar
 //   exercice : { id, nom, groupe, series, reps, poids, repos, video, note }
+//   exercicesPerso/{id}                  exercices créés par les membres du site,
+//                                        visibles par tout le monde dans le catalogue
 // ==========================================
 import { db } from "../commun/firebase.js";
 import { compte } from "../commun/compte.js";
 import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter } from "../commun/partage.js";
 import { esc, toast, ouvrirFeuille, confirmer } from "../commun/ui.js";
 import {
-    collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, getDocs, writeBatch, query, orderBy
+    collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDocs, writeBatch, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { GROUPES, CATALOGUE, groupe, lienVideo } from "./exercices.js";
 
@@ -28,7 +30,9 @@ const S = {
     chemin: "",
     go: null,          // séance en cours : { sid, index, faites: {i: [bool]}, poids: {i: n} }
     minuteur: null,    // repos en cours : { fin, total }
-    verrouEcran: null
+    verrouEcran: null,
+    persos: [],        // exercices ajoutés par les membres du site (base de données)
+    majCatalogue: null // redessine le catalogue ouvert quand la liste change
 };
 const MEMO_PROG = "muscu-programme", MEMO_GO = "muscu-seance-en-cours";
 const lire = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -38,6 +42,43 @@ const programme = () => S.programmes.find(p => p.id === S.programmeId);
 const seancesCol = (pid = S.programmeId) => collection(db, "programmes", pid, "seances");
 const seance = (sid) => S.seances.find(s => s.id === sid);
 const uid = () => Math.random().toString(36).slice(2, 10);
+
+// ---------- Catalogue : exercices intégrés + exercices ajoutés par les membres ----------
+const normaliser = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+const cleExercice = (nom) => normaliser(nom).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "exercice";
+const MATERIELS = ["Poids du corps", "Haltères", "Barre", "Machine", "Poulie", "Kettlebell", "Élastique", "Autre"];
+
+function catalogueComplet() {
+    const connus = new Set(CATALOGUE.map(x => normaliser(x.nom)));
+    const persos = S.persos.filter(x => !connus.has(normaliser(x.nom)));
+    const ordre = (gid) => { const i = GROUPES.findIndex(g => g.id === gid); return i < 0 ? 99 : i; };
+    // rangé par muscle (dans l'ordre des catégories), en gardant l'ordre de chaque groupe
+    return [...CATALOGUE, ...persos].sort((a, b) => ordre(a.groupe) - ordre(b.groupe));
+}
+
+function ecouterPersos() {
+    onSnapshot(collection(db, "exercicesPerso"), snap => {
+        S.persos = snap.docs.map(d => ({ id: d.id, perso: true, ...d.data() }))
+            .sort((a, b) => normaliser(a.nom).localeCompare(normaliser(b.nom)));
+        S.majCatalogue?.();
+    }, err => console.warn("exercices perso", err));
+}
+
+// Ajoute un exercice au catalogue de tout le monde (si son nom n'existe pas déjà)
+async function publierExercice({ nom, groupe: g, materiel, reps, video }) {
+    const cle = cleExercice(nom);
+    if (catalogueComplet().some(x => normaliser(x.nom) === normaliser(nom)) || S.persos.some(x => x.id === cle)) {
+        toast(`« ${nom} » est déjà dans le catalogue.`);
+        return;
+    }
+    try {
+        await setDoc(doc(db, "exercicesPerso", cle), {
+            nom, groupe: g, materiel, reps, video: video || null,
+            creePar: compte.uid, creeParNom: (compte.nom || "membre").slice(0, 40), creeLe: Date.now()
+        });
+        toast(`« ${nom} » ajouté au catalogue de tout le monde ⭐`);
+    } catch (e) { console.error(e); toast("L'exercice est dans ta séance, mais n'a pas pu être ajouté au catalogue."); }
+}
 
 // ---------- Mise en forme ----------
 function fmtRepos(s) {
@@ -433,7 +474,7 @@ function liberer() { S.verrouEcran?.release?.().catch(() => { }); S.verrouEcran 
 
 // ---------- Fiche d'un exercice (ajout / modification) ----------
 const REPOS = [30, 45, 60, 90, 120, 180];
-function ficheExercice({ titre, exo, quandValide }) {
+function ficheExercice({ titre, exo, quandValide, nouveauPerso = false }) {
     const f = ouvrirFeuille({ titre });
     f.corps.innerHTML = `<form class="mu-fiche" autocomplete="off">
         <label class="champ"><span>Exercice</span><input name="nom" maxlength="80" required value="${esc(exo.nom)}"></label>
@@ -449,8 +490,12 @@ function ficheExercice({ titre, exo, quandValide }) {
                 ${REPOS.map(r => `<button type="button" class="mu-puce ${r === exo.repos ? "active" : ""}" data-repos="${r}">${fmtRepos(r)}</button>`).join("")}
                 <label class="mu-repos-libre"><input name="repos" type="number" min="0" max="900" step="5" value="${exo.repos}" inputmode="numeric" aria-label="Repos en secondes"> s</label>
             </div></div>
+        ${nouveauPerso ? `<label class="champ"><span>Matériel</span><select name="materiel">
+            ${MATERIELS.map(m => `<option ${m === "Autre" ? "selected" : ""}>${esc(m)}</option>`).join("")}</select></label>` : ""}
         <label class="champ"><span>Lien vidéo (facultatif)</span><input name="video" type="url" inputmode="url" value="${esc(exo.video || "")}" placeholder="https://… (sinon : recherche YouTube)"></label>
         <label class="champ"><span>Note (facultatif)</span><input name="note" maxlength="200" value="${esc(exo.note || "")}" placeholder="Ex. coudes serrés, descendre lentement"></label>
+        ${nouveauPerso ? `<label class="mu-partage-cat"><input type="checkbox" name="publier" checked>
+            <span><b>Ajouter au catalogue de tout le monde</b><small>Les autres membres du site le trouveront dans la catégorie choisie.</small></span></label>` : ""}
         <button class="bouton principal large" type="submit">Enregistrer</button>
     </form>`;
     const form = f.corps.querySelector("form");
@@ -474,7 +519,7 @@ function ficheExercice({ titre, exo, quandValide }) {
             repos: Math.min(900, Math.max(0, parseInt(form.repos.value, 10) || 0)),
             video: video || null,
             note: form.note.value.trim() || null
-        });
+        }, nouveauPerso ? { publier: form.publier.checked, materiel: form.materiel.value } : {});
         f.fermer();
     });
     return f;
@@ -492,17 +537,24 @@ function ouvrirCatalogue(sid) {
         </div>
         <div class="mu-catalogue"></div>`;
     const liste = f.corps.querySelector(".mu-catalogue");
-    const norm = (t) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
     const dessiner = () => {
-        const q = norm(filtre.trim());
-        const res = CATALOGUE.filter(x => (g === "tous" || x.groupe === g) && (!q || norm(x.nom).includes(q)));
-        liste.innerHTML = (filtre.trim() ? `<button type="button" class="mu-cat-item perso" data-perso="1">
-                <span><b>+ Créer « ${esc(filtre.trim())} »</b><small>Ton propre exercice</small></span></button>` : "")
-            + res.map(x => `<button type="button" class="mu-cat-item" data-nom="${esc(x.nom)}">
-                <span><b>${esc(x.nom)}</b><small>${esc(x.materiel)}</small></span>${pastille(x.groupe)}</button>`).join("")
+        const q = normaliser(filtre);
+        const tous = catalogueComplet();
+        const res = tous.filter(x => (g === "tous" || x.groupe === g) && (!q || normaliser(x.nom).includes(q)));
+        const existe = q && tous.some(x => normaliser(x.nom) === q);
+        liste.innerHTML = (filtre.trim() && !existe ? `<button type="button" class="mu-cat-item perso" data-perso="1">
+                <span><b>+ Créer « ${esc(filtre.trim())} »</b><small>Ton propre exercice, que tu peux ajouter au catalogue de tout le monde</small></span></button>` : "")
+            + res.map(x => {
+                const bouton = `<button type="button" class="mu-cat-item" data-nom="${esc(x.nom)}">
+                    <span><b>${esc(x.nom)}</b><small>${esc(x.materiel || "")}${x.perso ? ` · ⭐ ajouté par ${esc(x.creePar === compte.uid ? "toi" : (x.creeParNom || "un membre"))}` : ""}</small></span>${pastille(x.groupe)}</button>`;
+                return x.perso && x.creePar === compte.uid
+                    ? `<div class="mu-cat-ligne">${bouton}<button type="button" class="mu-cat-suppr" data-suppr-perso="${esc(x.id)}" aria-label="Retirer « ${esc(x.nom)} » du catalogue" title="Retirer du catalogue">🗑️</button></div>`
+                    : bouton;
+            }).join("")
             + (!res.length && !filtre.trim() ? `<p class="muet">Aucun exercice dans ce groupe.</p>` : "");
     };
     dessiner();
+    S.majCatalogue = () => { if (f.fond.isConnected) dessiner(); else S.majCatalogue = null; };
     const recherche = f.corps.querySelector(".mu-recherche");
     recherche.addEventListener("input", () => { filtre = recherche.value; dessiner(); });
     f.corps.querySelectorAll("[data-g]").forEach(b => b.addEventListener("click", () => {
@@ -510,19 +562,32 @@ function ouvrirCatalogue(sid) {
         f.corps.querySelectorAll("[data-g]").forEach(x => x.classList.toggle("active", x === b));
         dessiner();
     }));
-    liste.addEventListener("click", ev => {
+    liste.addEventListener("click", async ev => {
+        const suppr = ev.target.closest("[data-suppr-perso]");
+        if (suppr) {
+            const x = S.persos.find(p => p.id === suppr.dataset.supprPerso); if (!x) return;
+            if (!await confirmer({ titre: `Retirer « ${x.nom} » du catalogue ?`, message: "Il ne sera plus proposé aux autres. Les séances qui l'utilisent déjà le gardent.", bouton: "Retirer", danger: true })) return;
+            try { await deleteDoc(doc(db, "exercicesPerso", x.id)); toast("Exercice retiré du catalogue."); }
+            catch { toast("Suppression impossible."); }
+            return;
+        }
         const b = ev.target.closest(".mu-cat-item"); if (!b) return;
-        const modele = b.dataset.perso
+        const nouveau = !!b.dataset.perso;
+        const modele = nouveau
             ? { nom: filtre.trim(), groupe: g === "tous" ? "pecs" : g, reps: "10" }
-            : CATALOGUE.find(x => x.nom === b.dataset.nom);
+            : catalogueComplet().find(x => x.nom === b.dataset.nom);
+        if (!modele) return;
+        S.majCatalogue = null;
         f.fermer();
         const leger = ["abdos", "cardio"].includes(modele.groupe);
         ficheExercice({
             titre: "Nouvel exercice",
-            exo: { id: uid(), nom: modele.nom, groupe: modele.groupe, series: leger ? 3 : 4, reps: modele.reps, poids: null, repos: leger ? 45 : 90, video: null, note: null },
-            quandValide: async (exo) => {
+            exo: { id: uid(), nom: modele.nom, groupe: modele.groupe, series: leger ? 3 : 4, reps: modele.reps || "10", poids: null, repos: leger ? 45 : 90, video: modele.video || null, note: null },
+            nouveauPerso: nouveau,
+            quandValide: async (exo, { publier, materiel } = {}) => {
                 const s = seance(sid); if (!s) return;
                 if (await enregistrerExercices(sid, [...(s.exercices || []), exo])) toast(`« ${exo.nom} » ajouté.`);
+                if (publier) publierExercice({ nom: exo.nom, groupe: exo.groupe, materiel: materiel || "Autre", reps: exo.reps, video: exo.video });
             }
         });
     });
@@ -592,6 +657,7 @@ export function demarrer(conteneur, outilsCoquille) {
     brancherActions();
     rendre();
     ecouterProgrammes();
+    ecouterPersos();
     // l'écran allumé est coupé quand on change d'appli sur le téléphone : on le redemande au retour
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible" && S.chemin.startsWith("go/") && outils.visible()) garderEcranAllume();
