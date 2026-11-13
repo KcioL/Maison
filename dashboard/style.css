@@ -260,6 +260,7 @@
 }
 .vue-dashboard .liste-bouton:hover{ border-color: var(--text-muted); }
 .vue-dashboard .liste-bouton.principal{ background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.vue-dashboard .liste-bouton[hidden]{ display: none; }
 .vue-dashboard .liste-bouton.icone{ padding: 0.5rem 0.65rem; font-size: 1.05rem; }
 .vue-dashboard .liste-bouton.petit{ min-height: 36px; padding: 0.35rem 0.8rem; font-size: 0.85rem; }
 .vue-dashboard .liste-outils[hidden], .vue-dashboard .liste-ajout[hidden], .vue-dashboard .liste-vide[hidden]{ display: none; }
@@ -298,4 +299,6 @@
     .vue-dashboard .liste-label input{ width: 24px; height: 24px; }
     .vue-dashboard .liste-suppr{ width: 44px; height: 44px; }
     .vue-dashboard .liste-bouton{ padding: 0.5rem 0.7rem; }
+    .vue-dashboard .liste-bouton .lbl{ display: none; }   /* sur téléphone : icônes seules */
+    .vue-dashboard .liste-outils{ gap: 0.4rem; }
 }

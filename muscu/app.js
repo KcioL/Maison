@@ -16,7 +16,7 @@
 // ==========================================
 import { db } from "../commun/firebase.js";
 import { compte } from "../commun/compte.js";
-import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter } from "../commun/partage.js";
+import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter, renommerPartage } from "../commun/partage.js";
 import { esc, toast, ouvrirFeuille, confirmer } from "../commun/ui.js";
 import {
     collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDocs, writeBatch, query, orderBy
@@ -230,7 +230,8 @@ function pageAccueil() {
                 ${S.programmes.map(x => `<option value="${esc(x.id)}" ${x.id === S.programmeId ? "selected" : ""}>${esc(x.name)}${x.ownerId !== compte.uid ? " (partagé)" : ""}</option>`).join("")}
                 <option value="__nouveau">+ Nouveau programme…</option>
             </select>
-            <button type="button" class="mu-bouton" data-action="partager">👥 Partager</button>
+            <button type="button" class="mu-bouton" data-action="partager" title="Partager"><span aria-hidden="true">👥</span><span class="lbl"> Partager</span></button>
+            ${mien ? `<button type="button" class="mu-bouton icone" data-action="renommer-programme" title="Renommer ce programme" aria-label="Renommer ce programme">✏️</button>` : ""}
             <button type="button" class="mu-bouton icone" data-action="supprimer-programme" title="${mien ? "Supprimer ce programme" : "Quitter ce programme (il est partagé avec toi)"}" aria-label="${mien ? "Supprimer ce programme" : "Quitter ce programme"}">${mien ? "🗑️" : "🚪"}</button>
         </div>
         ${enCours ? `<a class="widget mu-reprendre" href="${outils.lien(`go/${S.go.sid}`)}">
@@ -603,6 +604,7 @@ function brancherActions() {
 
         if (a === "creer-programme") { b.disabled = true; await creerProgramme("Mon programme"); b.disabled = false; }
         else if (a === "partager" && S.programmeId) ouvrirAcces({ collection: "programmes", id: S.programmeId, quoi: "ce programme", supprimerContenu: viderProgramme });
+        else if (a === "renommer-programme") renommerPartage({ collection: "programmes", partage: programme(), quoi: "ce programme" });
         else if (a === "supprimer-programme") supprimerOuQuitter({ collection: "programmes", partage: programme(), quoi: "ce programme", supprimerContenu: viderProgramme });
         else if (a === "nouvelle-seance") nouvelleSeance();
         else if (a === "ajouter-exo") ouvrirCatalogue(sid);

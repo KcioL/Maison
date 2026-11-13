@@ -8,7 +8,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../commun/firebase.js";
 import { compte, nomDe } from "../commun/compte.js";
-import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter } from "../commun/partage.js";
+import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter, renommerPartage } from "../commun/partage.js";
 import { esc, toast, ouvrirFeuille } from "../commun/ui.js";
 
 // Réglages de chaque sorte de liste
@@ -75,6 +75,7 @@ function widgetListe(el) {
         boutonSuppr.textContent = mienne ? "🗑️" : "🚪";
         boutonSuppr.title = mienne ? "Supprimer cette liste" : "Quitter cette liste (elle est partagée avec toi)";
         boutonSuppr.setAttribute("aria-label", boutonSuppr.title);
+        el.querySelector('[data-action="renommer"]').hidden = !mienne;   // seul le propriétaire renomme
         form.hidden = !listes.length;
     }
 
@@ -176,6 +177,8 @@ function widgetListe(el) {
             const lot = writeBatch(db);
             articles.filter(a => a.coche).forEach(a => lot.delete(doc(articlesCol(), a.id)));
             lot.commit().catch(() => toast("Suppression impossible."));
+        } else if (b.dataset.action === "renommer" && id) {
+            renommerPartage({ collection: "listes", partage: liste(), quoi: "cette liste" });
         } else if (b.dataset.action === "supprimer" && id) {
             supprimerOuQuitter({ collection: "listes", partage: liste(), quoi: "cette liste", supprimerContenu: viderListe });
         }

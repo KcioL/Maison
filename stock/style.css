@@ -207,6 +207,7 @@
     .vue-stock .st-top-actions{ width: 100%; }
     .vue-stock .st-select{ flex: 1 1 100%; max-width: none; }
     .vue-stock .st-top-actions .st-btn{ flex: 1; }
+    .vue-stock .st-top-actions #btn-rename{ flex: none; padding-inline: 0.9rem; }
     .vue-stock .st-account{ margin-top: -0.4rem; }
     .vue-stock .st-btn{ min-height: 44px; }
     .vue-stock .st-link{ padding: 0.5rem 0.6rem; }

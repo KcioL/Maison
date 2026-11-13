@@ -149,6 +149,9 @@
 
 @media (max-width: 700px) {
     .vue-muscu .mu-seances{ grid-template-columns: minmax(0, 1fr); gap: 0.9rem; }
+    .vue-muscu .mu-outils .lbl{ display: none; }   /* sur téléphone : icônes seules */
+    .vue-muscu .mu-outils{ gap: 0.4rem; }
+    .vue-muscu .mu-outils .mu-bouton{ padding: 0.5rem 0.7rem; }
     .vue-muscu .mu-seance{ padding: 1.2rem; }
     .vue-muscu .mu-champ-titre input{ font-size: 1.35rem; }
     .vue-muscu h1.mu-go-nom{ font-size: 1.4rem; }

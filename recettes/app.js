@@ -17,7 +17,7 @@ const TITRE = "Les recettes de Jenigger";
 
 import { db } from "../commun/firebase.js";
 import { compte } from "../commun/compte.js";
-import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter } from "../commun/partage.js";
+import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter, renommerPartage } from "../commun/partage.js";
 import { ouvrirFeuille, toast as toastSite } from "../commun/ui.js";
 import {
   collection, doc, getDoc, getDocs, getDocsFromCache, getDocsFromServer, setDoc, updateDoc, deleteDoc, writeBatch,
@@ -266,6 +266,7 @@ function outilsCarnet() {
         <option value="__nouveau">+ Nouveau carnet…</option>
       </select>
       <button type="button" class="btn btn-clair" id="partager-carnet">👥 Partager</button>
+      ${carnet()?.ownerId === compte.uid ? `<button type="button" class="btn btn-clair btn-icone" id="renommer-carnet" title="Renommer ce carnet" aria-label="Renommer ce carnet">${icones.crayon}</button>` : ""}
       ${boutonSupprimerCarnet()}
     </div>`;
 }
@@ -281,6 +282,9 @@ function boutonSupprimerCarnet() {
 
 function brancherOutilsCarnet() {
   brancherChoix();
+  $id("renommer-carnet")?.addEventListener("click", () => {
+    renommerPartage({ collection: "carnets", partage: carnet(), quoi: "ce carnet" });
+  });
   $id("supprimer-carnet")?.addEventListener("click", () => {
     supprimerOuQuitter({ collection: "carnets", partage: carnet(), quoi: "ce carnet", supprimerContenu: viderCarnet });
   });

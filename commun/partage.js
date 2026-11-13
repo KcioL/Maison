@@ -9,6 +9,7 @@
 //   ecouterMesPartages("listes", (liste) => …)    ce que je possède ou qu'on m'a partagé
 //   creerPartage("listes", { name, type })          crée, avec moi comme propriétaire
 //   ouvrirAcces({ collection, id, quoi, supprimerContenu })   panneau « Qui a accès »
+//   renommerPartage({ collection, partage, quoi })   petite fenêtre pour changer le nom
 //   supprimerOuQuitter({ collection, partage, quoi, supprimerContenu })
 //       propriétaire : supprime (avec tout son contenu) ; membre : quitte. Demande confirmation.
 // ==========================================
@@ -53,6 +54,27 @@ export { estProprietaire };
 function erreurPartage(e) {
     console.error(e);
     toast(e?.code === "permission-denied" ? "Action refusée : tu n'as peut-être plus accès." : "Modification impossible. Réessaie.");
+}
+
+// Renomme une liste, un stock, un carnet ou un programme (seul le propriétaire peut)
+export function renommerPartage({ collection: nomCollection, partage, quoi = "ceci" }) {
+    if (!partage) return;
+    if (!estProprietaire(partage)) { toast(`Seul le propriétaire peut renommer ${quoi}.`); return; }
+    const f = ouvrirFeuille({ titre: "Renommer" });
+    f.corps.innerHTML = `<form class="ligne-form" autocomplete="off">
+        <label class="champ"><span>Nouveau nom</span><input name="nom" maxlength="60" required></label>
+        <button class="bouton principal" type="submit">Renommer</button></form>`;
+    const input = f.corps.querySelector("input");
+    input.value = partage.name || "";
+    input.focus(); input.select();
+    f.corps.querySelector("form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const nom = input.value.trim();
+        if (!nom || nom === partage.name) { f.fermer(); return; }
+        f.fermer();
+        try { await updateDoc(doc(db, nomCollection, partage.id), { name: nom }); toast(`Renommé en « ${nom} ».`); }
+        catch (err) { erreurPartage(err); }
+    });
 }
 
 // Supprime (si je suis propriétaire) ou quitte (si je suis membre), après confirmation.

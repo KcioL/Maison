@@ -13,7 +13,7 @@
 // ==========================================
 import { db } from "../commun/firebase.js";
 import { compte, nomDe } from "../commun/compte.js";
-import { ecouterMesPartages, creerPartage, ouvrirAcces } from "../commun/partage.js";
+import { ecouterMesPartages, creerPartage, ouvrirAcces, renommerPartage } from "../commun/partage.js";
 import {
     collection, doc, query, where, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc,
     getDoc, getDocs, writeBatch, deleteField
@@ -210,6 +210,7 @@ export function demarrer(conteneur, outilsCoquille) {
         sel.innerHTML = sortedStocks().map(x => `<option value="${esc(x.id)}" ${x.id === S.stockId ? "selected" : ""}>${esc(x.name)}${x.ownerId !== S.user.uid ? " (partagé)" : ""}</option>`).join("")
             + `<option value="__new">+ Nouveau stock…</option>`;
         $("btn-access").hidden = !s;
+        $("btn-rename").hidden = !s || s.ownerId !== S.user.uid;   // seul le propriétaire renomme
         $("btn-add-storage").hidden = !s;
         $("home-view").hidden = !!S.view;
         $("detail-view").hidden = !S.view;
@@ -433,6 +434,7 @@ export function demarrer(conteneur, outilsCoquille) {
         if (v === "__new") { e.target.value = S.stockId || ""; showForm("new-stock", "ns-name"); return; }
         openStock(v);
     });
+    $("btn-rename").onclick = () => renommerPartage({ collection: "stocks", partage: stock(), quoi: "ce stock" });
     $("btn-add-storage").onclick = () => { if (S.view) goHome(); showForm("add-storage", "as-name"); };
     // Qui a accès : panneau commun à tout le site
     $("btn-access").onclick = () => {
