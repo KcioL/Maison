@@ -2,6 +2,7 @@
 // MENU : une tuile par appli (la liste vient de commun/apps.js)
 // ==========================================
 import { APPS } from "../commun/apps.js";
+import { surNouveautes } from "../commun/nouveautes.js";
 
 let racine;
 
@@ -26,11 +27,17 @@ export function demarrer(conteneur) {
             img.src = a.logo; img.alt = ""; img.width = 128; img.height = 128;
             ico.appendChild(img);
         } else ico.textContent = a.icon;
+        const point = document.createElement("span");
+        point.className = "app-tile-point"; point.title = "Du nouveau";
+        ico.appendChild(point);
+        tuile.dataset.appli = a.id;
         tuile.querySelector(".app-tile-name").textContent = a.name;
         tuile.querySelector(".app-tile-desc").textContent = a.desc;
         grille.appendChild(tuile);
     });
     majDate();
+    // petit rond sur les applis où quelqu'un a ajouté ou changé quelque chose
+    surNouveautes(etat => grille.querySelectorAll(".app-tile").forEach(t => t.classList.toggle("nouveau", !!etat[t.dataset.appli])));
 }
 
 // la date est remise à jour à chaque retour sur le menu

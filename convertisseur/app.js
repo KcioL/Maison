@@ -13,7 +13,7 @@ import { ecouterMesPartages } from "../commun/partage.js";
 import { esc, toast } from "../commun/ui.js";
 import {
     collection, getDocs, getDocsFromCache, query, orderBy
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+} from "../commun/firestore.js";
 
 // ---------- Ingrédients : grammes pour 1 cup (240 ml) ----------
 const INGREDIENTS = [

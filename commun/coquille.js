@@ -16,6 +16,7 @@ import {
 } from "./compte.js";
 import { esc, toast, ouvrirFeuille } from "./ui.js";
 import { avatar } from "./partage.js";
+import * as nouveautes from "./nouveautes.js";
 
 const TOUTES = [MENU, ...APPS];
 const racineSite = new URL("../", import.meta.url);
@@ -127,6 +128,16 @@ function dessinerDock() {
         }
     }
     document.body.appendChild(dock);
+
+    // petit rond : seulement quand il y a du nouveau, pas encore consulté (commun/nouveautes.js)
+    nouveautes.surNouveautes(etat => {
+        dock.querySelectorAll(".dock-appli[data-appli]").forEach(lien => {
+            const a = TOUTES.find(x => x.id === lien.dataset.appli);
+            const n = !!etat[lien.dataset.appli];
+            lien.classList.toggle("nouveau", n);
+            lien.setAttribute("aria-label", n ? `${a.name} (du nouveau)` : a.name);
+        });
+    });
 
     // Comme dans une appli : la barre ramène là où on en était dans chaque appli
     // (une recette ouverte, une séance en cours…) ; un 2e appui revient à son accueil.
@@ -331,6 +342,7 @@ async function router() {
         ancien.module?.masquer?.();
     }
     courant = def.id;
+    nouveautes.appliAffichee(def.id);
     etat.conteneur.hidden = false;
     document.body.className = document.body.className.replace(/\bappli-\S+/g, "").trim();
     document.body.classList.add(`appli-${def.id}`);
@@ -379,6 +391,8 @@ function demarrerSite() {
 // Déjà connecté sur cet appareil : on affiche le site tout de suite,
 // sans attendre la confirmation de Firebase (les applis, elles, l'attendent).
 if (probablementConnecte()) demarrerSite();
+surChangement(u => { if (u) nouveautes.demarrer(); else nouveautes.arreter(); });
+if (compte.uid) nouveautes.demarrer();
 pret.then(u => {
     if (!u) afficherConnexion();
     else if (!document.body.classList.contains("connecte")) demarrerSite();

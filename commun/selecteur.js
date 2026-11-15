@@ -15,6 +15,7 @@
 import { compte } from "./compte.js";
 import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter, renommerPartage } from "./partage.js";
 import { esc, toast, demanderTexte } from "./ui.js";
+import { affiche } from "./nouveautes.js";
 
 const lire = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const ecrire = (k, v) => { try { localStorage.setItem(k, v); } catch { } };
@@ -22,6 +23,8 @@ const ecrire = (k, v) => { try { localStorage.setItem(k, v); } catch { } };
 export function selecteurPartage({ collection, quoi, nomNouveau, etiquette = "Nom", exemple = "", memo, supprimerContenu, quandChange, quandErreur }) {
     let liste = [], id = null, charge = false, voulu = null;
     const courant = () => liste.find(x => x.id === id) || null;
+    // prévient l'appli, et note ce qui est à l'écran (pour le petit rond « nouveau »)
+    const changer = () => { affiche(collection, courant()?.id); quandChange(courant(), liste); };
 
     ecouterMesPartages(collection, (nouvelle) => {
         liste = nouvelle; charge = true;
@@ -33,14 +36,14 @@ export function selecteurPartage({ collection, quoi, nomNouveau, etiquette = "No
         }
         id = cible;
         if (id) ecrire(memo, id);
-        quandChange(courant(), liste);
+        changer();
     }, (err) => { charge = true; quandErreur?.(err); });
 
     async function creer(nom) {
         try {
             const nouvel = await creerPartage(collection, { name: nom });
             ecrire(memo, nouvel);
-            if (liste.some(x => x.id === nouvel)) { id = nouvel; quandChange(courant(), liste); }
+            if (liste.some(x => x.id === nouvel)) { id = nouvel; changer(); }
             else voulu = nouvel;
             toast(`« ${nom} » créé.`);
             return nouvel;
@@ -72,7 +75,7 @@ export function selecteurPartage({ collection, quoi, nomNouveau, etiquette = "No
                 return;
             }
             id = choix.value; ecrire(memo, id);
-            quandChange(courant(), liste);
+            changer();
         });
         zone.querySelectorAll("[data-sel]").forEach(b => b.addEventListener("click", () => {
             const c = courant(); if (!c) return;

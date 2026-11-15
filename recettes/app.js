@@ -15,6 +15,7 @@ const TITRE = "Les recettes de Jenigger";
 
 /* ========================================================= */
 
+import { affiche } from "../commun/nouveautes.js";
 import { db } from "../commun/firebase.js";
 import { compte } from "../commun/compte.js";
 import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter, renommerPartage } from "../commun/partage.js";
@@ -22,7 +23,7 @@ import { ouvrirFeuille, toast as toastSite } from "../commun/ui.js";
 import {
   collection, doc, getDoc, getDocs, getDocsFromCache, getDocsFromServer, setDoc, updateDoc, deleteDoc, writeBatch,
   query, orderBy, serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+} from "../commun/firestore.js";
 
 let app;              // zone où s'affichent les pages du carnet
 let racine;           // vue de l'appli
@@ -305,6 +306,7 @@ function brancherChoix() {
 function changerCarnet(id) {
   if (id === carnetId) return;
   carnetId = id;
+  affiche("carnets", id);   // pour le petit rond « nouveau » du dock
   if (id) ecrireMemo(id);
   recettesCache = null;
   recherche = "";

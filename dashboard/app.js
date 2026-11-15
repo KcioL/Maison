@@ -3,9 +3,10 @@
 // Appli chargée dans la page principale (voir commun/coquille.js) :
 // demarrer() est appelée une seule fois, avec la vue de l'appli.
 // ==========================================
+import { affiche } from "../commun/nouveautes.js";
 import {
     collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, getDocs, query, orderBy, writeBatch
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+} from "../commun/firestore.js";
 import { db } from "../commun/firebase.js";
 import { compte, nomDe } from "../commun/compte.js";
 import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter, renommerPartage } from "../commun/partage.js";
@@ -82,6 +83,7 @@ function widgetListe(el) {
     function ouvrir(nouvelId) {
         arreterArticles?.(); arreterArticles = null;
         id = nouvelId; articles = [];
+        affiche("listes", id, type);   // pour le petit rond « nouveau » du dock
         if (id) ecrireMemoire(sorte.cle, id);
         dessinerChoix();
         dessiner();

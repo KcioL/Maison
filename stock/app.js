@@ -11,13 +11,14 @@
 // La connexion et le partage sont communs à tout le site :
 //   commun/compte.js (compte connecté) et commun/partage.js (qui a accès)
 // ==========================================
+import { affiche } from "../commun/nouveautes.js";
 import { db } from "../commun/firebase.js";
 import { compte, nomDe } from "../commun/compte.js";
 import { ecouterMesPartages, creerPartage, ouvrirAcces, renommerPartage } from "../commun/partage.js";
 import {
     collection, doc, query, where, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc,
     getDoc, getDocs, writeBatch, deleteField
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+} from "../commun/firestore.js";
 
 let racine, outils;
 
@@ -165,6 +166,7 @@ export function demarrer(conteneur, outilsCoquille) {
     function openStock(id) {
         stopStock();
         S.stockId = id; S.view = null; S.confirm = null; S.editing = null;
+        affiche("stocks", id);   // pour le petit rond « nouveau » du dock
         hide("item-editor", "edit-storage", "add-storage");
         if (id) storeSet("stock-current", id);
         renderAll();

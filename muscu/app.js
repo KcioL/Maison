@@ -14,13 +14,14 @@
 //   exercicesPerso/{id}                  exercices créés par les membres du site,
 //                                        visibles par tout le monde dans le catalogue
 // ==========================================
+import { affiche } from "../commun/nouveautes.js";
 import { db } from "../commun/firebase.js";
 import { compte } from "../commun/compte.js";
 import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter, renommerPartage } from "../commun/partage.js";
 import { esc, toast, ouvrirFeuille, confirmer } from "../commun/ui.js";
 import {
     collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDocs, writeBatch, query, orderBy
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+} from "../commun/firestore.js";
 import { GROUPES, CATALOGUE, groupe, lienVideo } from "./exercices.js";
 
 let racine, outils, zone;
@@ -125,6 +126,7 @@ function ouvrirProgramme(pid) {
     const avant = S.programmeId;
     S.arreterSeances?.(); S.arreterSeances = null;
     S.programmeId = pid; S.seances = []; S.seancesChargees = false;
+    affiche("programmes", pid);   // pour le petit rond « nouveau » du dock
     if (pid) ecrire(MEMO_PROG, pid);
     // en changeant de programme, on revient à sa liste de séances
     // (au premier chargement, on garde la page demandée, par exemple une séance en cours)

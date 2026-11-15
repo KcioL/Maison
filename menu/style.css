@@ -54,6 +54,13 @@
 }
 .vue-menu .app-tile-icon.avec-logo{ background: none; width: 4.5rem; height: 4.5rem; }
 .vue-menu .app-tile-icon.avec-logo img{ width: 100%; height: 100%; display: block; filter: drop-shadow(0 4px 10px rgba(74, 68, 60, 0.15)); }
+.vue-menu .app-tile-icon{ position: relative; }
+.vue-menu .app-tile-point{
+    position: absolute; right: -2px; top: -2px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--tile-color); border: 3px solid var(--card-bg); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+    transform: scale(0); transition: transform 0.3s cubic-bezier(.3, 1.6, .5, 1);
+}
+.vue-menu .app-tile.nouveau .app-tile-point{ transform: scale(1); }
 
 
 @media (max-width: 700px) {

@@ -110,5 +110,15 @@ export const APPS = [
         dossier: "loyer",
         style: "maison",
         color: "#d4a017"
+    },
+    {
+        id: "garage",
+        name: "Garage",
+        short: "Garage",
+        icon: "🔧",
+        desc: "Carnet d'entretien : historique des révisions, alertes au kilométrage (pneus, chaîne, vidange…) et capacités de ton véhicule.",
+        dossier: "garage",
+        style: "maison",
+        color: "#5b7fa6"
     }
 ];

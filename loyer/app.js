@@ -17,7 +17,7 @@ import { db } from "../commun/firebase.js";
 import { compte, nomDe } from "../commun/compte.js";
 import { selecteurPartage, ecouterAvecReessai } from "../commun/selecteur.js";
 import { esc, toast, confirmer } from "../commun/ui.js";
-import { doc, onSnapshot, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { doc, onSnapshot, setDoc, deleteDoc } from "../commun/firestore.js";
 
 const MODES = [
     { id: "egal",    nom: "À parts égales",      aide: "Chacun paie la même part du loyer." },

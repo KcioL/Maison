@@ -13,7 +13,7 @@ import { selecteurPartage, ecouterAvecReessai } from "../commun/selecteur.js";
 import { esc, toast, ouvrirFeuille, confirmer } from "../commun/ui.js";
 import {
     collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, getDocs, writeBatch
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+} from "../commun/firestore.js";
 
 const CATEGORIES = [
     { id: "streaming", nom: "Streaming / TV", emoji: "📺", couleur: "#e07a5f" },
