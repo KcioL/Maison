@@ -116,6 +116,7 @@ export const APPS = [
         name: "Garage",
         short: "Garage",
         icon: "🔧",
+        logo: "commun/logos/garage-192.png",
         desc: "Carnet d'entretien : historique des révisions, alertes au kilométrage (pneus, chaîne, vidange…) et capacités de ton véhicule.",
         dossier: "garage",
         style: "maison",

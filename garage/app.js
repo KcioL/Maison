@@ -91,7 +91,7 @@ const rappelIntervalle = (e) => [e.intervalleKm ? `tous les ${km(e.intervalleKm)
 // ==========================================
 function rendre() {
     if (!zone) return;
-    const entete = `<header><h1 class="titre-logo"><span class="titre-emoji" aria-hidden="true">🔧</span> Garage</h1></header>`;
+    const entete = `<header><h1 class="titre-logo"><img src="commun/logos/garage-192.png" alt="" width="48" height="48"> Garage</h1></header>`;
     if (!sel.charge()) { zone.innerHTML = entete + `<p class="ga-vide chargement">Chargement…</p>`; return; }
     if (!sel.courant()) {
         zone.innerHTML = entete + `<div class="widget ga-vide-carte">
