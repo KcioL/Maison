@@ -12,7 +12,8 @@
 //   vehicules/{id}/donnees/fiche       type, marque, modele, annee, immat, km, kmLe,
 //                                      pneusAv, pneusAr, capacites [{id, nom, valeur}]
 //   vehicules/{id}/entretiens/{id}     nom, intervalleKm, intervalleMois, dernierKm,
-//                                      derniereDate, valeur, note, ordre
+//                                      derniereDate, valeur, note, ordre, source
+//                                      (source : d'où viennent les valeurs, voir modeles.js)
 //   vehicules/{id}/historique/{id}     date, km, titre, details, cout, lieu, entretienId
 // ==========================================
 import { db } from "../commun/firebase.js";
@@ -22,7 +23,7 @@ import { esc, toast, ouvrirFeuille, confirmer } from "../commun/ui.js";
 import {
     collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDocs, writeBatch
 } from "../commun/firestore.js";
-import { TYPES, typeDe, ENTRETIENS, CAPACITES } from "./modeles.js";
+import { TYPES, typeDe, ENTRETIENS, CAPACITES, PLANS, plansPour, planDe, sourcePlan, SOURCE_GENERIQUE } from "./modeles.js";
 
 let racine, outils, zone, sel;
 const FICHE_VIDE = () => ({ type: null, marque: "", modele: "", annee: null, immat: "", km: null, kmLe: null, pneusAv: null, pneusAr: null, capacites: [] });
@@ -145,16 +146,21 @@ function pageEntretiens() {
         .sort((a, b) => RANG[a.st.niveau] - RANG[b.st.niveau] || b.st.avance - a.st.avance || (a.e.ordre || 0) - (b.e.ordre || 0));
     const type = S.fiche.type;
     const proposes = (ENTRETIENS[type] || []).filter(m => !S.entretiens.some(e => e.nom === m.nom));
+    const plans = plansPour(type);
     return `
         ${!S.entretiens.length ? `<div class="widget ga-modeles">
+            ${plans.length ? `<p><b>Ton modèle est-il dans la liste ?</b></p>
+            <p class="muet petit">Intervalles et valeurs recherchés pour ces modèles, avec leurs sources.</p>
+            <div class="ga-plans">${plans.map(x => `<button type="button" class="ga-plan" data-plan="${esc(x.id)}">${esc(x.titre)}<span aria-hidden="true">›</span></button>`).join("")}</div>
+            <p class="muet petit ga-ou">Sinon :</p>` : ""}
             <p><b>Entretiens courants pour ${esc(typeDe(type).nom.toLowerCase())}</b></p>
-            <p class="muet petit">Valeurs indicatives : tu pourras les régler selon le carnet de ton modèle.</p>
-            <button type="button" class="ga-bouton principal" data-action="modeles">Ajouter les ${proposes.length} entretiens courants</button>
+            <p class="ga-avert">⚠️ Valeurs <b>indicatives</b>, pas celles de ton modèle : vérifie-les dans ton carnet d'entretien et ajuste chaque carte avec ✏️.</p>
+            <button type="button" class="ga-bouton ${plans.length ? "" : "principal"}" data-action="modeles">Ajouter les ${proposes.length} entretiens courants</button>
         </div>` : ""}
         <ul class="ga-entretiens">
             ${liste.map(({ e, st }) => `<li class="widget ga-entretien ${st.niveau}" data-id="${esc(e.id)}">
                 <div class="ga-ent-tete">
-                    <div class="ga-ent-nom"><b>${esc(e.nom)}</b><span class="muet petit">${esc(rappelIntervalle(e) || "Sans alerte")}</span></div>
+                    <div class="ga-ent-nom"><b>${esc(e.nom)}</b><span class="muet petit">${esc(rappelIntervalle(e) || "Sans alerte")}</span>${origine(e)}</div>
                     <span class="ga-pastille ${st.niveau}">${ETIQUETTE[st.niveau]}</span>
                 </div>
                 ${e.valeur ? `<p class="ga-valeur">📌 ${esc(e.valeur)}</p>` : ""}
@@ -171,8 +177,19 @@ function pageEntretiens() {
         </ul>
         <div class="ga-ajouts">
             <button type="button" class="ga-ajout" data-action="nouvel-entretien">+ Nouvel entretien</button>
+            ${S.entretiens.length && plans.length ? `<button type="button" class="ga-lien" data-action="plans">📖 Plan d'entretien d'un modèle précis</button>` : ""}
             ${S.entretiens.length && proposes.length ? `<button type="button" class="ga-lien" data-action="modeles">Ajouter les entretiens courants manquants (${proposes.length})</button>` : ""}
         </div>`;
+}
+
+// D'où viennent les valeurs d'un entretien
+const NOMS_GENERIQUES = new Set(Object.values(ENTRETIENS).flat().map(m => m.nom));
+function origine(e) {
+    if (e.source === "manuel") return "";
+    const src = e.source || (NOMS_GENERIQUES.has(e.nom) ? SOURCE_GENERIQUE : "");
+    if (!src) return "";
+    const aVerifier = /à vérifier/.test(src);
+    return `<span class="ga-source ${aVerifier ? "a-verifier" : ""}">${aVerifier ? "⚠️" : "📖"} ${esc(src)}</span>`;
 }
 
 function pageFiche() {
@@ -295,6 +312,8 @@ function ficheEntretien(e) {
             dernierKm: entier(form.dernierKm.value), derniereDate: form.derniereDate.value || null,
             valeur: form.valeur.value.trim() || null, note: form.note.value.trim() || null, modifiePar: compte.uid
         };
+        // valeurs réglées à la main : ce n'est plus « indicatif »
+        if (nouveau || d.intervalleKm !== (e.intervalleKm ?? null) || d.intervalleMois !== (e.intervalleMois ?? null) || d.valeur !== (e.valeur ?? null)) d.source = "manuel";
         f.fermer();
         try {
             if (nouveau) await addDoc(ref.entretiens(), { ...d, ordre: Date.now(), creeLe: Date.now() });
@@ -398,10 +417,70 @@ async function ajouterModeles() {
     const lot = writeBatch(db), t = Date.now();
     proposes.forEach((m, i) => lot.set(doc(ref.entretiens()), {
         nom: m.nom, intervalleKm: m.km, intervalleMois: m.mois, dernierKm: null, derniereDate: null,
-        valeur: m.valeur, note: null, ordre: t + i, creeLe: t, modifiePar: compte.uid
+        valeur: m.valeur, note: null, source: SOURCE_GENERIQUE, ordre: t + i, creeLe: t, modifiePar: compte.uid
     }));
     try { await lot.commit(); toast(`${proposes.length} entretiens ajoutés. Touche « ✓ Fait » pour noter la dernière fois.`); }
     catch (e) { console.error(e); toast("Ajout impossible. Réessaie."); }
+}
+
+// ---------- Plans par modèle ----------
+function fichePlans() {
+    const plans = plansPour(S.fiche.type);
+    const f = ouvrirFeuille({ titre: "Plan d'un modèle précis" });
+    f.corps.innerHTML = `<div class="ga-form">
+        <div class="ga-plans">${plans.map(x => `<button type="button" class="ga-plan" data-plan="${esc(x.id)}">${esc(x.titre)}<span aria-hidden="true">›</span></button>`).join("")}</div>
+        <p class="muet petit">Ton modèle n'y est pas ? Garde les entretiens courants et règle-les selon ton carnet d'entretien.</p></div>`;
+    f.corps.addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-plan]"); if (!b) return;
+        f.fermer(); fichePlan(planDe(b.dataset.plan));
+    });
+}
+
+function fichePlan(plan) {
+    if (!plan) return;
+    const f = ouvrirFeuille({ titre: plan.titre });
+    const intervalle = (e) => [e.km ? km(e.km) : "", e.mois ? `${e.mois} mois` : ""].filter(Boolean).join(" ou ") || "—";
+    f.corps.innerHTML = `<div class="ga-form ga-plan-detail">
+        ${plan.remarque ? `<p class="ga-avert">⚠️ ${esc(plan.remarque)}</p>` : ""}
+        <ul class="ga-plan-liste">${plan.entretiens.map(e => `<li>
+            <div><b>${esc(e.nom)}</b>${e.valeur ? `<span class="muet petit">${esc(e.valeur)}</span>` : ""}</div>
+            <span class="ga-plan-int">${esc(intervalle(e))}${e.verifier ? `<em>à vérifier</em>` : ""}</span></li>`).join("")}</ul>
+        <div class="ga-sources"><b>Sources</b>
+            ${plan.sources.length ? `<ul>${plan.sources.map(x => `<li><a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.nom)}</a></li>`).join("")}</ul>`
+                : `<p class="muet petit">Aucune source constructeur trouvée.</p>`}
+            <p class="muet petit">Le carnet d'entretien de ton véhicule reste la référence.</p>
+        </div>
+        <p class="muet petit">Les entretiens du même nom sont mis à jour (la date et le km de la dernière fois sont gardés). Les entretiens indicatifs jamais faits qui ne sont pas dans ce plan sont retirés.</p>
+        <button class="bouton principal large" type="button" data-appliquer>Appliquer ce plan</button></div>`;
+    f.corps.querySelector("[data-appliquer]").addEventListener("click", () => { f.fermer(); appliquerPlan(plan); });
+}
+
+async function appliquerPlan(plan) {
+    const lot = writeBatch(db), t = Date.now();
+    const noms = new Set(plan.entretiens.map(e => e.nom));
+    let ajoutes = 0, maj = 0, retires = 0;
+    plan.entretiens.forEach((e, i) => {
+        const d = { intervalleKm: e.km, intervalleMois: e.mois, valeur: e.valeur, source: sourcePlan(plan, e), modifiePar: compte.uid };
+        const exist = S.entretiens.find(x => x.nom === e.nom);
+        if (exist) { lot.update(doc(ref.entretiens(), exist.id), d); maj++; }
+        else { lot.set(doc(ref.entretiens()), { nom: e.nom, ...d, dernierKm: null, derniereDate: null, note: null, ordre: t + i, creeLe: t }); ajoutes++; }
+    });
+    // on retire les entretiens indicatifs (générique ou autre plan) jamais faits et absents de ce plan
+    S.entretiens.forEach(x => {
+        const indicatif = x.source === "manuel" ? false : x.source ? !x.source.startsWith(plan.titre) : NOMS_GENERIQUES.has(x.nom);
+        if (indicatif && !noms.has(x.nom) && x.dernierKm == null && !x.derniereDate) { lot.delete(doc(ref.entretiens(), x.id)); retires++; }
+    });
+    try {
+        await lot.commit();
+        // fiche : marque / modèle / année si vides, capacités manquantes
+        const fi = S.fiche, modifs = {};
+        if (!fi.marque) modifs.marque = plan.marque;
+        if (!fi.modele) modifs.modele = plan.modele;
+        const caps = plan.capacites.filter(c => !fi.capacites.some(x => x.nom === c.nom));
+        if (caps.length) modifs.capacites = [...fi.capacites, ...caps.map(c => ({ id: uid(), nom: c.nom, valeur: c.valeur }))];
+        if (Object.keys(modifs).length) await enregistrerFiche(modifs);
+        toast(`Plan appliqué : ${[ajoutes && `${ajoutes} ajouté${ajoutes > 1 ? "s" : ""}`, maj && `${maj} mis à jour`, retires && `${retires} retiré${retires > 1 ? "s" : ""}`].filter(Boolean).join(", ")}.`);
+    } catch (e) { console.error(e); toast("Impossible d'appliquer le plan. Réessaie."); }
 }
 
 async function viderVehicule(vid) {
@@ -427,6 +506,8 @@ function brancher() {
         else if (b.dataset.type) { await enregistrerFiche({ type: b.dataset.type }); }
         else if (a === "km") ficheKm();
         else if (a === "modeles") ajouterModeles();
+        else if (a === "plans") fichePlans();
+        else if (b.dataset.plan) fichePlan(planDe(b.dataset.plan));
         else if (a === "nouvel-entretien") ficheEntretien(null);
         else if (a === "nouvelle-intervention") ficheIntervention(null);
         else if (b.dataset.ent) {

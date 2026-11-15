@@ -161,3 +161,23 @@
 .feuille .ga-form textarea:focus{ outline: none; border-color: var(--accent); }
 .feuille .ga-case{ display: flex; align-items: center; gap: 0.6rem; font-weight: 600; cursor: pointer; min-height: 44px; }
 .feuille .ga-case input{ width: 22px; height: 22px; accent-color: var(--accent); }
+
+/* ---------- Plans par modèle / origine des valeurs ---------- */
+.vue-garage .ga-plans, .feuille .ga-plans{ display: flex; flex-direction: column; gap: 0.4rem; width: 100%; }
+.vue-garage .ga-plan, .feuille .ga-plan{ display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; width: 100%; text-align: left; font: inherit; font-weight: 700; color: inherit; background: var(--field-bg); border: 1px solid transparent; border-radius: 12px; padding: 0.7rem 0.9rem; cursor: pointer; }
+.vue-garage .ga-plan:hover, .feuille .ga-plan:hover{ border-color: var(--accent); }
+.vue-garage .ga-plan span, .feuille .ga-plan span{ color: var(--accent); font-size: 1.3rem; line-height: 1; }
+.vue-garage .ga-ou{ margin-top: 0.3rem; }
+.vue-garage .ga-avert, .feuille .ga-avert{ font-size: 0.88rem; line-height: 1.4; background: color-mix(in srgb, #e0a100 16%, transparent); border-radius: 10px; padding: 0.5rem 0.7rem; margin: 0; }
+.vue-garage .ga-source{ font-size: 0.78rem; opacity: 0.85; margin-top: 0.15rem; }
+.vue-garage .ga-source.a-verifier{ color: #b07800; opacity: 1; }
+:root[data-theme="sombre"] .vue-garage .ga-source.a-verifier{ color: #f0c04a; }
+.feuille .ga-plan-liste{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.feuille .ga-plan-liste li{ display: flex; justify-content: space-between; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid var(--field-bg); }
+.feuille .ga-plan-liste li > div{ display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.feuille .ga-plan-int{ text-align: right; font-size: 0.88rem; white-space: nowrap; display: flex; flex-direction: column; align-items: flex-end; }
+.feuille .ga-plan-int em{ font-style: normal; font-size: 0.72rem; font-weight: 700; color: #b07800; }
+:root[data-theme="sombre"] .feuille .ga-plan-int em{ color: #f0c04a; }
+.feuille .ga-sources{ font-size: 0.88rem; }
+.feuille .ga-sources ul{ margin: 0.3rem 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.feuille .ga-sources a{ color: var(--accent); overflow-wrap: anywhere; }

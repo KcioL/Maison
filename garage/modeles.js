@@ -68,6 +68,7 @@ export const ENTRETIENS = {
 };
 
 // Capacités et références proposées sur la fiche technique
+export const SOURCE_GENERIQUE = "Valeur indicative (modèle générique) · à vérifier";
 export const CAPACITES = {
     moto: ["Huile moteur", "Liquide de refroidissement", "Liquide de frein", "Huile de fourche (par tube)", "Chaîne (référence)", "Pneus (dimensions)", "Bougies (référence)", "Batterie", "Réservoir d'essence"],
     voiture: ["Huile moteur", "Liquide de refroidissement", "Liquide de frein", "Lave-glace", "Boîte de vitesses", "Pneus (dimensions)", "Batterie", "Réservoir de carburant"],
@@ -75,3 +76,117 @@ export const CAPACITES = {
     velo: ["Pneus (dimensions)", "Chaîne (référence)", "Cassette", "Plaquettes de frein", "Liquide de frein (huile minérale / DOT)"],
     autre: ["Huile", "Pneus (dimensions)", "Batterie"]
 };
+
+// ==========================================
+// PLANS PAR MODÈLE
+// Valeurs recherchées pour un modèle précis, avec leurs sources.
+// « verifier: true » = pas trouvé dans un document du constructeur
+// (source secondaire ou valeur habituelle) : l'appli affiche « à vérifier ».
+// Pour ajouter un modèle : copier un bloc, garder des noms d'entretien
+// identiques aux modèles génériques quand c'est la même chose.
+// ==========================================
+const p = (nom, km, mois, valeur = null, verifier = false) => ({ nom, km, mois, valeur, verifier });
+
+export const PLANS = [
+    {
+        id: "yamaha-yzf-r6-2017",
+        type: "moto", marque: "Yamaha", modele: "YZF-R6", annee: 2020,
+        titre: "Yamaha YZF-R6 (2017-2020)",
+        sources: [
+            { nom: "Programme d'entretien du manuel du propriétaire Yamaha (version Europe), repris par MaintenanceSchedule.com", url: "https://maintenanceschedule.com/yamaha-r6-4th-gen-maintenance/" }
+        ],
+        remarque: "Pression des pneus et mou de chaîne : non trouvés dans les sources, à lire dans le manuel.",
+        entretiens: [
+            p("Pression des pneus", null, 1, "À froid : voir le manuel", true),
+            p("Graissage de la chaîne", 800, null, "Et après chaque lavage ou sortie sous la pluie"),
+            p("Tension de la chaîne", 1000, null, "Mou : voir le manuel", true),
+            p("Vidange huile moteur", 10000, 12, "Yamalube 10W-40 ou 10W-50"),
+            p("Filtre à huile", 20000, null),
+            p("Bougies", 20000, null, "NGK CR10EK · écartement 0,6 à 0,7 mm"),
+            p("Filtre à air", 40000, null),
+            p("Jeu aux soupapes", 40000, null),
+            p("Purge liquide de frein", null, 24, "DOT 4"),
+            p("Durites de frein", null, 48),
+            p("Liquide de refroidissement", null, 36),
+            p("Graissage roulements de bras oscillant", 50000, null)
+        ],
+        capacites: [
+            { nom: "Bougies (référence)", valeur: "NGK CR10EK · 0,6 à 0,7 mm" },
+            { nom: "Huile moteur", valeur: "10W-40 ou 10W-50 · quantité : voir le manuel" },
+            { nom: "Liquide de frein", valeur: "DOT 4" }
+        ]
+    },
+    {
+        id: "peugeot-206-14-hdi",
+        type: "voiture", marque: "Peugeot", modele: "206 1.4 HDi", annee: 2007,
+        titre: "Peugeot 206 1.4 HDi (diesel)",
+        sources: [
+            { nom: "AD : courroie de distribution de la 206 1.4 HDi", url: "https://www.ad.fr/guides/guide-conseil/distribution/courroie-de-distribution-206-quand-la-changer-et-a-quel-prix" },
+            { nom: "auto-abc.eu : huile 5W-30, 3,75 L", url: "https://www.auto-abc.eu/peugeot-206/v8453-2005" },
+            { nom: "idgarages : carnet d'entretien 206 (version 1.9 D, la plus proche publiée)", url: "https://www.idgarages.com/fr-fr/entretien/peugeot/carnet-entretien-peugeot-206" }
+        ],
+        remarque: "Aucun carnet constructeur du 1.4 HDi trouvé en ligne : les intervalles de filtres et de liquides viennent du diesel 1.9 D, à confirmer avec ton carnet.",
+        entretiens: [
+            p("Pression des pneus", null, 1, "Voir l'étiquette sur la portière conducteur"),
+            p("Vidange huile moteur + filtre", 20000, 24, "5W-30 · 3,75 L", true),
+            p("Filtre d'habitacle", 20000, 24, null, true),
+            p("Filtre à air", 60000, null, null, true),
+            p("Filtre à gazole", 60000, null, null, true),
+            p("Purge liquide de frein", 60000, 24, "DOT 4", true),
+            p("Liquide de refroidissement", 120000, 120, null, true),
+            p("Courroie de distribution", 240000, 120, "Kit complet avec galets"),
+            p("Contrôle technique", null, 24)
+        ],
+        capacites: [
+            { nom: "Huile moteur", valeur: "5W-30 · 3,75 L avec filtre" }
+        ]
+    },
+    {
+        id: "renault-captur-15-dci",
+        type: "voiture", marque: "Renault", modele: "Captur 1.5 dCi", annee: 2018,
+        titre: "Renault Captur 1.5 dCi (2013-2019)",
+        sources: [
+            { nom: "idgarages : révision du Captur diesel (2 ans ou 30 000 km)", url: "https://www.idgarages.com/fr-fr/vehicules/renault/renault-captur-revision-generale-diesel" },
+            { nom: "AD : courroie de distribution du Captur 1.5 dCi 90", url: "https://www.ad.fr/guides/guide-conseil/distribution/renault-captur-courroie-de-distribution" },
+            { nom: "auto-abc.eu : huile, liquide de refroidissement, bougies de préchauffage (dCi 110)", url: "https://www.auto-abc.eu/Renault-Captur/v20211-2017/service" }
+        ],
+        remarque: "Les sources ne s'accordent pas toutes : le témoin d'entretien du tableau de bord peut demander la vidange plus tôt (trajets courts, ville). Suis-le en priorité.",
+        entretiens: [
+            p("Pression des pneus", null, 1, "Voir l'étiquette sur la portière conducteur"),
+            p("Vidange huile moteur + filtre", 30000, 24, "5W-30 · environ 4,5 L"),
+            p("Filtre d'habitacle", 30000, 24, null, true),
+            p("Filtre à air", 60000, null, null, true),
+            p("Filtre à gazole", 60000, null, null, true),
+            p("Purge liquide de frein", null, 24, "DOT 4", true),
+            p("Liquide de refroidissement", 90000, 60),
+            p("Courroie de distribution", 160000, 72, "Valeur du dCi 90 : vérifie pour le dCi 110"),
+            p("Bougies de préchauffage", 120000, null),
+            p("Contrôle technique", null, 24)
+        ],
+        capacites: [
+            { nom: "Huile moteur", valeur: "5W-30 · environ 4,5 L à la vidange (4,9 L au total)" },
+            { nom: "Liquide de refroidissement", valeur: "5 L" }
+        ]
+    },
+    {
+        id: "peugeot-e-3008",
+        type: "voiture", marque: "Peugeot", modele: "e-3008", annee: 2026,
+        titre: "Peugeot e-3008 électrique (depuis 2024)",
+        sources: [],
+        remarque: "Aucun plan d'entretien Peugeot publié pour le e-3008 trouvé en ligne. Ces intervalles sont ceux habituels des Peugeot électriques : à confirmer dans le carnet ou l'appli MyPeugeot.",
+        entretiens: [
+            p("Pression des pneus", null, 1, "Voir l'étiquette sur la portière conducteur"),
+            p("Révision (batterie, freins, trains roulants)", 25000, 24, null, true),
+            p("Filtre d'habitacle", 25000, 24, null, true),
+            p("Purge liquide de frein", null, 24, "DOT 4", true),
+            p("Contrôle batterie 12 V", null, 24, null, true),
+            p("Contrôle technique", null, 24, "Le premier à 4 ans, puis tous les 2 ans")
+        ],
+        capacites: []
+    }
+];
+export const plansPour = (type) => PLANS.filter(x => x.type === type);
+export const planDe = (id) => PLANS.find(x => x.id === id);
+
+// Texte « source » enregistré sur chaque entretien ajouté depuis un plan
+export const sourcePlan = (plan, e) => `${plan.titre}${e.verifier ? " · à vérifier" : ""}`.slice(0, 120);
