@@ -303,8 +303,12 @@ export async function demarrer(racine) {
     });
 
     closeModalBtn.addEventListener('click', () => { weatherModal.style.display = 'none'; });
+    // ferme seulement si le clic a commencé sur le fond (sélection de texte = pas de fermeture)
+    let appuiSurFond = false;
+    window.addEventListener('pointerdown', (e) => { appuiSurFond = e.target === weatherModal; });
     window.addEventListener('click', (e) => {
-        if (e.target === weatherModal) weatherModal.style.display = 'none';
+        if (e.target === weatherModal && appuiSurFond) weatherModal.style.display = 'none';
+        appuiSurFond = false;
     });
 
     function handleCitySearch() {

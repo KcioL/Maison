@@ -43,7 +43,11 @@ export function ouvrirFeuille({ titre, quandFerme } = {}) {
         quandFerme?.();
     };
     const surTouche = (e) => { if (e.key === "Escape") fermer(); };
-    fond.addEventListener("click", (e) => { if (e.target === fond) fermer(); });
+    // On ne ferme en touchant le fond que si le clic a COMMENCÉ sur le fond :
+    // sélectionner du texte dans un champ et relâcher la souris dehors ne ferme plus la fenêtre.
+    let appuiSurFond = false;
+    fond.addEventListener("pointerdown", (e) => { appuiSurFond = e.target === fond; });
+    fond.addEventListener("click", (e) => { if (e.target === fond && appuiSurFond) fermer(); appuiSurFond = false; });
     fond.querySelector(".feuille-fermer").addEventListener("click", fermer);
     document.addEventListener("keydown", surTouche);
     document.body.appendChild(fond);

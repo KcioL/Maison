@@ -190,3 +190,58 @@ export const planDe = (id) => PLANS.find(x => x.id === id);
 
 // Texte « source » enregistré sur chaque entretien ajouté depuis un plan
 export const sourcePlan = (plan, e) => `${plan.titre}${e.verifier ? " · à vérifier" : ""}`.slice(0, 120);
+
+// ==========================================
+// RECONNAÎTRE LES ENTRETIENS DANS UNE INTERVENTION
+// « Révision : vidange, filtre à huile, bougies » -> Vidange…, Filtre à huile, Bougies
+// Chaque règle : [motif dans le NOM de l'entretien, motif dans le TEXTE de l'intervention].
+// La première règle dont le motif de nom correspond s'applique (les plus précises d'abord).
+// ==========================================
+export const normaliser = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/['’]/g, " ");
+const REGLES = [
+    [/prechauffage/, /prechauffage/],
+    [/bougie/, /\bbougies?\b(?! de prechauffage)/],
+    [/filtre a huile/, /filtre (a |d )?huile|vidange[^.;]*filtre|filtre[^.;]*vidange/],
+    [/vidange|huile moteur/, /vidange|changement (de l |d )?huile|huile moteur/],
+    [/filtre a air/, /filtre (a )?air/],
+    [/habitacle/, /habitacle|pollen/],
+    [/gazole|carburant/, /gazole|gasoil|filtre (a )?carburant/],
+    [/liquide de frein|purge/, /liquide de frein|purge|dot ?[345]/],
+    [/durite/, /durite/],
+    [/plaquette/, /plaquette/],
+    [/refroidissement/, /refroidissement|antigel|liquide de refroid/],
+    [/pression/, /pression|gonfl/],
+    [/kit chaine/, /kit chaine|pignon|couronne/],
+    [/roulement|bras oscillant/, /roulement|bras oscillant/],
+    [/tension/, /tension|mou (de )?(la )?chaine|retendu|tendu/],
+    [/chaine/, /grais|lubrif/],
+    [/soupape/, /soupape/],
+    [/distribution/, /distribution/],
+    [/courroie/, /courroie/],
+    [/galet/, /galet/],
+    [/transmission/, /transmission/],
+    [/batterie/, /batterie/],
+    [/permutation/, /permut/],
+    [/controle technique/, /controle technique|\bct\b/],
+    [/revision/, /revision/]
+];
+const MOTS_VIDES = new Set(["de", "la", "le", "les", "du", "des", "et", "a", "au", "aux", "d", "l", "un", "une", "tous", "pour"]);
+// Renvoie les ids des entretiens reconnus dans le texte
+export function entretiensReconnus(texte, entretiens) {
+    const t = normaliser(texte);
+    if (!t.trim()) return new Set();
+    const ids = new Set();
+    for (const e of entretiens) {
+        const nom = normaliser(e.nom);
+        const regle = REGLES.find(([n]) => n.test(nom));
+        let ok;
+        if (regle) ok = regle[1].test(t);
+        else {
+            // entretien perso : tous ses mots importants présents dans le texte
+            const mots = nom.split(/[^a-z0-9]+/).filter(m => m.length > 2 && !MOTS_VIDES.has(m));
+            ok = mots.length > 0 && mots.every(m => t.includes(m));
+        }
+        if (ok) ids.add(e.id);
+    }
+    return ids;
+}

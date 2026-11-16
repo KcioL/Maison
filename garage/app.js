@@ -24,7 +24,7 @@ import { esc, toast, ouvrirFeuille, confirmer } from "../commun/ui.js";
 import {
     collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDocs, writeBatch
 } from "../commun/firestore.js";
-import { TYPES, typeDe, ENTRETIENS, CAPACITES, PLANS, plansPour, planDe, sourcePlan, SOURCE_GENERIQUE } from "./modeles.js";
+import { TYPES, typeDe, ENTRETIENS, CAPACITES, PLANS, plansPour, planDe, sourcePlan, SOURCE_GENERIQUE, entretiensReconnus } from "./modeles.js";
 
 let racine, outils, zone, sel;
 const FICHE_VIDE = () => ({ type: null, marque: "", modele: "", annee: null, immat: "", km: null, kmLe: null, pneusAv: null, pneusAr: null, capacites: [] });
@@ -365,7 +365,7 @@ function ficheIntervention(h) {
     const x = h || { date: aujourdhuiISO(), km: S.fiche.km, titre: "", details: null, cout: null, lieu: null };
     const f = ouvrirFeuille({ titre: nouveau ? "Nouvelle intervention" : "Modifier l'intervention" });
     f.corps.innerHTML = `<form class="ga-form" autocomplete="off">
-        <label class="champ"><span>Intervention</span><input name="titre" maxlength="80" required value="${esc(x.titre)}" placeholder="Ex. Révision des 12 000 km" list="ga-noms"></label>
+        <label class="champ"><span>Intervention</span><input name="titre" maxlength="80" required value="${esc(x.titre)}" placeholder="Ex. Révision : vidange, filtre à huile" list="ga-noms"></label>
         <datalist id="ga-noms">${S.entretiens.map(e => `<option value="${esc(e.nom)}">`).join("")}</datalist>
         <div class="ga-form2">
             <label class="champ"><span>Date</span><input name="date" type="date" required value="${esc(x.date || "")}"></label>
@@ -376,21 +376,92 @@ function ficheIntervention(h) {
             <label class="champ"><span>Où</span><input name="lieu" maxlength="60" value="${esc(x.lieu || "")}" placeholder="Moi, garage…"></label>
         </div>
         <label class="champ"><span>Détails</span><textarea name="details" maxlength="300" rows="3" placeholder="Pièces changées, produits utilisés…">${esc(x.details || "")}</textarea></label>
+        <fieldset class="ga-lies"></fieldset>
         <button class="bouton principal large" type="submit">${nouveau ? "Ajouter" : "Enregistrer"}</button></form>`;
-    const form = f.corps.querySelector("form");
+    const form = f.corps.querySelector("form"), zoneLies = form.querySelector(".ga-lies");
     if (nouveau) setTimeout(() => form.titre.focus(), 50);
+
+    // Entretiens concernés : reconnus dans le titre et les détails (nouvelle intervention),
+    // ou cochés à la main. Un choix fait à la main n'est plus changé par la détection.
+    const choixManuels = new Map();
+    const creation = { coche: false, nom: null, km: "", mois: "" };
+    let reconnus = new Set();
+    const coches = () => S.entretiens.filter(e => choixManuels.has(e.id) ? choixManuels.get(e.id) : reconnus.has(e.id));
+    function dessinerLies() {
+        if (nouveau) reconnus = entretiensReconnus(`${form.titre.value} ${form.details.value}`, S.entretiens);
+        const liste = coches(), titre = form.titre.value.trim();
+        if (creation.nom === null || !creation.touche) creation.nom = titre;
+        const proposerCreation = !liste.length && titre;
+        zoneLies.innerHTML = `
+            ${S.entretiens.length ? `<legend>Entretiens remis à zéro</legend>
+            <p class="muet petit">${nouveau ? "Reconnus d'après ce que tu écris ; touche pour cocher ou décocher." : "Coche ceux faits pendant cette intervention."}</p>
+            <div class="ga-lies-puces">${S.entretiens.map(e => {
+                const c = liste.includes(e);
+                return `<button type="button" class="ga-puce-lie ${c ? "coche" : ""}" data-lie="${esc(e.id)}" aria-pressed="${c}">${c ? "✓ " : ""}${esc(e.nom)}</button>`;
+            }).join("")}</div>` : `<legend>Suivi</legend>`}
+            ${proposerCreation ? `<div class="ga-creer">
+                <label class="ga-case"><input type="checkbox" data-creer ${creation.coche ? "checked" : ""}><span>${S.entretiens.length ? "Aucun entretien reconnu : " : ""}<b>suivre cette intervention comme un entretien</b></span></label>
+                ${creation.coche ? `<label class="champ"><span>Nom de l'entretien</span><input data-creer-nom maxlength="60" value="${esc(creation.nom)}"></label>
+                <div class="ga-form2">
+                    <label class="champ"><span>À refaire tous les… (km)</span><input data-creer-km type="number" min="0" max="500000" inputmode="numeric" value="${esc(creation.km)}" placeholder="—"></label>
+                    <label class="champ"><span>ou tous les… (mois)</span><input data-creer-mois type="number" min="0" max="240" inputmode="numeric" value="${esc(creation.mois)}" placeholder="—"></label>
+                </div>
+                <p class="muet petit">Tu pourras le renommer ou le régler ensuite dans Entretiens (✏️).</p>` : ""}
+            </div>` : ""}`;
+    }
+    dessinerLies();
+    let attente = 0;
+    const redessinerBientot = () => { clearTimeout(attente); attente = setTimeout(dessinerLies, 250); };
+    form.titre.addEventListener("input", redessinerBientot);
+    form.details.addEventListener("input", redessinerBientot);
+    zoneLies.addEventListener("click", (ev) => {
+        const b = ev.target.closest("[data-lie]"); if (!b) return;
+        choixManuels.set(b.dataset.lie, b.getAttribute("aria-pressed") !== "true");
+        dessinerLies();
+    });
+    zoneLies.addEventListener("change", (ev) => {
+        if (ev.target.matches("[data-creer]")) { creation.coche = ev.target.checked; dessinerLies(); if (creation.coche) zoneLies.querySelector("[data-creer-nom]")?.focus(); }
+    });
+    zoneLies.addEventListener("input", (ev) => {
+        if (ev.target.matches("[data-creer-nom]")) { creation.nom = ev.target.value; creation.touche = true; }
+        else if (ev.target.matches("[data-creer-km]")) creation.km = ev.target.value;
+        else if (ev.target.matches("[data-creer-mois]")) creation.mois = ev.target.value;
+    });
+
     form.addEventListener("submit", async (ev) => {
         ev.preventDefault();
+        clearTimeout(attente); dessinerLies();
         const d = {
             date: form.date.value || aujourdhuiISO(), km: entier(form.km.value), titre: form.titre.value.trim(),
             details: form.details.value.trim() || null, cout: decimal(form.cout.value), lieu: form.lieu.value.trim() || null
         };
+        const lies = coches();
+        const aCreer = !lies.length && creation.coche && (creation.nom || "").trim()
+            ? { nom: creation.nom.trim().slice(0, 60), km: entier(creation.km) || null, mois: entier(creation.mois) || null } : null;
         f.fermer();
         try {
-            if (nouveau) await addDoc(ref.historique(), { ...d, entretienId: null, creeLe: Date.now(), creePar: compte.uid });
+            let idCree = null;
+            if (aCreer) {
+                const r = doc(ref.entretiens());
+                await setDoc(r, {
+                    nom: aCreer.nom, intervalleKm: aCreer.km, intervalleMois: aCreer.mois, dernierKm: d.km, derniereDate: d.date,
+                    valeur: null, note: null, source: "manuel", ordre: Date.now(), creeLe: Date.now(), modifiePar: compte.uid
+                });
+                idCree = r.id;
+            }
+            // chaque entretien coché repart de cette intervention (si elle est plus récente)
+            let remis = 0;
+            for (const e of lies) {
+                const m = {};
+                if (!e.derniereDate || d.date >= e.derniereDate) m.derniereDate = d.date;
+                if (d.km != null && (e.dernierKm == null || d.km > e.dernierKm)) m.dernierKm = d.km;
+                if (Object.keys(m).length) { await updateDoc(doc(ref.entretiens(), e.id), { ...m, modifiePar: compte.uid }); remis++; }
+            }
+            if (nouveau) await addDoc(ref.historique(), { ...d, entretienId: idCree || lies[0]?.id || null, creeLe: Date.now(), creePar: compte.uid });
             else await updateDoc(doc(ref.historique(), h.id), d);
             if (d.km != null && (S.fiche.km == null || d.km > S.fiche.km)) await enregistrerFiche({ km: d.km, kmLe: d.date });
-            toast(nouveau ? "Intervention ajoutée." : "Intervention mise à jour.");
+            const extra = aCreer ? ` · entretien « ${aCreer.nom} » créé` : remis ? ` · ${remis} entretien${remis > 1 ? "s" : ""} remis à zéro` : "";
+            toast((nouveau ? "Intervention ajoutée" : "Intervention mise à jour") + extra + ".");
         } catch (err) { console.error(err); toast("Enregistrement impossible. Réessaie."); }
     });
 }
