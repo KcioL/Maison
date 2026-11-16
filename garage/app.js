@@ -15,6 +15,7 @@
 //                                      derniereDate, valeur, note, ordre, source
 //                                      (source : d'où viennent les valeurs, voir modeles.js)
 //   vehicules/{id}/historique/{id}     date, km, titre, details, cout, lieu, entretienId
+//   vehicules/{id}/donnees/photo       data (photo réduite en data URL, facultative)
 // ==========================================
 import { db } from "../commun/firebase.js";
 import { compte } from "../commun/compte.js";
@@ -28,13 +29,14 @@ import { TYPES, typeDe, ENTRETIENS, CAPACITES, PLANS, plansPour, planDe, sourceP
 let racine, outils, zone, sel;
 const FICHE_VIDE = () => ({ type: null, marque: "", modele: "", annee: null, immat: "", km: null, kmLe: null, pneusAv: null, pneusAr: null, capacites: [] });
 const S = {
-    vid: null, fiche: FICHE_VIDE(), ficheChargee: false,
+    vid: null, fiche: FICHE_VIDE(), ficheChargee: false, photo: null,
     entretiens: [], entretiensCharges: false, historique: [], historiqueCharge: false,
     arrets: [], onglet: "entretiens"
 };
 
 const ref = {
     fiche: (v = S.vid) => doc(db, "vehicules", v, "donnees", "fiche"),
+    photo: (v = S.vid) => doc(db, "vehicules", v, "donnees", "photo"),
     entretiens: (v = S.vid) => collection(db, "vehicules", v, "entretiens"),
     historique: (v = S.vid) => collection(db, "vehicules", v, "historique")
 };
@@ -121,7 +123,9 @@ function rendre() {
     const onglets = [["entretiens", "🔔 Entretiens"], ["fiche", "📋 Fiche<span class=\"ga-o-long\"> technique</span>"], ["historique", "🗂️ Historique"]];
     zone.innerHTML = entete + sel.barre() + `
         <section class="widget ga-vehicule">
-            <span class="ga-vehicule-emoji">${type.emoji}</span>
+            <button type="button" class="ga-vehicule-photo ${S.photo ? "avec" : ""}" data-action="photo" aria-label="${S.photo ? "Voir la photo du véhicule" : "Ajouter une photo du véhicule"}">
+                ${S.photo ? `<img src="${esc(S.photo)}" alt="">` : `<span class="ga-vehicule-emoji">${type.emoji}</span><span class="ga-photo-badge" aria-hidden="true">📷</span>`}
+            </button>
             <div class="ga-vehicule-infos">
                 <b>${esc([f.marque, f.modele].filter(Boolean).join(" ") || v.name)}</b>
                 <span class="muet">${esc([f.annee, f.immat].filter(Boolean).join(" · ") || type.nom)}</span>
@@ -483,6 +487,67 @@ async function appliquerPlan(plan) {
     } catch (e) { console.error(e); toast("Impossible d'appliquer le plan. Réessaie."); }
 }
 
+// ---------- Photo du véhicule (facultative) ----------
+// Comme pour les recettes : stockée dans Firestore en data URL (pas de Cloud Storage,
+// payant), réduite pour rester bien sous la limite de 1 Mo par document.
+function lireImage(fichier) {
+    return new Promise((ok, ko) => {
+        const img = new Image(), url = URL.createObjectURL(fichier);
+        img.onload = () => { URL.revokeObjectURL(url); ok(img); };
+        img.onerror = () => { URL.revokeObjectURL(url); ko(new Error("illisible")); };
+        img.src = url;
+    });
+}
+async function reduirePhoto(fichier) {
+    const img = await lireImage(fichier);
+    for (const [taille, qualite] of [[1200, 0.8], [1000, 0.72], [800, 0.65], [600, 0.6]]) {
+        const r = Math.min(1, taille / Math.max(img.naturalWidth, img.naturalHeight));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.naturalWidth * r); c.height = Math.round(img.naturalHeight * r);
+        const ctx = c.getContext("2d");
+        ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        const data = c.toDataURL("image/jpeg", qualite);
+        if (data.length < 450000) return data;
+    }
+    throw new Error("trop grande");
+}
+
+function fichePhoto() {
+    const vid = S.vid;
+    const f = ouvrirFeuille({ titre: "Photo du véhicule" });
+    const dessiner = () => {
+        f.corps.innerHTML = `<div class="ga-form ga-photo-feuille">
+            ${S.photo ? `<img class="ga-photo-grande" src="${esc(S.photo)}" alt="Photo du véhicule">`
+                : `<p class="muet">Facultatif : une photo pour reconnaître le véhicule d'un coup d'œil.</p>`}
+            <label class="bouton principal large ga-photo-choisir">${S.photo ? "Changer la photo" : "📷 Choisir une photo"}
+                <input type="file" accept="image/*" hidden></label>
+            ${S.photo ? `<button type="button" class="bouton large ga-photo-retirer">Retirer la photo</button>` : ""}
+        </div>`;
+        f.corps.querySelector("input[type=file]").addEventListener("change", async (ev) => {
+            const fichier = ev.target.files?.[0]; if (!fichier) return;
+            const lab = f.corps.querySelector(".ga-photo-choisir");
+            lab.classList.add("occupe"); lab.firstChild.textContent = "Envoi…";
+            try {
+                const data = await reduirePhoto(fichier);
+                await setDoc(ref.photo(vid), { data, modifieLe: Date.now(), modifiePar: compte.uid });
+                if (vid === S.vid) S.photo = data;
+                f.fermer(); rendre(); toast("Photo enregistrée.");
+            } catch (e) {
+                console.error(e);
+                toast(e.message === "illisible" ? "Cette photo n'a pas pu être lue. Essaie en JPEG ou PNG." : "Photo non enregistrée. Réessaie.");
+                dessiner();
+            }
+        });
+        f.corps.querySelector(".ga-photo-retirer")?.addEventListener("click", async () => {
+            if (!await confirmer({ titre: "Retirer la photo ?", bouton: "Retirer", danger: true })) return;
+            try { await deleteDoc(ref.photo(vid)); if (vid === S.vid) S.photo = null; f.fermer(); rendre(); toast("Photo retirée."); }
+            catch (e) { console.error(e); toast("Impossible de retirer la photo."); }
+        });
+    };
+    dessiner();
+}
+
 async function viderVehicule(vid) {
     for (const col of [ref.entretiens(vid), ref.historique(vid)]) {
         const snap = await getDocs(col);
@@ -492,6 +557,7 @@ async function viderVehicule(vid) {
             await lot.commit();
         }
     }
+    await deleteDoc(ref.photo(vid));
     await deleteDoc(ref.fiche(vid));
 }
 
@@ -505,6 +571,7 @@ function brancher() {
         if (a === "creer") { b.disabled = true; await sel.creer("Mon véhicule"); b.disabled = false; }
         else if (b.dataset.type) { await enregistrerFiche({ type: b.dataset.type }); }
         else if (a === "km") ficheKm();
+        else if (a === "photo") fichePhoto();
         else if (a === "modeles") ajouterModeles();
         else if (a === "plans") fichePlans();
         else if (b.dataset.plan) fichePlan(planDe(b.dataset.plan));
@@ -570,7 +637,7 @@ function ouvrir(vehicule) {
     const vid = vehicule?.id || null;
     if (vid === S.vid) { if (!saisieEnCours()) rendre(); return; }
     S.arrets.forEach(f => f()); S.arrets = [];
-    Object.assign(S, { vid, fiche: FICHE_VIDE(), ficheChargee: false, entretiens: [], entretiensCharges: false, historique: [], historiqueCharge: false });
+    Object.assign(S, { vid, photo: null, fiche: FICHE_VIDE(), ficheChargee: false, entretiens: [], entretiensCharges: false, historique: [], historiqueCharge: false });
     rendre();
     if (!vid) return;
     const valable = () => vid === S.vid;
@@ -583,6 +650,13 @@ function ouvrir(vehicule) {
         if (!premier && (minuteurFiche || saisieEnCours())) return;
         S.fiche = { ...FICHE_VIDE(), ...d, capacites: (d.capacites || []).map(c => ({ ...c })) };
         rendre();
+    }, ko), valable));
+    S.arrets.push(ecouterAvecReessai((ko) => onSnapshot(ref.photo(vid), snap => {
+        if (!valable()) return;
+        const p = snap.exists() ? snap.data().data || null : null;
+        if (p === S.photo) return;
+        S.photo = p;
+        if (!saisieEnCours()) rendre();
     }, ko), valable));
     S.arrets.push(ecouterAvecReessai((ko) => onSnapshot(ref.entretiens(vid), snap => {
         if (!valable()) return;

@@ -181,3 +181,19 @@
 .feuille .ga-sources{ font-size: 0.88rem; }
 .feuille .ga-sources ul{ margin: 0.3rem 0; padding-left: 1.1rem; display: flex; flex-direction: column; gap: 0.25rem; }
 .feuille .ga-sources a{ color: var(--accent); overflow-wrap: anywhere; }
+
+/* ---------- Photo du véhicule ---------- */
+.vue-garage .ga-vehicule-photo{
+    position: relative; width: 64px; height: 64px; border-radius: 16px; border: 2px dashed var(--line);
+    background: var(--field-bg); display: grid; place-items: center; cursor: pointer; padding: 0; color: inherit; overflow: visible;
+}
+.vue-garage .ga-vehicule-photo.avec{ border: none; background: none; }
+.vue-garage .ga-vehicule-photo img{ width: 100%; height: 100%; object-fit: cover; border-radius: 16px; display: block; box-shadow: 0 2px 8px rgba(0,0,0,0.18); }
+.vue-garage .ga-vehicule-photo:hover{ border-color: var(--accent); }
+.vue-garage .ga-photo-badge{ position: absolute; right: -6px; bottom: -6px; font-size: 0.85rem; background: var(--card-bg, var(--field-bg)); border-radius: 50%; width: 24px; height: 24px; display: grid; place-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+.feuille .ga-photo-grande{ width: 100%; max-height: 60vh; object-fit: contain; border-radius: 14px; background: var(--field-bg); }
+.feuille .ga-photo-choisir{ text-align: center; cursor: pointer; }
+.feuille .ga-photo-choisir.occupe{ opacity: 0.6; pointer-events: none; }
+@media (max-width: 700px) {
+    .vue-garage .ga-vehicule-photo{ width: 56px; height: 56px; }
+}
