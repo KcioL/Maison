@@ -38,10 +38,25 @@ export const pret = new Promise(r => { resoudrePret = r; });
 const ecouteurs = new Set();
 export function surChangement(fn) { ecouteurs.add(fn); return () => ecouteurs.delete(fn); }
 
+// Firestore ne regarde pas « u.emailVerified » mais le jeton de connexion, qui peut dater
+// d'avant la vérification de l'e-mail (il n'est renouvelé que toutes les heures).
+// Dans ce cas les écritures « réservées aux comptes vérifiés » (prénom, annuaire) sont refusées :
+// on redemande un jeton à jour.
+async function jetonAJour(u = auth.currentUser) {
+    if (!u) return false;
+    try {
+        if (!u.emailVerified) await u.reload();          // vérifié depuis un autre appareil / onglet ?
+        if (!u.emailVerified) return false;
+        const jeton = await u.getIdTokenResult();
+        if (jeton.claims.email_verified !== true) await u.getIdToken(true);
+        return true;
+    } catch (e) { console.warn("Jeton :", e); return !!u.emailVerified; }
+}
+
 onAuthStateChanged(auth, async (u) => {
     if (u) {
         compte.uid = u.uid; compte.email = emailCle(u.email); compte.user = u;
-        compte.verifie = !!u.emailVerified;
+        compte.verifie = await jetonAJour(u);
         compte.nom = (u.email || "").split("@")[0];
         try { localStorage.setItem(INDICE, "1"); } catch { }
         inscrireAnnuaire();
@@ -112,7 +127,14 @@ async function inscrireAnnuaire() {
 export async function changerNom(nom) {
     nom = String(nom).trim().slice(0, 40);
     if (!nom || !compte.verifie) return false;
-    await setDoc(doc(db, "annuaire", compte.email), { uid: compte.uid, name: nom });
+    const ref = doc(db, "annuaire", compte.email), donnees = { uid: compte.uid, name: nom };
+    try { await setDoc(ref, donnees); }
+    catch (e) {
+        if (e?.code !== "permission-denied") throw e;
+        // jeton d'avant la vérification de l'e-mail : on le renouvelle et on réessaie une fois
+        await auth.currentUser.getIdToken(true);
+        await setDoc(ref, donnees);
+    }
     compte.nom = nom; noms.set(compte.uid, nom);
     ecouteurs.forEach(fn => fn(compte.user));
     return true;

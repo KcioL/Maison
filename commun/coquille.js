@@ -67,7 +67,12 @@ function ouvrirMonCompte() {
         f.corps.querySelector("form")?.addEventListener("submit", async e => {
             e.preventDefault();
             try { if (await changerNom(e.target.nom.value)) { toast("Prénom enregistré."); dessiner(); } }
-            catch { toast("Enregistrement impossible. Réessaie."); }
+            catch (err) {
+                console.error(err);
+                toast(err?.code === "permission-denied"
+                    ? "Refusé par le serveur : déconnecte-toi puis reconnecte-toi, et réessaie."
+                    : err?.code === "unavailable" ? "Pas de connexion internet. Réessaie." : "Enregistrement impossible. Réessaie.");
+            }
         });
         f.corps.querySelector('[data-action="envoyer"]')?.addEventListener("click", () =>
             envoyerVerification().then(() => toast(`E-mail envoyé à ${compte.email} (regarde aussi les spams).`))
