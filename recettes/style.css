@@ -553,7 +553,8 @@ body:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(5.5rem + e
 .vue-recettes .intercalaires{
   display: flex; align-items: flex-end; gap: 4px;
   margin: 1rem calc(-1 * var(--marge-x)) 0; padding: 10px var(--marge-x) 0;
-  overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+  /* défilement horizontal seulement : rien ne dépasse en hauteur, donc pas de glissement vertical */
+  overflow-x: auto; overflow-y: hidden; overscroll-behavior-x: contain; scrollbar-width: none;
   -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--marge-x), #000 calc(100% - var(--marge-x)), transparent 100%);
           mask-image: linear-gradient(to right, transparent 0, #000 var(--marge-x), #000 calc(100% - var(--marge-x)), transparent 100%);
 }
@@ -561,12 +562,12 @@ body:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(5.5rem + e
 .vue-recettes .onglet{
   flex: none; position: relative;
   display: inline-flex; align-items: baseline; gap: .35rem;
-  min-height: 44px; padding: .55rem .95rem .45rem;
+  min-height: 40px; padding: .5rem .95rem .45rem;
   border: 0; border-radius: 14px 14px 0 0; cursor: pointer;
   background: var(--pastel); color: var(--encre);
   font-family: var(--manuscrit); font-weight: 700; font-size: 1.35rem; line-height: 1;
   box-shadow: inset 0 -6px 8px -6px rgba(74, 62, 142, .18);
-  transform: translateY(6px); transition: transform .15s ease, filter .15s ease;
+  transition: padding .15s ease, filter .15s ease;
   filter: saturate(.85) brightness(1.02);
 }
 .vue-recettes .onglet small{
@@ -574,14 +575,10 @@ body:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(5.5rem + e
   background: rgba(255, 255, 255, .6); border-radius: 999px; padding: .05rem .4rem;
 }
 .vue-recettes .onglet.vide{ opacity: .6; }
-.vue-recettes .onglet:hover{ transform: translateY(2px); }
+.vue-recettes .onglet:hover{ padding-top: .65rem; }
 .vue-recettes .onglet.actif{
-  transform: none; opacity: 1; filter: none; z-index: 1;
-  padding-top: .7rem; box-shadow: 0 -2px 6px rgba(74, 62, 142, .10);
-}
-.vue-recettes .onglet.actif::after{
-  /* raccord avec la page du classeur */
-  content: ""; position: absolute; left: 0; right: 0; bottom: -6px; height: 8px; background: var(--pastel);
+  opacity: 1; filter: none; z-index: 1;
+  padding-top: .85rem; box-shadow: 0 -2px 6px rgba(74, 62, 142, .10);
 }
 .vue-recettes .classeur{
   position: relative;
