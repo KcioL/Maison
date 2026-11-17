@@ -6,6 +6,8 @@
      #/recettes/recette/<id>      une recette
      #/recettes/ajouter           nouvelle recette
      #/recettes/modifier/<id>     modifier une recette
+   Intercalaires : chaque recette a une liste « categories » (Sucré, Plat…) ;
+   l'accueil les montre comme des onglets de classeur pour filtrer le carnet.
    Les recettes sont rangées dans des carnets partagés (comme les stocks et les listes) :
      carnets/{carnet}/recettes/{recette}/photos/{photo}
    Le compte et le partage sont communs au site (commun/compte.js, commun/partage.js).
@@ -41,7 +43,30 @@ const recettesCol = () => collection(db, "carnets", carnetId, "recettes");
 const nomCarnet = () => carnet()?.name || TITRE;
 const photosCache = new Map();   // id de photo -> image (data URL)
 let recherche = "";
+let intercalaire = "";           // intercalaire ouvert ("" = toutes les recettes)
 let scrollAccueil = 0;
+
+/* ---------- Intercalaires ----------
+   Ceux proposés d'office ; on peut en créer d'autres depuis une recette. */
+const INTERCALAIRES = ["Sucré", "Salé", "Entrée", "Plat", "Dessert", "Protéiné", "Diet", "Apéro", "Petit-déj"];
+const categoriesDe = (r) => (Array.isArray(r?.categories) ? r.categories : []);
+// les intercalaires du carnet : ceux d'office, puis ceux créés (dans l'ordre d'apparition)
+function intercalairesDu(recettes) {
+  const liste = [...INTERCALAIRES];
+  const vus = new Set(liste.map((n) => sansAccents(n)));
+  recettes.forEach((r) => categoriesDe(r).forEach((c) => {
+    if (!vus.has(sansAccents(c))) { vus.add(sansAccents(c)); liste.push(c); }
+  }));
+  return liste;
+}
+// nom propre : sans espaces en trop, majuscule au début, et l'écriture d'office si elle existe
+function nomIntercalaire(brut, existants = INTERCALAIRES) {
+  const t = String(brut || "").replace(/\s+/g, " ").trim().slice(0, 24);
+  if (!t) return "";
+  const deja = existants.find((n) => sansAccents(n) === sansAccents(t));
+  return deja || t.charAt(0).toUpperCase() + t.slice(1);
+}
+const couleurIntercalaire = (i) => `c-${PASTELS[i % PASTELS.length]}`;
 let wakeLock = null;
 let toucheEchap = null;          // action de la touche Échap sur la page en cours
 
@@ -310,6 +335,7 @@ function changerCarnet(id) {
   if (id) ecrireMemo(id);
   recettesCache = null;
   recherche = "";
+  intercalaire = "";
   scrollAccueil = 0;
   if (cheminCourant) aller("", { remplacer: true }); else route();
 }
@@ -421,16 +447,20 @@ async function pageAccueil() {
                <span class="sr-only">Rechercher</span>
                <input id="recherche" type="search" placeholder="Une recette, un ingrédient…" value="${esc(recherche)}" autocomplete="off">
              </label>
-             <div class="ligne-compteur">
-               <p class="compteur" id="compteur" aria-live="polite"></p>
-               <button type="button" class="lien" id="btn-selectionner">Sélectionner</button>
-             </div>
-             <ul class="grille" id="grille"></ul>`
+             <nav class="intercalaires" id="intercalaires" aria-label="Intercalaires"></nav>
+             <div class="classeur" id="classeur">
+               <div class="ligne-compteur">
+                 <p class="compteur" id="compteur" aria-live="polite"></p>
+                 <button type="button" class="lien" id="btn-selectionner">Sélectionner</button>
+               </div>
+               <ul class="grille" id="grille"></ul>
+             </div>`
       }
     </main>
     <div class="barre-bas barre-selection" id="barre-selection" hidden>
       <div class="barre-bas-inner">
         <button type="button" class="btn btn-clair" id="annuler-selection">Annuler</button>
+        <button type="button" class="btn btn-clair" id="ranger-selection" disabled>🔖 <span>Ranger</span></button>
         <button type="button" class="btn btn-supprimer" id="supprimer-selection" disabled>${icones.poubelle}<span id="texte-supprimer">Supprimer</span></button>
       </div>
     </div>`;
@@ -447,6 +477,10 @@ async function pageAccueil() {
   const btnAnnuler = $id("annuler-selection");
   const btnSupprimer = $id("supprimer-selection");
   const texteSupprimer = $id("texte-supprimer");
+  const btnRanger = $id("ranger-selection");
+  const zoneOnglets = $id("intercalaires");
+  const classeur = $id("classeur");
+  if (intercalaire && !intercalairesDu(recettes).includes(intercalaire)) intercalaire = "";
 
   const selection = new Set();
   let modeSelection = false;
@@ -460,9 +494,9 @@ async function pageAccueil() {
         ? `${pluriel(selection.size, "recette")} sélectionnée${selection.size > 1 ? "s" : ""}`
         : "Touche les recettes à supprimer";
     } else if (recherche.trim()) {
-      compteur.textContent = `${pluriel(nbAffichees, "recette")} trouvée${nbAffichees > 1 ? "s" : ""}`;
+      compteur.textContent = `${pluriel(nbAffichees, "recette")} trouvée${nbAffichees > 1 ? "s" : ""}${intercalaire ? ` dans « ${intercalaire} »` : ""}`;
     } else {
-      compteur.textContent = pluriel(recettes.length, "recette");
+      compteur.textContent = pluriel(nbAffichees, "recette");
     }
   };
 
@@ -471,6 +505,7 @@ async function pageAccueil() {
     barre.hidden = !modeSelection;
     btnSelectionner.hidden = modeSelection;
     btnSupprimer.disabled = selection.size === 0;
+    btnRanger.disabled = selection.size === 0;
     texteSupprimer.textContent = selection.size ? `Supprimer (${selection.size})` : "Supprimer";
     grille.querySelectorAll(".fiche").forEach((el) => {
       const choisie = selection.has(el.dataset.id);
@@ -494,10 +529,32 @@ async function pageAccueil() {
   };
   toucheEchap = () => modeSelection && quitterSelection();
 
+  // les onglets du classeur : « Toutes » puis un par intercalaire, avec leur nombre de recettes
+  const dessinerOnglets = () => {
+    const noms = intercalairesDu(recettes);
+    const nb = (n) => recettes.filter((r) => categoriesDe(r).includes(n)).length;
+    const onglet = (nom, libelle, n, couleur) => `
+      <button type="button" class="onglet ${couleur} ${intercalaire === nom ? "actif" : ""} ${n ? "" : "vide"}" data-onglet="${esc(nom)}" aria-pressed="${intercalaire === nom}">
+        <span>${esc(libelle)}</span><small>${n}</small>
+      </button>`;
+    zoneOnglets.innerHTML = onglet("", "Toutes", recettes.length, "c-lavande") + noms.map((n, i) => onglet(n, n, nb(n), couleurIntercalaire(i + 1))).join("");
+    const actif = zoneOnglets.querySelector(".onglet.actif");
+    classeur.className = `classeur ${actif ? [...actif.classList].find((c) => c.startsWith("c-")) : "c-lavande"}`;
+  };
+  zoneOnglets.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-onglet]");
+    if (!b) return;
+    intercalaire = b.dataset.onglet;
+    afficher();
+    b.scrollIntoView?.({ inline: "nearest", block: "nearest", behavior: "smooth" });
+  });
+
   const afficher = () => {
     const q = sansAccents(recherche.trim());
-    const liste = q ? recettes.filter((r) => sansAccents([r.titre, ...r.ingredients].join(" ")).includes(q)) : recettes;
+    let liste = intercalaire ? recettes.filter((r) => categoriesDe(r).includes(intercalaire)) : recettes;
+    if (q) liste = liste.filter((r) => sansAccents([r.titre, ...r.ingredients].join(" ")).includes(q));
     nbAffichees = liste.length;
+    dessinerOnglets();
 
     grille.innerHTML = liste
       .map(
@@ -516,7 +573,10 @@ async function pageAccueil() {
           </a>
         </li>`
       )
-      .join("");
+      .join("") || (intercalaire && !q
+        ? `<li class="grille-vide">Aucune recette dans « ${esc(intercalaire)} » pour l'instant.<br>
+             Pour en ranger : <b>Sélectionner</b> des recettes puis <b>🔖 Ranger</b>, ou <b>Modifier</b> une recette.</li>`
+        : q ? `<li class="grille-vide">Aucune recette trouvée${intercalaire ? ` dans « ${esc(intercalaire)} »` : ""}.</li>` : "");
     majSelection();
   };
 
@@ -590,6 +650,58 @@ async function pageAccueil() {
   });
 
   btnSelectionner.addEventListener("click", () => entrerSelection());
+
+  // Ranger les recettes sélectionnées dans des intercalaires
+  btnRanger.addEventListener("click", () => {
+    const choisies = recettes.filter((r) => selection.has(r.id));
+    if (!choisies.length) return;
+    let ecritures = Promise.resolve();
+    const f = ouvrirFeuille({
+      titre: choisies.length === 1 ? `Ranger « ${choisies[0].titre} »` : `Ranger ${choisies.length} recettes`,
+      quandFerme: () => ecritures.then(() => { quitterSelection(); afficher(); }),
+    });
+    const dessiner = () => {
+      const noms = intercalairesDu(recettes);
+      f.corps.innerHTML = `<div class="ranger-feuille">
+          <p class="muet petit">Touche un intercalaire pour y ranger ${choisies.length > 1 ? "ces recettes" : "la recette"} (ou l'en retirer). Une recette peut être dans plusieurs.</p>
+          <div class="puces-intercalaires">${noms.map((n) => {
+            const dans = choisies.filter((r) => categoriesDe(r).includes(n)).length;
+            const etat = dans === choisies.length ? "tout" : dans ? "partiel" : "";
+            return `<button type="button" class="puce-intercalaire ${etat}" data-ranger="${esc(n)}" aria-pressed="${etat === "tout"}">${etat === "tout" ? "✓ " : etat ? "– " : ""}${esc(n)}</button>`;
+          }).join("")}</div>
+          <form class="nouvel-intercalaire" autocomplete="off">
+            <input name="nom" maxlength="24" placeholder="Nouvel intercalaire (ex. Végé)" aria-label="Nouvel intercalaire">
+            <button type="submit" class="bouton">Ajouter</button>
+          </form>
+          <button type="button" class="bouton principal large" data-fini>Terminé</button>
+        </div>`;
+    };
+    const ranger = (nom, mettre) => {
+      choisies.forEach((r) => {
+        const avant = categoriesDe(r);
+        r.categories = mettre ? (avant.includes(nom) ? avant : [...avant, nom].slice(0, 12)) : avant.filter((c) => c !== nom);
+      });
+      dessiner();
+      // enregistrement en lot (les écritures se suivent, dans l'ordre)
+      const lot = choisies.map((r) => [r.id, [...r.categories]]);
+      ecritures = ecritures.then(async () => {
+        const batch = writeBatch(db);
+        lot.forEach(([id, cats]) => batch.update(doc(recettesCol(), id), { categories: cats, modifieLe: serverTimestamp() }));
+        await batch.commit();
+      }).catch((err) => { console.error(err); toast("Le rangement n'a pas pu être enregistré. Réessaie."); });
+    };
+    f.corps.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-ranger]");
+      if (b) ranger(b.dataset.ranger, !b.classList.contains("tout"));
+      if (e.target.closest("[data-fini]")) f.fermer();
+    });
+    f.corps.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const nom = nomIntercalaire(e.target.nom.value, intercalairesDu(recettes));
+      if (nom) ranger(nom, true);
+    });
+    dessiner();
+  });
   btnAnnuler.addEventListener("click", quitterSelection);
 
   btnSupprimer.addEventListener("click", async () => {
@@ -665,6 +777,9 @@ async function pageRecette(id) {
     <header class="titre-bloc seyes avec-marge ${couleur}">
       <div class="titre-bloc-inner">
         <h1 class="titre-recette">${esc(r.titre)}</h1>
+        ${categoriesDe(r).length
+          ? `<p class="etiquettes">${categoriesDe(r).map((c) => `<a class="etiquette" href="${lien("")}" data-aller-intercalaire="${esc(c)}">🔖 ${esc(c)}</a>`).join("")}</p>`
+          : ""}
         ${
           source || ecranDispo
             ? `<div class="actions">
@@ -793,6 +908,16 @@ async function pageFormulaire(id = null) {
       </div>
 
       <div class="champ">
+        <span class="label">Intercalaires</span>
+        <p class="aide">Où ranger la recette dans le carnet. Tu peux en choisir plusieurs.</p>
+        <div class="puces-intercalaires" id="choix-intercalaires"></div>
+        <div class="nouvel-intercalaire">
+          <input id="nouvel-intercalaire" type="text" maxlength="24" placeholder="Nouvel intercalaire (ex. Végé)" aria-label="Nouvel intercalaire">
+          <button type="button" class="btn btn-clair" id="ajouter-intercalaire">Ajouter</button>
+        </div>
+      </div>
+
+      <div class="champ">
         <span class="label">Photos</span>
         <p class="aide">Touche une photo pour la mettre en couverture.</p>
         <div class="vignettes" id="vignettes"></div>
@@ -828,6 +953,39 @@ async function pageFormulaire(id = null) {
         </div>
       </div>
     </form>`;
+
+  // intercalaires de la recette
+  const choisis = new Set(categoriesDe(r));
+  const tousIntercalaires = () => {
+    const liste = intercalairesDu(recettesCache || []);
+    choisis.forEach((c) => { if (!liste.includes(c)) liste.push(c); });
+    return liste;
+  };
+  const zoneIntercalaires = $id("choix-intercalaires");
+  const dessinerIntercalaires = () => {
+    zoneIntercalaires.innerHTML = tousIntercalaires().map((n) =>
+      `<button type="button" class="puce-intercalaire ${choisis.has(n) ? "tout" : ""}" data-choix="${esc(n)}" aria-pressed="${choisis.has(n)}">${choisis.has(n) ? "✓ " : ""}${esc(n)}</button>`).join("");
+  };
+  dessinerIntercalaires();
+  zoneIntercalaires.addEventListener("click", (e) => {
+    const b = e.target.closest("[data-choix]");
+    if (!b) return;
+    const n = b.dataset.choix;
+    if (choisis.has(n)) choisis.delete(n); else choisis.add(n);
+    dessinerIntercalaires();
+  });
+  const ajouterIntercalaire = () => {
+    const champ = $id("nouvel-intercalaire");
+    const nom = nomIntercalaire(champ.value, tousIntercalaires());
+    if (!nom) return champ.focus();
+    if (choisis.size < 12) choisis.add(nom);
+    champ.value = "";
+    dessinerIntercalaires();
+  };
+  $id("ajouter-intercalaire").addEventListener("click", ajouterIntercalaire);
+  $id("nouvel-intercalaire").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); ajouterIntercalaire(); }
+  });
 
   const vignettes = $id("vignettes");
   const zoneErreur = $id("erreur-form");
@@ -949,6 +1107,7 @@ async function pageFormulaire(id = null) {
         etapes: lignes($id("etapes").value, { numeros: true }),
         source: sourceBrute || null,
         notes: $id("notes").value.trim() || null,
+        categories: [...choisis].slice(0, 12),
         photos: photos.map((p) => p.id),
         miniature,
         modifieLe: serverTimestamp(),
@@ -1049,6 +1208,11 @@ export function demarrer(conteneur, outilsCoquille) {
   outils = outilsCoquille;
   app = $id("app");
   outils.titre("Recettes");
+  // étiquette d'une recette -> ouvre le carnet sur cet intercalaire
+  racine.addEventListener("click", (e) => {
+    const a = e.target.closest("[data-aller-intercalaire]");
+    if (a) { intercalaire = a.dataset.allerIntercalaire; scrollAccueil = 0; }
+  });
   route();
   // carnets que je possède ou qu'on m'a partagés (en direct)
   ecouterMesPartages("carnets", (liste) => {

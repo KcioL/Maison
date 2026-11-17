@@ -493,6 +493,12 @@
 .vue-recettes .barre-bas-inner{ max-width: 520px; margin: 0 auto; display: flex; align-items: center; gap: .75rem; }
 .vue-recettes .barre-bas-inner .btn{ flex: 1; }
 .vue-recettes .barre-bas-inner .btn-supprimer{ flex: 1.6; }
+.vue-recettes .barre-bas-inner .btn{ min-width: 0; white-space: nowrap; }
+@media (max-width: 479px) {
+  .vue-recettes .barre-bas-inner{ gap: .4rem; }
+  .vue-recettes .barre-bas-inner .btn{ padding-inline: .55rem; font-size: .95rem; gap: .3rem; }
+  .vue-recettes .barre-bas-inner .btn-supprimer{ flex: 1.3; }
+}
 .vue-recettes .barre-enregistrer .btn:not(.btn-danger){ flex: 1; max-width: 320px; margin-left: auto; }
 
 .vue-recettes .erreur{
@@ -541,6 +547,88 @@ body:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(5.5rem + e
 @media (prefers-reduced-motion: reduce) {
   .vue-recettes *, .vue-recettes *::before, .vue-recettes *::after{ transition: none !important; scroll-behavior: auto !important; }
 }
+
+
+/* ---------- Intercalaires (onglets du classeur) ---------- */
+.vue-recettes .intercalaires{
+  display: flex; align-items: flex-end; gap: 4px;
+  margin: 1rem calc(-1 * var(--marge-x)) 0; padding: 10px var(--marge-x) 0;
+  overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--marge-x), #000 calc(100% - var(--marge-x)), transparent 100%);
+          mask-image: linear-gradient(to right, transparent 0, #000 var(--marge-x), #000 calc(100% - var(--marge-x)), transparent 100%);
+}
+.vue-recettes .intercalaires::-webkit-scrollbar{ display: none; }
+.vue-recettes .onglet{
+  flex: none; position: relative;
+  display: inline-flex; align-items: baseline; gap: .35rem;
+  min-height: 44px; padding: .55rem .95rem .45rem;
+  border: 0; border-radius: 14px 14px 0 0; cursor: pointer;
+  background: var(--pastel); color: var(--encre);
+  font-family: var(--manuscrit); font-weight: 700; font-size: 1.35rem; line-height: 1;
+  box-shadow: inset 0 -6px 8px -6px rgba(74, 62, 142, .18);
+  transform: translateY(6px); transition: transform .15s ease, filter .15s ease;
+  filter: saturate(.85) brightness(1.02);
+}
+.vue-recettes .onglet small{
+  font-family: var(--lisible); font-size: .72rem; font-weight: 700; color: var(--doux);
+  background: rgba(255, 255, 255, .6); border-radius: 999px; padding: .05rem .4rem;
+}
+.vue-recettes .onglet.vide{ opacity: .6; }
+.vue-recettes .onglet:hover{ transform: translateY(2px); }
+.vue-recettes .onglet.actif{
+  transform: none; opacity: 1; filter: none; z-index: 1;
+  padding-top: .7rem; box-shadow: 0 -2px 6px rgba(74, 62, 142, .10);
+}
+.vue-recettes .onglet.actif::after{
+  /* raccord avec la page du classeur */
+  content: ""; position: absolute; left: 0; right: 0; bottom: -6px; height: 8px; background: var(--pastel);
+}
+.vue-recettes .classeur{
+  position: relative;
+  border-top: 6px solid var(--pastel);
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--pastel) 45%, transparent), transparent 140px);
+  border-radius: 0 0 18px 18px;
+  padding-top: .75rem;
+  margin: 0 calc(-1 * min(var(--marge-x), 12px));
+  padding-inline: min(var(--marge-x), 12px);
+}
+.vue-recettes .classeur .ligne-compteur{ margin-top: 0; }
+.vue-recettes .grille-vide{
+  grid-column: 1 / -1; text-align: center; color: var(--doux);
+  padding: 2rem 1rem; line-height: 1.6;
+}
+.vue-recettes .grille-vide b{ color: var(--encre); }
+
+/* étiquettes sur la page d'une recette */
+.vue-recettes .etiquettes{ display: flex; flex-wrap: wrap; gap: .4rem; margin: .6rem 0 0; }
+.vue-recettes .etiquette{
+  display: inline-flex; align-items: center; min-height: 32px; padding: .2rem .75rem;
+  background: rgba(255, 255, 255, .7); border-radius: 999px; text-decoration: none;
+  font-weight: 700; font-size: .9rem; color: var(--encre);
+}
+.vue-recettes .etiquette:hover{ background: var(--blanc); }
+[data-theme="sombre"] .vue-recettes .etiquette{ background: rgba(42, 37, 54, .7); }
+[data-theme="sombre"] .vue-recettes .onglet small{ background: rgba(0, 0, 0, .25); }
+
+/* choix des intercalaires (formulaire et « Ranger ») */
+.vue-recettes .puces-intercalaires, .feuille .puces-intercalaires{ display: flex; flex-wrap: wrap; gap: .45rem; }
+.vue-recettes .puce-intercalaire, .feuille .puce-intercalaire{
+  min-height: 40px; padding: .35rem .9rem; border-radius: 999px; cursor: pointer;
+  font: inherit; font-weight: 700; font-size: .95rem; color: inherit;
+  background: transparent; border: 1.5px dashed var(--line, #cbbff5);
+}
+.vue-recettes .puce-intercalaire{ border-color: var(--bouton); color: var(--encre); }
+.feuille .puce-intercalaire.tout{ border-style: solid; background: color-mix(in srgb, var(--accent) 18%, transparent); border-color: var(--accent); }
+.vue-recettes .puce-intercalaire.tout{ border-style: solid; background: var(--lavande); border-color: var(--focus); }
+.feuille .puce-intercalaire.partiel{ border-style: solid; }
+.vue-recettes .nouvel-intercalaire, .feuille .nouvel-intercalaire{ display: flex; gap: .5rem; margin-top: .6rem; }
+.vue-recettes .nouvel-intercalaire input{ flex: 1; min-width: 0; }
+.feuille .nouvel-intercalaire input{
+  flex: 1; min-width: 0; min-height: 44px; padding: .5rem .9rem; font: inherit; color: inherit;
+  background: var(--field-bg); border: 1.5px solid transparent; border-radius: 12px;
+}
+.feuille .nouvel-intercalaire input:focus-visible{ outline: none; border-color: var(--accent); }
+.feuille .ranger-feuille{ display: flex; flex-direction: column; gap: .9rem; }
 
 /* =========================================================
    MODE SOMBRE (activé par commun/theme.js)
@@ -594,18 +682,14 @@ body:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(5.5rem + e
 .vue-recettes a, .vue-recettes button, .vue-recettes input, .vue-recettes label, .vue-recettes textarea, .vue-recettes select{ touch-action: manipulation; }
 
 /* =========================================================
-   Barre d'onglets du site (téléphone) : les barres du bas
-   du carnet se posent juste au-dessus
+   Barre des applis du site (le dock, en bas, une fois connecté) :
+   les barres du bas du carnet se posent juste au-dessus
    ========================================================= */
-@media (max-width: 700px) {
-  body.avec-onglets .vue-recettes .barre-enregistrer,
-  body.avec-onglets .vue-recettes .barre-bas{ bottom: var(--hauteur-onglets); padding-bottom: .75rem; }
-  body.avec-onglets .vue-recettes .toast{ bottom: calc(var(--hauteur-onglets) + 1rem); }
-  body.avec-onglets:has(.barre-enregistrer) .vue-recettes .toast,
-  body.avec-onglets:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(var(--hauteur-onglets) + 5rem); }
-  body.avec-onglets .vue-recettes .barre{ top: 0; }
-  body.avec-onglets .vue-recettes .entete{ padding-top: 24px; }
-}
+body.connecte .vue-recettes .barre-enregistrer,
+body.connecte .vue-recettes .barre-bas{ bottom: var(--hauteur-onglets); padding-bottom: .75rem; }
+body.connecte .vue-recettes .toast{ bottom: calc(var(--hauteur-onglets) + 1rem); }
+body.connecte:has(.barre-enregistrer) .vue-recettes .toast,
+body.connecte:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(var(--hauteur-onglets) + 5rem); }
 
 /* « Ouverture du carnet… » n'apparaît que si le chargement dure */
 @keyframes apparait-si-lent { from { opacity: 0; } to { opacity: 1; } }
