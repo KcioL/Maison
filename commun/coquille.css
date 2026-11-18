@@ -266,3 +266,10 @@ body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
     .bouton-partage { padding: 0.5rem 0.7rem; }
     .bouton-partage .lbl { display: none; }   /* sur téléphone : icônes seules */
 }
+
+
+/* Téléphone : pendant la saisie (clavier ouvert), la barre des applis se cache.
+   Sur iPhone, les éléments « fixés en bas » flottent sinon au milieu de l'écran. */
+@media (pointer: coarse) {
+    body:has(:is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="button"], [type="submit"]), textarea, [contenteditable="true"]):focus) .dock { display: none; }
+}

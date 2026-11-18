@@ -749,6 +749,16 @@ body.connecte:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(v
 .vue-recettes .page{ padding-top: .25rem; padding-bottom: 2rem; }
 .vue-recettes .contenu, .vue-recettes .form{ padding-bottom: 2rem; }
 .vue-recettes .form{ margin-bottom: 6rem; }
+/* Le bouton « Enregistrer » suit la page (collé en bas de l'écran tant qu'on n'est pas
+   arrivé en bas du formulaire), au lieu d'être posé par-dessus : rien ne passe plus dessous. */
+.vue-recettes .form .barre-enregistrer,
+body.connecte .vue-recettes .form .barre-enregistrer{
+  position: sticky; left: auto; right: auto; bottom: 0;
+  margin: 1.5rem calc(-1 * var(--marge-x)) -2rem;
+  padding: .75rem var(--marge-x) calc(.75rem + env(safe-area-inset-bottom));
+  border-radius: 0 0 24px 24px;
+}
+body.connecte .vue-recettes .form .barre-enregistrer{ bottom: var(--hauteur-onglets); padding-bottom: .75rem; border-radius: 18px; margin-bottom: -1rem; }
 .vue-recettes .barre{ max-width: var(--largeur); margin: 0 auto; border-radius: 18px; }
 .vue-recettes .titre-bloc{ max-width: var(--largeur); margin: 1rem auto 0; border-radius: 20px; }
 .vue-recettes .photos-wrap{ margin-top: 1rem; border-radius: 20px; overflow: hidden; }
@@ -773,4 +783,14 @@ body.connecte:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(v
   .vue-recettes{ padding: 0 10px; }
   .vue-recettes .entete{ border-radius: 24px; }
   .vue-recettes .page, .vue-recettes .contenu, .vue-recettes .form{ border-radius: 20px; }
+}
+
+
+/* Téléphone, clavier ouvert : le bouton « Enregistrer » reprend sa place en bas du formulaire
+   au lieu de rester fixé à l'écran (sur iPhone il se retrouvait au milieu, par-dessus les champs). */
+@media (pointer: coarse) {
+  body:has(.vue-recettes .form :is(input:not([type="checkbox"], [type="file"]), textarea):focus) .vue-recettes .barre-enregistrer{
+    position: static; margin: 1.5rem 0 0; padding: 0;
+    background: none; border: 0; -webkit-backdrop-filter: none; backdrop-filter: none;
+  }
 }
