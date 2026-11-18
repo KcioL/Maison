@@ -18,6 +18,7 @@ const TITRE = "Les recettes de Jenigger";
 /* ========================================================= */
 
 import { affiche } from "../commun/nouveautes.js";
+import { lireCaptures, analyserTexte } from "./import.js";
 import { db } from "../commun/firebase.js";
 import { compte } from "../commun/compte.js";
 import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter, renommerPartage } from "../commun/partage.js";
@@ -805,7 +806,11 @@ async function pageRecette(id) {
         ${
           r.ingredients.length
             ? `<ul class="liste-ingredients">
-                 ${r.ingredients.map((ing) => `<li><label><input type="checkbox"><span>${esc(ing)}</span></label></li>`).join("")}
+                 ${r.ingredients.map((ing) => {
+                   // « — Pour la sauce — » : un sous-titre, pas un ingrédient à cocher
+                   const g = ing.match(/^—\s*(.+?)\s*—$/);
+                   return g ? `<li class="ing-groupe">${esc(g[1])}</li>` : `<li><label><input type="checkbox"><span>${esc(ing)}</span></label></li>`;
+                 }).join("")}
                </ul>`
             : `<p class="muet">Aucun ingrédient noté.</p>`
         }
@@ -902,6 +907,18 @@ async function pageFormulaire(id = null) {
       <h1>${r ? "Modifier la recette" : "Nouvelle recette"}</h1>
       <div id="erreur-form"></div>
 
+      <section class="import-auto" aria-labelledby="t-import">
+        <p class="import-titre" id="t-import">✨ Remplir automatiquement</p>
+        <p class="aide">Depuis une description Instagram (ou d'un site) : les ingrédients et les étapes se rangent tout seuls, tu vérifies ensuite.</p>
+        <div class="import-boutons">
+          <label class="btn btn-clair import-capture">📷 <span>Depuis une capture</span>
+            <input type="file" id="import-fichiers" accept="image/*" multiple>
+          </label>
+          <button type="button" class="btn btn-clair" id="import-coller">📋 <span>Coller le texte</span></button>
+        </div>
+        <p class="aide import-etat" id="import-etat" aria-live="polite"></p>
+      </section>
+
       <div class="champ">
         <label for="titre">Nom de la recette</label>
         <input id="titre" type="text" required maxlength="200" value="${esc(r?.titre || "")}" placeholder="Tarte aux poireaux">
@@ -925,7 +942,7 @@ async function pageFormulaire(id = null) {
 
       <div class="champ">
         <label for="ingredients">Ingrédients</label>
-        <p class="aide">Un ingrédient par ligne.</p>
+        <p class="aide">Un ingrédient par ligne. Pour un sous-titre, écris-le entre tirets : « — Pour la sauce — ».</p>
         <textarea id="ingredients" placeholder="3 poireaux&#10;200 g de crème fraîche&#10;1 pâte brisée">${esc((r?.ingredients || []).join("\n"))}</textarea>
       </div>
 
@@ -985,6 +1002,72 @@ async function pageFormulaire(id = null) {
   $id("ajouter-intercalaire").addEventListener("click", ajouterIntercalaire);
   $id("nouvel-intercalaire").addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); ajouterIntercalaire(); }
+  });
+
+  /* ---- Remplir automatiquement (capture ou texte collé) ---- */
+  const etatImport = $id("import-etat");
+  const remplirDepuis = (texte) => {
+    const a = analyserTexte(texte);
+    if (!a.ingredients.length && !a.etapes.length) {
+      etatImport.textContent = "Je n'ai reconnu ni ingrédients ni étapes. Vérifie le texte, ou recopie-le dans les champs.";
+      return false;
+    }
+    const completer = (id, liste) => {
+      if (!liste.length) return;
+      const champ = $id(id);
+      const avant = champ.value.trim();
+      champ.value = (avant ? avant + "\n" : "") + liste.join("\n");
+      champ.classList.add("vient-d-etre-rempli");
+      setTimeout(() => champ.classList.remove("vient-d-etre-rempli"), 2500);
+    };
+    if (a.titre && !$id("titre").value.trim()) { $id("titre").value = a.titre.slice(0, 200); $id("titre").classList.add("vient-d-etre-rempli"); }
+    completer("ingredients", a.ingredients);
+    completer("etapes", a.etapes);
+    const infos = [a.portions, a.nutrition].filter(Boolean).join("\n");
+    if (infos && !$id("notes").value.includes(infos)) $id("notes").value = ($id("notes").value.trim() ? $id("notes").value.trim() + "\n" : "") + infos;
+    const pluriel = (n, m) => `${n} ${m}${n > 1 ? "s" : ""}`;
+    const nbIng = a.ingredients.filter((x) => !/^—.*—$/.test(x)).length;
+    etatImport.textContent = `✔ ${pluriel(nbIng, "ingrédient")} et ${pluriel(a.etapes.length, "étape")} ajoutés : relis avant d'enregistrer.`;
+    toast("Recette remplie : relis avant d'enregistrer");
+    $id("ingredients").scrollIntoView({ behavior: "smooth", block: "center" });
+    return true;
+  };
+  // fenêtre où l'on voit (et corrige) le texte avant de remplir la recette
+  const ouvrirTexte = (texte = "", depuisCapture = false) => {
+    const f = ouvrirFeuille({ titre: depuisCapture ? "Texte lu sur la capture" : "Coller la description" });
+    f.corps.innerHTML = `<form class="import-feuille" autocomplete="off">
+        <p class="muet petit">${depuisCapture
+          ? "Corrige si besoin ce qui a été mal lu, puis remplis la recette."
+          : "Sur Instagram : appuie longuement sur la description (ou sur le texte d'une capture) › Copier, puis colle ici."}</p>
+        <label class="champ"><span>Texte</span><textarea name="texte" rows="10" placeholder="Ingrédients :&#10;200 g de farine&#10;3 œufs&#10;…">${esc(texte)}</textarea></label>
+        <button class="bouton principal large" type="submit">Remplir la recette</button>
+      </form>`;
+    const form = f.corps.querySelector("form");
+    if (!depuisCapture) setTimeout(() => form.texte.focus(), 50);
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (remplirDepuis(form.texte.value)) f.fermer();
+      else form.insertAdjacentHTML("afterbegin", `<p class="erreur">Je n'ai reconnu ni ingrédients ni étapes dans ce texte.</p>`);
+    });
+  };
+  $id("import-coller").addEventListener("click", () => ouvrirTexte());
+  $id("import-fichiers").addEventListener("change", async (e) => {
+    const fichiers = [...e.target.files];
+    e.target.value = "";
+    if (!fichiers.length) return;
+    const zone = racine.querySelector(".import-auto");
+    zone.classList.add("en-cours");
+    try {
+      const texte = await lireCaptures(fichiers, (m) => { etatImport.textContent = m; });
+      etatImport.textContent = "";
+      if (!texte.trim()) etatImport.textContent = "Aucun texte trouvé sur cette image.";
+      else ouvrirTexte(texte, true);
+    } catch (err) {
+      console.error(err);
+      etatImport.textContent = err.message || "La lecture de la capture a échoué. Réessaie.";
+    } finally {
+      zone.classList.remove("en-cours");
+    }
   });
 
   const vignettes = $id("vignettes");

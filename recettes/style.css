@@ -627,6 +627,36 @@ body:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(5.5rem + e
 .feuille .nouvel-intercalaire input:focus-visible{ outline: none; border-color: var(--accent); }
 .feuille .ranger-feuille{ display: flex; flex-direction: column; gap: .9rem; }
 
+
+/* sous-titre dans la liste d'ingrédients (« — Pour la sauce — ») */
+.vue-recettes .liste-ingredients .ing-groupe{
+  list-style: none; margin: 1rem 0 .25rem; font-family: var(--manuscrit); font-weight: 700;
+  font-size: 1.45rem; line-height: 1.1; color: var(--encre);
+  border-bottom: 2px solid var(--ligne); padding-bottom: .2rem;
+}
+.vue-recettes .liste-ingredients .ing-groupe:first-child{ margin-top: 0; }
+
+/* ---------- Remplir automatiquement ---------- */
+.vue-recettes .import-auto{
+  margin: 0 0 1.5rem; padding: 1rem 1.1rem;
+  background: var(--lavande); border-radius: 18px;
+  display: flex; flex-direction: column; gap: .5rem;
+}
+.vue-recettes .import-titre{ margin: 0; font-weight: 700; color: var(--encre); }
+.vue-recettes .import-auto .aide{ margin: 0; }
+.vue-recettes .import-boutons{ display: flex; flex-wrap: wrap; gap: .5rem; }
+.vue-recettes .import-boutons .btn{ flex: 1 1 12rem; }
+.vue-recettes .import-capture{ position: relative; cursor: pointer; }
+.vue-recettes .import-capture input{ position: absolute; opacity: 0; width: 1px; height: 1px; }
+.vue-recettes .import-capture:focus-within{ outline: 3px solid var(--focus); outline-offset: 2px; }
+.vue-recettes .import-etat:empty{ display: none; }
+.vue-recettes .import-etat{ font-weight: 700; color: var(--encre); }
+.vue-recettes .import-auto.en-cours .import-boutons{ opacity: .55; pointer-events: none; }
+.vue-recettes .vient-d-etre-rempli{ box-shadow: 0 0 0 4px var(--menthe) !important; transition: box-shadow .4s ease; }
+.feuille .import-feuille{ display: flex; flex-direction: column; gap: .8rem; }
+.feuille .import-feuille textarea{ min-height: 14rem; }
+.feuille .import-feuille .erreur{ margin: 0; color: #b3261e; font-weight: 700; }
+
 /* =========================================================
    MODE SOMBRE (activé par commun/theme.js)
    Même carnet, papier nuit et pastels assourdis
