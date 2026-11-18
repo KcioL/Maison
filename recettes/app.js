@@ -19,6 +19,7 @@ const TITRE = "Les recettes de Jenigger";
 
 import { affiche } from "../commun/nouveautes.js";
 import { lireCaptures, analyserTexte } from "./import.js";
+import { detecterLangue, traduireLignes, LANGUES } from "./traduction.js";
 import { db } from "../commun/firebase.js";
 import { compte } from "../commun/compte.js";
 import { ecouterMesPartages, creerPartage, ouvrirAcces, supprimerOuQuitter, renommerPartage } from "../commun/partage.js";
@@ -916,6 +917,7 @@ async function pageFormulaire(id = null) {
           </label>
           <button type="button" class="btn btn-clair" id="import-coller">📋 <span>Coller le texte</span></button>
         </div>
+        <button type="button" class="lien import-lien" id="traduire-recette" hidden>🌍 Traduire cette recette en français</button>
         <p class="aide import-etat" id="import-etat" aria-live="polite"></p>
       </section>
 
@@ -1006,11 +1008,32 @@ async function pageFormulaire(id = null) {
 
   /* ---- Remplir automatiquement (capture ou texte collé) ---- */
   const etatImport = $id("import-etat");
-  const remplirDepuis = (texte) => {
-    const a = analyserTexte(texte);
+  // traduit en français les morceaux d'une recette { titre, ingredients, etapes, portions, nutrition }
+  const traduireRecette = async (a, langue, afficher) => {
+    a.portions = (a.portions || "")
+      .replace(/^makes\s+(\d+(?:\s*-\s*\d+)?)/i, "Pour $1").replace(/^serves\s+(\d+(?:\s*-\s*\d+)?)/i, "Pour $1 personnes")
+      .replace(/^(\d+)\s+servings?$/i, "$1 portions");
+    const lignes = [a.titre || "", ...a.ingredients, ...a.etapes, ...(a.nutrition ? a.nutrition.split("\n") : []), /^pour\s+\d/i.test(a.portions) ? "" : a.portions];
+    const t = await traduireLignes(lignes, langue, (fait, total) => afficher(`Traduction de l'${LANGUES[langue]}… ${fait}/${total}`));
+    let k = 0;
+    a.titre = t[k++] || a.titre;
+    a.ingredients = a.ingredients.map(() => t[k++]);
+    a.etapes = a.etapes.map(() => t[k++]);
+    if (a.nutrition) a.nutrition = a.nutrition.split("\n").map(() => t[k++]).join("\n");
+    if (!/^pour\s+\d/i.test(a.portions)) a.portions = t[k] || a.portions;
+    return a;
+  };
+
+  const remplirDepuis = async (texte, { traduire = null, afficher = () => {} } = {}) => {
+    let a = analyserTexte(texte);
     if (!a.ingredients.length && !a.etapes.length) {
       etatImport.textContent = "Je n'ai reconnu ni ingrédients ni étapes. Vérifie le texte, ou recopie-le dans les champs.";
       return false;
+    }
+    let noteTraduction = "";
+    if (traduire) {
+      try { a = await traduireRecette(a, traduire, afficher); noteTraduction = ` (traduit de l'${LANGUES[traduire]})`; }
+      catch (err) { console.error(err); noteTraduction = ` — non traduit : ${err.message}`; }
     }
     const completer = (id, liste) => {
       if (!liste.length) return;
@@ -1027,8 +1050,9 @@ async function pageFormulaire(id = null) {
     if (infos && !$id("notes").value.includes(infos)) $id("notes").value = ($id("notes").value.trim() ? $id("notes").value.trim() + "\n" : "") + infos;
     const pluriel = (n, m) => `${n} ${m}${n > 1 ? "s" : ""}`;
     const nbIng = a.ingredients.filter((x) => !/^—.*—$/.test(x)).length;
-    etatImport.textContent = `✔ ${pluriel(nbIng, "ingrédient")} et ${pluriel(a.etapes.length, "étape")} ajoutés : relis avant d'enregistrer.`;
+    etatImport.textContent = `✔ ${pluriel(nbIng, "ingrédient")} et ${pluriel(a.etapes.length, "étape")} ajoutés${noteTraduction} : relis avant d'enregistrer.`;
     toast("Recette remplie : relis avant d'enregistrer");
+    majBoutonTraduire();
     $id("ingredients").scrollIntoView({ behavior: "smooth", block: "center" });
     return true;
   };
@@ -1040,17 +1064,68 @@ async function pageFormulaire(id = null) {
           ? "Corrige si besoin ce qui a été mal lu, puis remplis la recette."
           : "Sur Instagram : appuie longuement sur la description (ou sur le texte d'une capture) › Copier, puis colle ici."}</p>
         <label class="champ"><span>Texte</span><textarea name="texte" rows="10" placeholder="Ingrédients :&#10;200 g de farine&#10;3 œufs&#10;…">${esc(texte)}</textarea></label>
+        <label class="import-traduire" hidden><input type="checkbox" name="traduire"><span>🌍 Traduire en français <small></small></span></label>
         <button class="bouton principal large" type="submit">Remplir la recette</button>
       </form>`;
     const form = f.corps.querySelector("form");
     if (!depuisCapture) setTimeout(() => form.texte.focus(), 50);
-    form.addEventListener("submit", (e) => {
+    // langue du texte : si ce n'est pas du français, on propose (et on coche) la traduction
+    const caseTraduire = form.querySelector(".import-traduire");
+    let langue = null, coche = null;
+    const majLangue = () => {
+      langue = detecterLangue(form.texte.value);
+      const etrangere = langue && langue !== "fr";
+      caseTraduire.hidden = !etrangere;
+      if (etrangere) {
+        caseTraduire.querySelector("small").textContent = `(texte en ${LANGUES[langue]})`;
+        form.traduire.checked = coche ?? true;
+      }
+    };
+    majLangue();
+    form.texte.addEventListener("input", majLangue);
+    form.traduire.addEventListener("change", () => { coche = form.traduire.checked; });
+    form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      if (remplirDepuis(form.texte.value)) f.fermer();
+      const bouton = form.querySelector("button[type=submit]");
+      const traduire = !caseTraduire.hidden && form.traduire.checked ? langue : null;
+      bouton.disabled = true;
+      const ok = await remplirDepuis(form.texte.value, { traduire, afficher: (m) => { bouton.textContent = m; } });
+      bouton.disabled = false; bouton.textContent = "Remplir la recette";
+      if (ok) f.fermer();
       else form.insertAdjacentHTML("afterbegin", `<p class="erreur">Je n'ai reconnu ni ingrédients ni étapes dans ce texte.</p>`);
     });
   };
   $id("import-coller").addEventListener("click", () => ouvrirTexte());
+
+  // recette déjà remplie dans une autre langue : on la traduit sur place
+  const btnTraduire = $id("traduire-recette");
+  const langueDesChamps = () => detecterLangue([$id("titre").value, $id("ingredients").value, $id("etapes").value].join("\n"));
+  const majBoutonTraduire = () => { const l = langueDesChamps(); btnTraduire.hidden = !l || l === "fr"; if (!btnTraduire.hidden) btnTraduire.textContent = `🌍 Traduire cette recette de l'${LANGUES[l]} en français`; };
+  ["titre", "ingredients", "etapes"].forEach((id) => $id(id).addEventListener("input", majBoutonTraduire));
+  majBoutonTraduire();
+  btnTraduire.addEventListener("click", async () => {
+    const l = langueDesChamps();
+    if (!l || l === "fr") return;
+    const zone = racine.querySelector(".import-auto");
+    zone.classList.add("en-cours"); btnTraduire.disabled = true;
+    try {
+      const a = await traduireRecette({
+        titre: $id("titre").value.trim(), ingredients: lignes($id("ingredients").value), etapes: lignes($id("etapes").value, { numeros: true }),
+        portions: "", nutrition: "",
+      }, l, (m) => { etatImport.textContent = m; });
+      $id("titre").value = a.titre.slice(0, 200);
+      $id("ingredients").value = a.ingredients.join("\n");
+      $id("etapes").value = a.etapes.join("\n");
+      ["titre", "ingredients", "etapes"].forEach((id) => { $id(id).classList.add("vient-d-etre-rempli"); setTimeout(() => $id(id).classList.remove("vient-d-etre-rempli"), 2500); });
+      etatImport.textContent = `✔ Recette traduite de l'${LANGUES[l]} : relis avant d'enregistrer.`;
+      majBoutonTraduire();
+    } catch (err) {
+      console.error(err);
+      etatImport.textContent = err.message;
+    } finally {
+      zone.classList.remove("en-cours"); btnTraduire.disabled = false;
+    }
+  });
   $id("import-fichiers").addEventListener("change", async (e) => {
     const fichiers = [...e.target.files];
     e.target.value = "";
