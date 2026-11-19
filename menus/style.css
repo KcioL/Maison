@@ -1,0 +1,111 @@
+/* ==========================================
+   MENUS DE LA SEMAINE
+   Toutes les règles commencent par .vue-menus : elles ne s'appliquent
+   qu'à cette appli (sauf les fiches, en bas, qui s'ouvrent par-dessus la page).
+   ========================================== */
+
+.vue-menus .titre-emoji{ font-size: 1.4em; line-height: 1; }
+.vue-menus .muet{ color: var(--text-muted); }
+.vue-menus .petit{ font-size: 0.85rem; }
+.vue-menus .chargement{ animation: apparait-si-lent 0.25s ease-out 0.45s both; }
+.vue-menus .me-vide{ text-align: center; color: var(--text-muted); padding: 1.5rem 1rem; }
+.vue-menus .me-vide-carte{ max-width: 560px; margin: 0 auto; text-align: center; gap: 0.9rem; align-items: center; }
+.vue-menus .me-grand{ font-size: 1.3rem; font-weight: 800; }
+.vue-menus .me-bouton{
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem;
+    border: 2px solid var(--line); background: var(--card-bg); color: var(--text-main);
+    border-radius: 12px; padding: 0.65rem 1.1rem; min-height: 46px; font-weight: 700; font-size: 0.98rem; cursor: pointer;
+}
+.vue-menus .me-bouton.principal{ background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.vue-menus .me-bouton.principal:hover:not(:disabled){ background: var(--accent-hover); }
+.vue-menus .me-bouton:disabled{ opacity: 0.5; cursor: default; }
+
+/* Semaine : ‹ Cette semaine › */
+.vue-menus .me-semaine{
+    max-width: 1100px; margin: 0 auto 0.75rem; display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 0.5rem;
+    padding: 0.6rem 0.75rem;
+}
+.vue-menus .me-semaine-titre{ display: flex; flex-direction: column; align-items: center; text-align: center; min-width: 0; }
+.vue-menus .me-semaine-titre b{ font-size: 1.1rem; }
+.vue-menus .me-fleche{
+    width: 46px; height: 46px; flex: none; display: grid; place-items: center; border-radius: 50%;
+    background: var(--field-bg); color: var(--text-main); text-decoration: none; font-size: 1.8rem; line-height: 1; padding-bottom: 4px;
+}
+.vue-menus .me-fleche:hover{ background: var(--hover-bg); }
+.vue-menus .me-retour{ text-align: center; margin: -0.25rem 0 0.75rem; }
+.vue-menus .me-retour a{ color: var(--accent); font-weight: 700; }
+
+.vue-menus .me-courses{ max-width: 1100px; margin: 0 auto 1rem; display: flex; flex-direction: column; align-items: center; gap: 0.45rem; text-align: center; padding: 0.9rem 1rem; }
+.vue-menus .me-courses .me-bouton{ width: 100%; max-width: 460px; }
+
+/* Les 7 jours */
+.vue-menus .me-jours{
+    list-style: none; margin: 0 auto; padding: 0; max-width: 1100px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 0.9rem;
+}
+.vue-menus .me-jour{ padding: 1rem 1.1rem; gap: 0.6rem; }
+.vue-menus .me-jour.aujourdhui{ box-shadow: 0 0 0 3px var(--accent), 0 10px 30px rgba(0, 0, 0, 0.08); }
+.vue-menus .me-jour.passe{ opacity: 0.72; }
+.vue-menus .me-jour-titre{ display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; margin: 0; font-size: 1.1rem; font-weight: 800; }
+.vue-menus .me-jour-titre small{ font-size: 0.82rem; font-weight: 600; color: var(--text-muted); }
+.vue-menus .me-jour.aujourdhui .me-jour-titre small{ color: var(--accent); }
+.vue-menus .me-creneau{ display: flex; align-items: flex-start; gap: 0.6rem; border-top: 2px dashed var(--line); padding-top: 0.55rem; }
+.vue-menus .me-moment{ flex: none; width: 4.6rem; font-size: 0.85rem; font-weight: 700; color: var(--text-muted); padding-top: 0.45rem; }
+.vue-menus .me-plats{ list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; flex: 1; min-width: 0; }
+.vue-menus .me-plat{
+    display: inline-flex; align-items: center; gap: 0.35rem; max-width: 100%;
+    min-height: 38px; padding: 0.35rem 0.75rem; border-radius: 12px; cursor: pointer; text-align: left;
+    background: var(--field-bg); border: 1.5px solid var(--line); color: var(--text-main);
+    font: inherit; font-weight: 700; font-size: 0.92rem; overflow-wrap: anywhere;
+}
+.vue-menus .me-plat.recette{ background: color-mix(in srgb, var(--accent) 14%, var(--card-bg)); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.vue-menus .me-plat small{ font-size: 0.72rem; font-weight: 700; color: var(--text-muted); background: var(--card-bg); border-radius: 999px; padding: 0 0.4rem; }
+.vue-menus .me-plat:hover{ border-color: var(--accent); }
+.vue-menus .me-ajout{
+    width: 38px; height: 38px; border-radius: 12px; cursor: pointer; font-size: 1.3rem; line-height: 1;
+    background: transparent; border: 1.5px dashed var(--line); color: var(--text-muted);
+}
+.vue-menus .me-ajout:hover{ border-color: var(--accent); color: var(--accent); }
+
+/* ---------- Fiches (par-dessus la page) ---------- */
+.feuille .me-form{ display: flex; flex-direction: column; gap: 0.9rem; min-width: 0; }
+.feuille .me-form2{ display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.feuille .me-form2 > *{ min-width: 0; }
+.feuille .me-form textarea, .feuille .me-recherche input{
+    width: 100%; padding: 0.75rem 0.9rem; border: 2px solid var(--line); border-radius: 12px;
+    background: var(--field-bg); color: var(--text-main); font: inherit; font-size: 0.95rem; resize: vertical;
+}
+.feuille .me-form textarea:focus, .feuille .me-recherche input:focus{ outline: none; border-color: var(--accent); }
+.feuille .me-info{ background: var(--hover-bg); border-radius: 12px; padding: 0.6rem 0.8rem; font-size: 0.9rem; }
+.feuille .me-onglets{ display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; background: var(--field-bg); border-radius: 14px; padding: 0.3rem; }
+.feuille .me-onglet{ min-height: 42px; border: none; border-radius: 11px; background: transparent; color: var(--text-main); font: inherit; font-weight: 700; cursor: pointer; }
+.feuille .me-onglet.actif{ background: var(--card-bg); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); }
+.feuille .me-panneau{ display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+.feuille .sr-only{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.feuille .me-recettes{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; max-height: 52vh; overflow-y: auto; }
+.feuille .me-recette{
+    display: flex; align-items: center; gap: 0.75rem; width: 100%; text-align: left; cursor: pointer;
+    padding: 0.45rem; border-radius: 12px; border: 1.5px solid transparent; background: var(--field-bg); color: var(--text-main); font: inherit;
+}
+.feuille .me-recette:hover{ border-color: var(--accent); }
+.feuille .me-recette img, .feuille .me-recette-vide{ width: 48px; height: 48px; flex: none; border-radius: 10px; object-fit: cover; }
+.feuille .me-recette-vide{ display: grid; place-items: center; background: var(--hover-bg); font-weight: 800; font-size: 1.2rem; color: var(--text-muted); }
+.feuille .me-recette-txt{ display: flex; flex-direction: column; min-width: 0; }
+.feuille .me-recette-txt b{ overflow-wrap: anywhere; }
+.feuille .me-recette-txt small{ color: var(--text-muted); font-size: 0.8rem; }
+
+/* Liste de courses */
+.feuille .me-ingredients{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; max-height: 50vh; overflow-y: auto; }
+.feuille .me-ingredients li{ border-bottom: 1px dashed var(--line); }
+.feuille .me-case{ display: flex; align-items: flex-start; gap: 0.7rem; padding: 0.55rem 0.1rem; cursor: pointer; }
+.feuille .me-case input{ width: 22px; height: 22px; flex: none; margin-top: 0.1rem; accent-color: var(--accent); }
+.feuille .me-case span{ display: flex; flex-direction: column; min-width: 0; }
+.feuille .me-case b{ font-weight: 600; overflow-wrap: anywhere; }
+.feuille .me-case em{ font-style: normal; font-weight: 800; color: var(--accent); }
+.feuille .me-case small{ color: var(--text-muted); font-size: 0.8rem; overflow-wrap: anywhere; }
+.feuille .me-case input:not(:checked) + span b{ color: var(--text-muted); text-decoration: line-through; }
+
+@media (max-width: 480px) {
+    .vue-menus .me-jour{ padding: 0.9rem; }
+    .vue-menus .me-moment{ width: 3.9rem; }
+}
