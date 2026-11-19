@@ -68,6 +68,17 @@ export const APPS = [
         color: "#9c88d8"
     },
     {
+        id: "menus",
+        name: "Menus de la semaine",
+        short: "Menus",
+        icon: "🍽️",
+        logo: "commun/logos/menus-192.png",
+        desc: "Prévoir les repas de la semaine avec tes recettes (ou sans), et envoyer tous les ingrédients dans la liste de courses.",
+        dossier: "menus",
+        style: "maison",
+        color: "#c8754b"
+    },
+    {
         id: "convertisseur",
         name: "Convertisseur",
         short: "Convertir",
@@ -121,16 +132,5 @@ export const APPS = [
         dossier: "garage",
         style: "maison",
         color: "#5b7fa6"
-    },
-    {
-        id: "menus",
-        name: "Menus de la semaine",
-        short: "Menus",
-        icon: "🍽️",
-        logo: "commun/logos/menus-192.png",
-        desc: "Prévoir les repas de la semaine avec tes recettes (ou sans), et envoyer tous les ingrédients dans la liste de courses.",
-        dossier: "menus",
-        style: "maison",
-        color: "#c8754b"
     }
 ];
