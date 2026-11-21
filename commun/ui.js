@@ -35,8 +35,28 @@ export function ouvrirFeuille({ titre, quandFerme } = {}) {
     const feuille = fond.querySelector(".feuille");
     const corps = fond.querySelector(".feuille-corps");
 
+    // Téléphone : quand le clavier s'ouvre, la fenêtre se cale sur la partie visible de l'écran
+    // (sinon, sur iPhone, elle reste en bas, cachée derrière le clavier).
+    const vv = window.visualViewport;
+    const ajuster = () => {
+        if (!vv) return;
+        const clavier = window.innerHeight - vv.height > 80;
+        fond.style.top = clavier ? `${vv.offsetTop}px` : "";
+        fond.style.height = clavier ? `${vv.height}px` : "";
+        fond.style.bottom = clavier ? "auto" : "";
+        feuille.style.maxHeight = clavier ? `${Math.round(vv.height - 12)}px` : "";
+    };
+    vv?.addEventListener("resize", ajuster);
+    vv?.addEventListener("scroll", ajuster);
+    // le champ où l'on écrit reste visible dans la fenêtre
+    feuille.addEventListener("focusin", (e) => {
+        if (e.target.matches("input, textarea, select")) setTimeout(() => e.target.scrollIntoView({ block: "nearest" }), 350);
+    });
+
     const fermer = () => {
         if (!fond.isConnected) return;
+        vv?.removeEventListener("resize", ajuster);
+        vv?.removeEventListener("scroll", ajuster);
         document.removeEventListener("keydown", surTouche);
         fond.classList.add("sortie");
         setTimeout(() => fond.remove(), 180);
