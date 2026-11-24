@@ -14,6 +14,7 @@
 //   vehicules/{id}/entretiens/{id}     nom, intervalleKm, intervalleMois, dernierKm,
 //                                      derniereDate, valeur, note, ordre, source
 //                                      (source : d'où viennent les valeurs, voir modeles.js)
+//                                      rappelLe : rappel mis dans l'agenda du téléphone (AAAA-MM-JJTHH:MM)
 //   vehicules/{id}/historique/{id}     date, km, titre, details, cout, lieu, entretienId
 //   vehicules/{id}/donnees/photo       data (photo réduite en data URL, facultative)
 // ==========================================
@@ -21,6 +22,7 @@ import { db } from "../commun/firebase.js";
 import { compte } from "../commun/compte.js";
 import { selecteurPartage, ecouterAvecReessai } from "../commun/selecteur.js";
 import { esc, toast, ouvrirFeuille, confirmer } from "../commun/ui.js";
+import { ficheRappel } from "../commun/rappel.js";
 import {
     collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDocs, writeBatch
 } from "../commun/firestore.js";
@@ -170,10 +172,12 @@ function pageEntretiens() {
                 ${e.valeur ? `<p class="ga-valeur">📌 ${esc(e.valeur)}</p>` : ""}
                 ${st.niveau !== "jamais" && (e.intervalleKm || e.intervalleMois) ? `<div class="ga-jauge"><span style="width:${Math.round(st.avance * 100)}%"></span></div>` : ""}
                 <p class="ga-etat">${esc(st.texte)}</p>
+                ${rappelAVenir(e) ? `<p class="ga-rappel">🔔 Rappel ${esc(texteRappel(e.rappelLe))}</p>` : ""}
                 ${e.dernierKm != null || e.derniereDate ? `<p class="muet petit">Dernière fois : ${esc([e.derniereDate ? dateCourte(e.derniereDate) : "", e.dernierKm != null ? km(e.dernierKm) : ""].filter(Boolean).join(" · "))}</p>` : ""}
                 ${e.note ? `<p class="ga-note">${esc(e.note)}</p>` : ""}
                 <div class="ga-ent-actions">
                     <button type="button" class="ga-bouton principal petit" data-ent="fait">✓ Fait</button>
+                    <button type="button" class="ga-icone ${st.niveau === "retard" || st.niveau === "bientot" ? "a-rappeler" : ""}" data-ent="rappel" aria-label="Me le rappeler" title="Me le rappeler">🔔</button>
                     <button type="button" class="ga-icone" data-ent="modifier" aria-label="Modifier" title="Modifier">✏️</button>
                     <button type="button" class="ga-icone" data-ent="supprimer" aria-label="Supprimer" title="Supprimer">🗑️</button>
                 </div>
@@ -286,6 +290,9 @@ function ficheKm() {
         f.fermer();
         await enregistrerFiche({ km: n, kmLe: aujourdhuiISO() });
         toast(`Compteur : ${km(n)}`);
+        // un entretien arrive à échéance (et n'a pas encore de rappel) : on propose de le mettre dans l'agenda
+        const aFaire = S.entretiens.filter(e => ["retard", "bientot"].includes(etat(e).niveau) && !rappelAVenir(e));
+        if (aFaire.length) setTimeout(() => rappeler(aFaire, `Compteur : <b>${km(n)}</b>. ${aFaire.length > 1 ? "Ces entretiens sont à faire" : "Cet entretien est à faire"} : veux-tu un rappel sur ton téléphone ?`), 350);
     });
 }
 
@@ -463,6 +470,27 @@ function ficheIntervention(h) {
             const extra = aCreer ? ` · entretien « ${aCreer.nom} » créé` : remis ? ` · ${remis} entretien${remis > 1 ? "s" : ""} remis à zéro` : "";
             toast((nouveau ? "Intervention ajoutée" : "Intervention mise à jour") + extra + ".");
         } catch (err) { console.error(err); toast("Enregistrement impossible. Réessaie."); }
+    });
+}
+
+// ---------- Rappels dans l'agenda du téléphone ----------
+const rappelAVenir = (e) => e.rappelLe && new Date(e.rappelLe) > new Date();
+const texteRappel = (s) => { const d = new Date(s); return isNaN(d) ? "" : d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" }) + " à " + d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }); };
+function rappeler(liste, intro = "") {
+    const v = sel.courant(), f = S.fiche;
+    const vehicule = [f.marque, f.modele].filter(Boolean).join(" ") || v?.name || "véhicule";
+    const titre = liste.length === 1 ? `🔧 ${liste[0].nom} — ${vehicule}` : `🔧 Entretien ${vehicule} : ${liste.map(e => e.nom.toLowerCase()).join(", ")}`;
+    const description = liste.map(e => {
+        const st = etat(e);
+        if (liste.length === 1) return [e.valeur, st.texte ? st.texte.charAt(0).toUpperCase() + st.texte.slice(1) : ""].filter(Boolean).join("\n");
+        return [`• ${e.nom}`, e.valeur ? `(${e.valeur})` : "", st.texte ? `— ${st.texte}` : ""].filter(Boolean).join(" ");
+    }).join("\n") + (f.km != null ? `\nCompteur : ${km(f.km)}` : "");
+    ficheRappel({
+        titre: titre.slice(0, 140), description, intro, nomFichier: "rappel-entretien.ics",
+        quandChoisi: (d) => {
+            const s = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}T${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+            liste.forEach(e => updateDoc(doc(ref.entretiens(), e.id), { rappelLe: s, modifiePar: compte.uid }).catch(err => console.warn("rappel", err)));
+        }
     });
 }
 
@@ -652,6 +680,7 @@ function brancher() {
             const e = S.entretiens.find(x => x.id === b.closest(".ga-entretien").dataset.id); if (!e) return;
             if (b.dataset.ent === "fait") ficheFait(e);
             else if (b.dataset.ent === "modifier") ficheEntretien(e);
+            else if (b.dataset.ent === "rappel") rappeler([e]);
             else if (b.dataset.ent === "supprimer") {
                 if (!await confirmer({ titre: `Supprimer « ${e.nom} » ?`, message: "L'alerte disparaît ; l'historique déjà noté est gardé.", bouton: "Supprimer", danger: true })) return;
                 deleteDoc(doc(ref.entretiens(), e.id)).then(() => toast("Entretien supprimé.")).catch(() => toast("Suppression impossible."));

@@ -209,3 +209,7 @@
 .feuille .ga-puce-lie:hover{ border-color: var(--line); }
 .feuille .ga-puce-lie.coche{ background: color-mix(in srgb, var(--accent) 18%, transparent); border-color: var(--accent); }
 .feuille .ga-creer{ display: flex; flex-direction: column; gap: 0.5rem; background: var(--field-bg); border-radius: 12px; padding: 0.7rem 0.8rem; }
+
+/* Rappel dans l'agenda */
+.vue-garage .ga-rappel{ font-size: 0.85rem; font-weight: 700; color: var(--accent); }
+.vue-garage .ga-icone.a-rappeler{ background: color-mix(in srgb, var(--accent) 16%, var(--field-bg)); }

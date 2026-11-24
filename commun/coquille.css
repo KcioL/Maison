@@ -273,3 +273,19 @@ body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
 @media (pointer: coarse) {
     body:has(:is(input:not([type="checkbox"], [type="radio"], [type="file"], [type="range"], [type="button"], [type="submit"]), textarea, [contenteditable="true"]):focus) .dock { display: none; }
 }
+
+
+/* ---------- Fenêtre « Me le rappeler » (commun/rappel.js) ---------- */
+.rappel-feuille { display: flex; flex-direction: column; gap: 0.9rem; }
+.rappel-quoi { display: flex; flex-direction: column; gap: 0.2rem; background: var(--hover-bg); border-radius: 12px; padding: 0.7rem 0.9rem; }
+.rappel-quoi small { color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; }
+.rappel-moments { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.rappel-moment {
+    min-height: 42px; padding: 0.4rem 0.9rem; border-radius: 999px; cursor: pointer;
+    border: 1.5px solid var(--line); background: var(--card-bg); color: var(--text-main); font: inherit; font-weight: 700; font-size: 0.9rem;
+}
+.rappel-moment.actif { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.rappel-autre { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.rappel-autre > * { min-width: 0; }
+.rappel-quand { font-size: 0.95rem; }
+.rappel-feuille a.bouton { text-decoration: none; text-align: center; justify-content: center; display: flex; align-items: center; }
