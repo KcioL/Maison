@@ -132,5 +132,16 @@ export const APPS = [
         dossier: "garage",
         style: "maison",
         color: "#5b7fa6"
+    },
+    {
+        id: "meubles",
+        name: "Meubles",
+        short: "Meubles",
+        icon: "🛋️",
+        logo: "commun/logos/meubles-192.png",
+        desc: "Les meubles repérés : référence, photos, prix (et son historique), comparaison des prix sur plusieurs sites, ce qu'il reste à acheter pièce par pièce.",
+        dossier: "meubles",
+        style: "maison",
+        color: "#8a6f5a"
     }
 ];

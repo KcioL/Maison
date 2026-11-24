@@ -21,7 +21,7 @@ import { doc, onSnapshot, setDoc, updateDoc } from "https://www.gstatic.com/fire
 // collection partagée -> appli qui l'affiche
 export const COLLECTIONS = {
     listes: "dashboard", stocks: "stock", carnets: "recettes", programmes: "muscu",
-    abonnements: "abonnements", foyers: "loyer", vehicules: "garage", menus: "menus"
+    abonnements: "abonnements", foyers: "loyer", vehicules: "garage", menus: "menus", meubles: "meubles"
 };
 
 const elements = {};          // collection -> [{ id, ownerId, activite }]

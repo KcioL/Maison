@@ -1,0 +1,155 @@
+/* ==========================================
+   MEUBLES
+   Toutes les règles commencent par .vue-meubles : elles ne s'appliquent
+   qu'à cette appli (sauf les fiches, en bas, qui s'ouvrent par-dessus la page).
+   ========================================== */
+
+.vue-meubles .titre-emoji{ font-size: 1.4em; line-height: 1; }
+.vue-meubles .muet{ color: var(--text-muted); }
+.vue-meubles .petit{ font-size: 0.85rem; }
+.vue-meubles .chargement{ animation: apparait-si-lent 0.25s ease-out 0.45s both; }
+.vue-meubles .mb-vide{ text-align: center; color: var(--text-muted); padding: 1.5rem 1rem; }
+.vue-meubles .mb-vide a{ color: var(--accent); font-weight: 700; }
+.vue-meubles .mb-vide-carte{ max-width: 560px; margin: 0 auto; text-align: center; gap: 0.9rem; align-items: center; }
+.vue-meubles .mb-grand{ font-size: 1.3rem; font-weight: 800; }
+.vue-meubles .mb-bouton{
+    display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; position: relative;
+    border: 2px solid var(--line); background: var(--card-bg); color: var(--text-main); text-decoration: none;
+    border-radius: 12px; padding: 0.6rem 1.05rem; min-height: 46px; font: inherit; font-weight: 700; font-size: 0.95rem; cursor: pointer;
+}
+.vue-meubles .mb-bouton.principal{ background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.vue-meubles .mb-bouton.principal:hover{ background: var(--accent-hover); }
+.vue-meubles .mb-bouton.petit{ min-height: 40px; padding: 0.4rem 0.85rem; font-size: 0.88rem; }
+.vue-meubles .mb-bouton:hover{ border-color: var(--accent); }
+.vue-meubles .mb-lien{ background: none; border: none; font: inherit; font-weight: 700; cursor: pointer; padding: 0.6rem; color: var(--accent); }
+.vue-meubles .mb-lien.danger{ color: #d1495b; }
+.vue-meubles .mb-icone{
+    width: 40px; height: 40px; flex: none; display: grid; place-items: center; border: none; border-radius: 10px;
+    background: var(--field-bg); color: var(--text-main); text-decoration: none; cursor: pointer; font-size: 0.95rem;
+}
+.vue-meubles .mb-icone:hover{ background: var(--hover-bg); }
+
+/* ---------- Résumé et filtres ---------- */
+.vue-meubles .mb-resume{
+    max-width: 1100px; margin: 0 auto 0.9rem; display: grid; grid-template-columns: 1fr 1fr auto; align-items: center; gap: 0.8rem 1.2rem;
+}
+.vue-meubles .mb-chiffre{ display: flex; flex-direction: column; min-width: 0; }
+.vue-meubles .mb-chiffre b{ font-size: 1.45rem; font-weight: 800; line-height: 1.2; }
+.vue-meubles .mb-filtres{ max-width: 1100px; margin: 0 auto 1rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.vue-meubles .mb-puces{ display: flex; gap: 0.4rem; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; padding-bottom: 2px; }
+.vue-meubles .mb-puces::-webkit-scrollbar{ display: none; }
+.vue-meubles .mb-puce{
+    flex: none; min-height: 40px; padding: 0.4rem 0.9rem; border-radius: 999px; cursor: pointer; white-space: nowrap;
+    border: 1.5px solid var(--line); background: var(--card-bg); color: var(--text-main); font: inherit; font-weight: 700; font-size: 0.9rem;
+}
+.vue-meubles .mb-puce.petite{ min-height: 36px; font-size: 0.84rem; padding: 0.3rem 0.8rem; }
+.vue-meubles .mb-puce.actif{ background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+/* ---------- Grille des meubles ---------- */
+.vue-meubles .mb-grille{
+    list-style: none; margin: 0 auto; padding: 0; max-width: 1100px;
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem;
+}
+@media (min-width: 700px) { .vue-meubles .mb-grille{ grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; } }
+.vue-meubles .mb-carte{ display: flex; flex-direction: column; gap: 0; padding: 0; overflow: hidden; text-decoration: none; color: inherit; height: 100%; }
+.vue-meubles .mb-carte:hover{ box-shadow: 0 0 0 2px var(--accent), 0 12px 30px rgba(0, 0, 0, 0.12); }
+.vue-meubles .mb-carte.achete{ opacity: 0.78; }
+.vue-meubles .mb-carte-photo{ position: relative; aspect-ratio: 4 / 3; background: var(--field-bg); display: grid; place-items: center; font-size: 2.6rem; }
+.vue-meubles .mb-carte-photo img{ width: 100%; height: 100%; object-fit: cover; display: block; }
+.vue-meubles .mb-statut{
+    position: absolute; left: 8px; top: 8px; font-size: 0.72rem; font-weight: 800; padding: 0.2rem 0.55rem; border-radius: 999px;
+    background: rgba(255, 255, 255, 0.92); color: #4a443c; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+.vue-meubles .mb-statut.achete{ background: #e2f1e6; color: #2f6b45; }
+.vue-meubles .mb-carte-txt{ display: flex; flex-direction: column; gap: 0.15rem; padding: 0.7rem 0.8rem 0.85rem; min-width: 0; }
+.vue-meubles .mb-carte-txt b{ font-size: 0.98rem; overflow-wrap: anywhere; }
+.vue-meubles .mb-prix{ font-weight: 800; font-size: 1.05rem; margin-top: 0.15rem; }
+.vue-meubles .mb-prix em{ font-style: normal; font-size: 0.78rem; font-weight: 800; color: #2f8a55; background: rgba(47, 138, 85, 0.12); border-radius: 999px; padding: 0.05rem 0.4rem; }
+
+/* ---------- Fiche d'un meuble ---------- */
+.vue-meubles .mb-barre{ max-width: 1000px; margin: 0 auto 0.8rem; display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.vue-meubles .mb-retour{
+    display: inline-flex; align-items: center; min-height: 44px; padding: 0.4rem 0.9rem; border-radius: 12px;
+    background: var(--card-bg); color: var(--text-main); text-decoration: none; font-weight: 800;
+}
+.vue-meubles .mb-fiche{ max-width: 1000px; margin: 0 auto 0.9rem; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 1.2rem; align-items: start; }
+.vue-meubles .mb-photos{ display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+.vue-meubles .mb-defile{ display: flex; gap: 0.5rem; overflow-x: auto; scroll-snap-type: x mandatory; border-radius: 16px; }
+.vue-meubles .mb-photo{ position: relative; margin: 0; flex: 0 0 100%; scroll-snap-align: start; aspect-ratio: 4 / 3; background: var(--field-bg); border-radius: 16px; overflow: hidden; }
+.vue-meubles .mb-photo img{ width: 100%; height: 100%; object-fit: contain; display: block; }
+.vue-meubles .mb-retirer-photo{
+    position: absolute; right: 8px; top: 8px; width: 36px; height: 36px; border: none; border-radius: 50%;
+    background: rgba(0, 0, 0, 0.5); color: #fff; cursor: pointer; font-size: 0.9rem;
+}
+.vue-meubles .mb-photo-vide{ aspect-ratio: 4 / 3; border-radius: 16px; background: var(--field-bg); display: grid; place-items: center; font-size: 4rem; }
+.vue-meubles .mb-ajout-photo input{ position: absolute; opacity: 0; width: 1px; height: 1px; }
+.vue-meubles .mb-ajout-photo{ align-self: flex-start; cursor: pointer; }
+.vue-meubles .mb-ajout-photo:focus-within{ outline: 3px solid var(--accent); outline-offset: 2px; }
+.vue-meubles .mb-infos{ display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+.vue-meubles .mb-nom{ margin: 0; font-size: 1.5rem; font-weight: 800; line-height: 1.2; overflow-wrap: anywhere; }
+.vue-meubles .mb-ref{ display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; overflow-wrap: anywhere; }
+.vue-meubles .mb-copier{ border: none; background: var(--field-bg); border-radius: 8px; width: 34px; height: 34px; cursor: pointer; }
+.vue-meubles .mb-statuts{ display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.vue-meubles .mb-statuts .mb-puce.actif.achete{ background: #3f9a62; border-color: #3f9a62; color: #fff; }
+.vue-meubles .mb-details{ margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.6rem 1rem; }
+.vue-meubles .mb-details div{ min-width: 0; }
+.vue-meubles .mb-details dt{ font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; color: var(--text-muted); }
+.vue-meubles .mb-details dd{ margin: 0.1rem 0 0; font-weight: 600; overflow-wrap: anywhere; }
+.vue-meubles .mb-details a{ color: var(--accent); }
+.vue-meubles .mb-note{ background: var(--hover-bg); border-radius: 12px; padding: 0.6rem 0.8rem; white-space: pre-line; overflow-wrap: anywhere; }
+
+.vue-meubles .mb-bloc{ max-width: 1000px; margin: 0 auto 0.9rem; gap: 0.75rem; }
+.vue-meubles .mb-prix-ligne{ display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.8rem 1.6rem; }
+.vue-meubles .mb-prix-ligne > div{ display: flex; flex-direction: column; min-width: 0; }
+.vue-meubles .mb-gros{ font-size: 1.6rem; font-weight: 800; line-height: 1.15; }
+.vue-meubles .mb-meilleur .mb-gros{ color: #2f8a55; }
+.vue-meubles .mb-meilleur small{ font-size: 0.82rem; color: var(--text-muted); }
+.vue-meubles .mb-prix-ligne .mb-bouton{ margin-left: auto; }
+.vue-meubles .mb-historique summary{ cursor: pointer; font-weight: 700; color: var(--accent); padding: 0.3rem 0; }
+.vue-meubles .mb-historique ul{ list-style: none; margin: 0.4rem 0 0; padding: 0; }
+.vue-meubles .mb-historique li{ display: flex; align-items: baseline; gap: 0.8rem; padding: 0.35rem 0; border-bottom: 1px dashed var(--line); }
+.vue-meubles .mb-historique li span{ flex: 1; color: var(--text-muted); font-size: 0.9rem; }
+.vue-meubles .mb-historique em{ font-style: normal; font-size: 0.82rem; font-weight: 700; }
+.vue-meubles .baisse{ color: #2f8a55; }
+.vue-meubles .hausse{ color: #d1495b; }
+
+.vue-meubles .mb-sites{ display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.vue-meubles .mb-site{
+    display: inline-flex; align-items: center; gap: 0.35rem; min-height: 40px; padding: 0.35rem 0.8rem; border-radius: 12px;
+    background: var(--field-bg); border: 1.5px solid var(--line); color: var(--text-main); text-decoration: none; font-weight: 700; font-size: 0.9rem;
+}
+.vue-meubles .mb-site small{ font-weight: 600; font-size: 0.72rem; color: var(--text-muted); }
+.vue-meubles .mb-site.comparateur{ border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 10%, var(--card-bg)); }
+.vue-meubles .mb-site:hover{ border-color: var(--accent); }
+.vue-meubles .mb-sous-titre{ margin: 0.4rem 0 0; font-size: 1rem; font-weight: 800; }
+.vue-meubles .mb-offres{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.vue-meubles .mb-offres li{ display: flex; align-items: center; gap: 0.7rem; padding: 0.55rem 0.7rem; border-radius: 12px; background: var(--field-bg); border: 1.5px solid transparent; }
+.vue-meubles .mb-offres li.moins-cher{ border-color: #3f9a62; background: color-mix(in srgb, #3f9a62 10%, var(--card-bg)); }
+.vue-meubles .mb-offre-site{ flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.vue-meubles .mb-offre-site b{ overflow-wrap: anywhere; }
+.vue-meubles .mb-offre-site small{ font-size: 0.78rem; }
+.vue-meubles .mb-badge{ align-self: flex-start; font-size: 0.7rem; font-weight: 800; color: #fff; background: #3f9a62; border-radius: 999px; padding: 0.1rem 0.5rem; }
+.vue-meubles .mb-offre-prix{ font-size: 1.1rem; white-space: nowrap; }
+.vue-meubles .mb-offre-actions{ display: flex; gap: 0.3rem; }
+.vue-meubles .mb-bloc > .mb-bouton{ align-self: flex-start; }
+.vue-meubles .mb-supprimer{ max-width: 1000px; margin: 0 auto 2rem; text-align: center; }
+
+@media (max-width: 700px) {
+    .vue-meubles .mb-resume{ grid-template-columns: 1fr 1fr; }
+    .vue-meubles .mb-resume .mb-bouton{ grid-column: 1 / -1; }
+    .vue-meubles .mb-chiffre b{ font-size: 1.25rem; }
+    .vue-meubles .mb-fiche{ grid-template-columns: 1fr; }
+    .vue-meubles .mb-gros{ font-size: 1.35rem; }
+    .vue-meubles .mb-prix-ligne .mb-bouton{ margin-left: 0; width: 100%; }
+}
+
+/* ---------- Fiches (par-dessus la page) ---------- */
+.feuille .mb-form{ display: flex; flex-direction: column; gap: 0.9rem; }
+.feuille .mb-form2{ display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+.feuille .mb-form2 > *{ min-width: 0; }
+.feuille .mb-form textarea{
+    width: 100%; padding: 0.75rem 0.9rem; border: 2px solid var(--line); border-radius: 12px;
+    background: var(--field-bg); color: var(--text-main); font: inherit; font-size: 0.95rem; resize: vertical;
+}
+.feuille .mb-form textarea:focus{ outline: none; border-color: var(--accent); }
+.feuille .mb-form input[type="file"]{ font: inherit; font-size: 0.9rem; }
