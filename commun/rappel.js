@@ -56,12 +56,30 @@ export function lienGoogleAgenda({ titre, description = "", debut, dureeMin = 30
 const estIOS = () => /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 // Ouvre le fichier .ics : l'iPhone propose « Ajouter au calendrier », Android ouvre l'agenda
-export function ouvrirIcs(ics, nom = "rappel.ics") {
-    if (estIOS() && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent)) {
-        // Safari sur iPhone affiche directement l'évènement, avec « Ajouter au calendrier »
-        location.href = "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
-        return;
+// Adresse de TON service de rappels sur Cloudflare (voir cloudflare/rappel-worker.js).
+// Tant qu'elle est vide, on utilise le service public ics.agical.io.
+//   ex. "https://rappel-maison.mon-compte.workers.dev"
+export const SERVICE_RAPPELS = "https://rappel-maison.gardien64.workers.dev";
+
+// iPhone : Apple refuse les fichiers d'agenda fabriqués par la page elle-même
+// (rien ne s'affiche). Il faut une vraie adresse internet qui renvoie l'évènement :
+// on utilise le service gratuit ics.agical.io, qui fabrique le fichier à partir des
+// informations passées dans l'adresse (titre, date, description, alerte).
+// L'iPhone affiche alors l'évènement avec « Ajouter au calendrier ».
+export function lienIcsEnLigne({ titre, description = "", debut, dureeMin = 30 }) {
+    if (SERVICE_RAPPELS) {
+        const q = new URLSearchParams({ titre, description, debut: debut.toISOString(), duree: String(dureeMin) });
+        return `${SERVICE_RAPPELS.replace(/\/+$/, "")}/?${q}`;
     }
+    const p = new URLSearchParams({
+        subject: titre, description, dtstart: debut.toISOString().replace(/\.\d{3}Z$/, "Z"),
+        duration: `${dureeMin}M`, reminder: "0"
+    });
+    return `https://ics.agical.io/?${p}`;
+}
+
+export function ouvrirIcs(ics, nom = "rappel.ics", evenement = null) {
+    if (estIOS() && evenement) { location.href = lienIcsEnLigne(evenement); return; }
     const url = URL.createObjectURL(new Blob([ics], { type: "text/calendar;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url; a.download = nom;
@@ -130,7 +148,7 @@ export function ficheRappel({ titre, description = "", intro = "", nomFichier = 
             </div>` : ""}
             <p class="rappel-quand">${d ? `Rappel le <b>${dateLongue(d)}</b>` : "Choisis un jour."}</p>
             <button type="button" class="bouton principal large" data-ics>🔔 Ajouter le rappel au téléphone</button>
-            ${estIOS() ? "" : `<a class="bouton large" data-google target="_blank" rel="noopener" href="#">Ajouter à Google Agenda</a>`}
+            <a class="bouton large" data-google target="_blank" rel="noopener" href="#">Ajouter à Google Agenda</a>
             <p class="muet petit">${estIOS()
                 ? "L'iPhone propose « Ajouter au calendrier » : touche-le. Au moment choisi, une <b>notification</b> s'affiche sur l'écran, comme un rappel, même si tu n'ouvres jamais le calendrier. (Si rien ne s'affiche : Réglages › Notifications › Calendrier › Autoriser les notifications.)"
                 : "Le rappel arrive dans ton agenda, avec une alerte à l'heure choisie : une notification s'affiche à ce moment-là, même si le site est fermé."}</p>
@@ -147,7 +165,7 @@ export function ficheRappel({ titre, description = "", intro = "", nomFichier = 
         const d = dateChoisie();
         if (e.target.closest("[data-ics]")) {
             if (!d) { toast("Choisis un jour pour le rappel."); return; }
-            ouvrirIcs(fichierIcs({ titre, description, debut: d }), nomFichier);
+            ouvrirIcs(fichierIcs({ titre, description, debut: d }), nomFichier, { titre, description, debut: d });
             quandChoisi(d);
             setTimeout(() => f.fermer(), 300);
         } else if (e.target.closest("[data-google]")) {
