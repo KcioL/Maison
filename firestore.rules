@@ -1,0 +1,662 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ==================================================================
+    // SITE « MAISON » (dashboard, stock, recettes)
+    // Connexion obligatoire : comptes e-mail Firebase Auth.
+    //
+    // Les stocks, les listes et les carnets de recettes se partagent tous
+    // de la même façon. Chaque document partagé contient :
+    //   name, ownerId, memberIds (liste des comptes), members ({ uid: e-mail }), createdAt
+    //   - seuls ses membres le voient et modifient son contenu
+    //   - seul le propriétaire le renomme, gère les accès ou le supprime
+    //   - un membre peut le quitter
+    // ==================================================================
+
+    function connecte() { return request.auth != null; }
+
+    function partageValide(d, champs) {
+      return d.keys().hasAll(champs) && d.keys().hasOnly(champs.concat(['activite']))
+        && activiteValide(d)
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 60
+        && d.ownerId is string
+        && d.memberIds is list && d.memberIds.size() >= 1 && d.memberIds.size() <= 30
+        && d.memberIds.toSet().size() == d.memberIds.size()
+        && d.ownerId in d.memberIds
+        && d.members is map
+        && d.members.keys().toSet() == d.memberIds.toSet()
+        && d.createdAt is int;
+    }
+    // activite : dernière modification du contenu, { le, par } (petit rond « nouveau »)
+    function activiteValide(d) {
+      return !('activite' in d)
+        || (d.activite is map && d.activite.keys().hasOnly(['le', 'par'])
+          && d.activite.le is int && d.activite.par is string);
+    }
+    function lirePartage() {
+      return connecte() && request.auth.uid in resource.data.memberIds;
+    }
+    function creerPartage(champs) {
+      return connecte()
+        && partageValide(request.resource.data, champs)
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.memberIds == [request.auth.uid];
+    }
+    function modifierPartage(champs) {
+      return connecte()
+        && partageValide(request.resource.data, champs)
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && (
+          // le propriétaire renomme et gère les accès
+          resource.data.ownerId == request.auth.uid
+          // un membre quitte (il ne peut rien changer d'autre)
+          || (request.auth.uid in resource.data.memberIds
+            && request.auth.uid != resource.data.ownerId
+            && request.resource.data.name == resource.data.name
+            && request.resource.data.memberIds == resource.data.memberIds.removeAll([request.auth.uid])
+            && request.resource.data.members.diff(resource.data.members).affectedKeys().hasOnly([request.auth.uid]))
+          // un membre signale qu'il a changé le contenu (rien d'autre)
+          || (request.auth.uid in resource.data.memberIds
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activite'])
+            && request.resource.data.activite.par == request.auth.uid)
+        );
+    }
+    function supprimerPartage() {
+      return connecte() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // ------------------------------------------------------------------
+    // Vus : pour chaque compte, la dernière activité vue de chaque élément
+    // partagé (le petit rond « nouveau » disparaît une fois vu). Privé.
+    // ------------------------------------------------------------------
+    match /vus/{uid} {
+      allow read, delete: if connecte() && request.auth.uid == uid;
+      allow create, update: if connecte() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['m'])
+        && request.resource.data.m is map
+        && request.resource.data.m.size() <= 2000;
+    }
+
+    // ------------------------------------------------------------------
+    // Annuaire : e-mail -> compte, pour partager avec quelqu'un.
+    // On s'y inscrit soi-même avec un e-mail vérifié ; on ne peut que
+    // consulter une adresse précise, jamais lister l'annuaire.
+    // ------------------------------------------------------------------
+    match /annuaire/{email} {
+      allow get: if connecte();
+      allow list: if false;
+      allow create, update: if connecte()
+        && request.auth.token.email_verified == true
+        && email == request.auth.token.email.lower()
+        && request.resource.data.keys().hasOnly(['uid', 'name'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 40;
+      allow delete: if connecte() && resource.data.uid == request.auth.uid;
+    }
+
+    // ------------------------------------------------------------------
+    // Listes partagées (dashboard) : courses et choses à faire
+    // ------------------------------------------------------------------
+    match /listes/{listeId} {
+      function champsListe() { return ['name', 'type', 'ownerId', 'memberIds', 'members', 'createdAt']; }
+      function membreDeLaListe() {
+        return connecte() && request.auth.uid in get(/databases/$(database)/documents/listes/$(listeId)).data.memberIds;
+      }
+
+      allow read: if lirePartage();
+      allow create: if creerPartage(champsListe()) && request.resource.data.type in ['courses', 'taches'];
+      allow update: if modifierPartage(champsListe()) && request.resource.data.type == resource.data.type;
+      allow delete: if supprimerPartage();
+
+      match /articles/{articleId} {
+        function articleValide(d) {
+          return d.keys().hasAll(['texte', 'coche', 'creeLe', 'creePar'])
+            && d.keys().hasOnly(['texte', 'coche', 'creeLe', 'creePar'])
+            && d.texte is string && d.texte.size() > 0 && d.texte.size() <= 200
+            && d.coche is bool
+            && d.creeLe is int
+            && d.creePar is string;
+        }
+        allow read, delete: if membreDeLaListe();
+        allow create: if membreDeLaListe()
+          && articleValide(request.resource.data)
+          && request.resource.data.creePar == request.auth.uid;
+        allow update: if membreDeLaListe()
+          && articleValide(request.resource.data)
+          && request.resource.data.creeLe == resource.data.creeLe
+          && request.resource.data.creePar == resource.data.creePar;
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Gestion des stocks
+    // ------------------------------------------------------------------
+    match /stocks/{stockId} {
+      function champsStock() { return ['name', 'ownerId', 'memberIds', 'members', 'createdAt']; }
+      function membreDuStock() {
+        return connecte() && request.auth.uid in get(/databases/$(database)/documents/stocks/$(stockId)).data.memberIds;
+      }
+
+      allow read: if lirePartage();
+      allow create: if creerPartage(champsStock());
+      allow update: if modifierPartage(champsStock());
+      allow delete: if supprimerPartage();
+
+      // Les rangements (frigo, placards…)
+      match /storages/{storageId} {
+        function validStorage(d) {
+          return d.keys().hasAll(['name', 'type', 'createdAt', 'createdBy'])
+            && d.keys().hasOnly(['name', 'type', 'createdAt', 'createdBy'])
+            && d.name is string && d.name.size() > 0 && d.name.size() <= 40
+            && d.type in ['frigo', 'congel', 'placard', 'cellier', 'etagere', 'tiroir', 'autre']
+            && d.createdAt is int
+            && d.createdBy is string;
+        }
+        allow read, delete: if membreDuStock();
+        allow create: if membreDuStock()
+          && validStorage(request.resource.data)
+          && request.resource.data.createdBy == request.auth.uid;
+        allow update: if membreDuStock()
+          && validStorage(request.resource.data)
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.createdBy == resource.data.createdBy;
+      }
+
+      // Les produits
+      match /items/{itemId} {
+        function validItem(d) {
+          return d.keys().hasAll(['storageId', 'name', 'qty', 'unit', 'min', 'expiry', 'createdAt', 'updatedAt', 'updatedBy'])
+            && d.keys().hasOnly(['storageId', 'name', 'qty', 'unit', 'min', 'expiry', 'createdAt', 'updatedAt', 'updatedBy'])
+            && d.storageId is string
+            && exists(/databases/$(database)/documents/stocks/$(stockId)/storages/$(d.storageId))
+            && d.name is string && d.name.size() > 0 && d.name.size() <= 80
+            && d.qty is number && d.qty >= 0 && d.qty <= 1000000
+            && d.unit in ['pcs', 'g', 'kg', 'ml', 'L', 'boîte', 'paquet', 'bouteille', 'pot', 'sachet']
+            && (d.min == null || (d.min is number && d.min >= 0 && d.min <= 1000000))
+            && (d.expiry == null || (d.expiry is string && d.expiry.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+            && d.createdAt is int
+            && d.updatedAt is int
+            && d.updatedBy == request.auth.uid;
+        }
+        allow read, delete: if membreDuStock();
+        allow create: if membreDuStock() && validItem(request.resource.data);
+        allow update: if membreDuStock()
+          && validItem(request.resource.data)
+          && request.resource.data.createdAt == resource.data.createdAt;
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Carnets de recettes partagés
+    //   carnets/{carnet}/recettes/{recette}/photos/{photo}
+    // Les photos sont stockées en texte (data URL), une par document.
+    // ------------------------------------------------------------------
+    match /carnets/{carnetId} {
+      function champsCarnet() { return ['name', 'ownerId', 'memberIds', 'members', 'createdAt']; }
+      function membreDuCarnet() {
+        return connecte() && request.auth.uid in get(/databases/$(database)/documents/carnets/$(carnetId)).data.memberIds;
+      }
+
+      allow read: if lirePartage();
+      allow create: if creerPartage(champsCarnet());
+      allow update: if modifierPartage(champsCarnet());
+      allow delete: if supprimerPartage();
+
+      match /recettes/{recetteId} {
+        function validRecette(d) {
+          return d.keys().hasAll(['titre', 'ingredients', 'etapes', 'photos', 'creeLe', 'modifieLe'])
+            && d.keys().hasOnly(['titre', 'ingredients', 'etapes', 'source', 'notes', 'categories', 'photos', 'miniature', 'creeLe', 'modifieLe'])
+            && d.titre is string && d.titre.size() > 0 && d.titre.size() <= 200
+            && d.ingredients is list && d.ingredients.size() <= 300
+            && d.etapes is list && d.etapes.size() <= 300
+            && (!('source' in d) || d.source == null
+                || (d.source is string && d.source.size() <= 2000 && d.source.matches('https?://.*')))
+            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 20000))
+            && (!('categories' in d) || (d.categories is list && d.categories.size() <= 12))
+            && d.photos is list && d.photos.size() <= 12
+            && (!('miniature' in d) || d.miniature == null
+                || (d.miniature is string && d.miniature.size() <= 600000 && d.miniature.matches('data:image/.*')))
+            && d.creeLe is timestamp
+            && d.modifieLe is timestamp;
+        }
+        allow read, delete: if membreDuCarnet();
+        allow create: if membreDuCarnet() && validRecette(request.resource.data);
+        allow update: if membreDuCarnet()
+          && validRecette(request.resource.data)
+          && request.resource.data.creeLe == resource.data.creeLe;
+
+        match /photos/{photoId} {
+          allow read, delete: if membreDuCarnet();
+          allow create: if membreDuCarnet()
+            && request.resource.data.keys().hasOnly(['data'])
+            && request.resource.data.data is string
+            && request.resource.data.data.size() < 1000000
+            && request.resource.data.data.matches('data:image/.*');
+          allow update: if false;
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Muscu : programmes d'entraînement partagés
+    //   programmes/{programme}/seances/{seance}
+    //   une séance : nom, ordre, exercices (liste), modifieLe, modifiePar
+    // ------------------------------------------------------------------
+    match /programmes/{programmeId} {
+      function champsProgramme() { return ['name', 'ownerId', 'memberIds', 'members', 'createdAt']; }
+      function membreDuProgramme() {
+        return connecte() && request.auth.uid in get(/databases/$(database)/documents/programmes/$(programmeId)).data.memberIds;
+      }
+
+      allow read: if lirePartage();
+      allow create: if creerPartage(champsProgramme());
+      allow update: if modifierPartage(champsProgramme());
+      allow delete: if supprimerPartage();
+
+      match /seances/{seanceId} {
+        function seanceValide(d) {
+          return d.keys().hasAll(['nom', 'ordre', 'exercices', 'modifieLe', 'modifiePar'])
+            && d.keys().hasOnly(['nom', 'ordre', 'exercices', 'modifieLe', 'modifiePar'])
+            && d.nom is string && d.nom.size() > 0 && d.nom.size() <= 60
+            && d.ordre is int
+            && d.exercices is list && d.exercices.size() <= 40
+            && d.modifieLe is int
+            && d.modifiePar == request.auth.uid;
+        }
+        allow read, delete: if membreDuProgramme();
+        allow create, update: if membreDuProgramme() && seanceValide(request.resource.data);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Muscu : exercices ajoutés par les membres, visibles par tout le site
+    //   chacun peut en ajouter ; seul son auteur peut le retirer
+    // ------------------------------------------------------------------
+    match /exercicesPerso/{exoId} {
+      function exerciceValide(d) {
+        return d.keys().hasAll(['nom', 'groupe', 'materiel', 'reps', 'video', 'creePar', 'creeParNom', 'creeLe'])
+          && d.keys().hasOnly(['nom', 'groupe', 'materiel', 'reps', 'video', 'creePar', 'creeParNom', 'creeLe'])
+          && d.nom is string && d.nom.size() > 0 && d.nom.size() <= 80
+          && d.groupe in ['pecs', 'dos', 'epaules', 'biceps', 'triceps', 'avantbras', 'jambes', 'fessiers', 'mollets', 'abdos', 'cardio']
+          && d.materiel is string && d.materiel.size() <= 30
+          && d.reps is string && d.reps.size() > 0 && d.reps.size() <= 20
+          && (d.video == null || (d.video is string && d.video.size() <= 2000 && d.video.matches('https?://.*')))
+          && d.creePar == request.auth.uid
+          && d.creeParNom is string && d.creeParNom.size() <= 40
+          && d.creeLe is int;
+      }
+      allow read: if connecte();
+      allow create: if connecte() && exerciceValide(request.resource.data);
+      allow update: if false;
+      allow delete: if connecte() && resource.data.creePar == request.auth.uid;
+    }
+
+    // ------------------------------------------------------------------
+    // Abonnements : listes d'abonnements partagées
+    //   abonnements/{liste}/lignes/{abonnement}
+    // ------------------------------------------------------------------
+    match /abonnements/{listeId} {
+      function champsAbonnements() { return ['name', 'ownerId', 'memberIds', 'members', 'createdAt']; }
+      function membreAbonnements() {
+        return connecte() && request.auth.uid in get(/databases/$(database)/documents/abonnements/$(listeId)).data.memberIds;
+      }
+      allow read: if lirePartage();
+      allow create: if creerPartage(champsAbonnements());
+      allow update: if modifierPartage(champsAbonnements());
+      allow delete: if supprimerPartage();
+
+      match /lignes/{ligneId} {
+        function ligneValide(d) {
+          return d.keys().hasAll(['nom', 'montant', 'frequence', 'prochaine', 'categorie', 'payePar', 'actif', 'note', 'modifiePar'])
+            && d.keys().hasOnly(['nom', 'montant', 'frequence', 'prochaine', 'categorie', 'payePar', 'actif', 'note', 'modifiePar', 'creeLe'])
+            && d.nom is string && d.nom.size() > 0 && d.nom.size() <= 60
+            && d.montant is number && d.montant >= 0 && d.montant <= 100000
+            && d.frequence in ['mois', 'trimestre', 'an', 'semaine']
+            && (d.prochaine == null || (d.prochaine is string && d.prochaine.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+            && d.categorie is string && d.categorie.size() <= 20
+            && (d.payePar == null || (d.payePar is string && d.payePar.size() <= 40))
+            && d.actif is bool
+            && (d.note == null || (d.note is string && d.note.size() <= 200))
+            && d.modifiePar == request.auth.uid;
+        }
+        allow read, delete: if membreAbonnements();
+        allow create: if membreAbonnements() && ligneValide(request.resource.data) && request.resource.data.creeLe is int;
+        allow update: if membreAbonnements() && ligneValide(request.resource.data)
+          && request.resource.data.get('creeLe', 0) == resource.data.get('creeLe', 0);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Loyer & charges : foyers partagés
+    //   foyers/{foyer}/donnees/config (un seul document de réglages)
+    // ------------------------------------------------------------------
+    match /foyers/{foyerId} {
+      function champsFoyer() { return ['name', 'ownerId', 'memberIds', 'members', 'createdAt']; }
+      function membreFoyer() {
+        return connecte() && request.auth.uid in get(/databases/$(database)/documents/foyers/$(foyerId)).data.memberIds;
+      }
+      allow read: if lirePartage();
+      allow create: if creerPartage(champsFoyer());
+      allow update: if modifierPartage(champsFoyer());
+      allow delete: if supprimerPartage();
+
+      match /donnees/{docId} {
+        function configValide(d) {
+          return docId == 'config'
+            && d.keys().hasAll(['loyer', 'loyerPayePar', 'mode', 'communs', 'personnes', 'charges', 'modifieLe', 'modifiePar'])
+            && d.keys().hasOnly(['loyer', 'loyerPayePar', 'mode', 'communs', 'personnes', 'charges', 'modifieLe', 'modifiePar'])
+            && (d.loyer == null || (d.loyer is number && d.loyer >= 0 && d.loyer <= 1000000))
+            && (d.loyerPayePar == null || d.loyerPayePar is string)
+            && d.mode in ['egal', 'revenus', 'surface']
+            && (d.communs == null || (d.communs is number && d.communs >= 0 && d.communs <= 10000))
+            && d.personnes is list && d.personnes.size() <= 20
+            && d.charges is list && d.charges.size() <= 40
+            && d.modifieLe is int
+            && d.modifiePar == request.auth.uid;
+        }
+        allow read, delete: if membreFoyer();
+        allow create, update: if membreFoyer() && configValide(request.resource.data);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Garage : véhicules partagés (carnet d'entretien)
+    //   vehicules/{vehicule}/donnees/fiche        fiche technique
+    //   vehicules/{vehicule}/entretiens/{id}      entretiens et alertes
+    //   vehicules/{vehicule}/historique/{id}      interventions faites
+    // ------------------------------------------------------------------
+    match /vehicules/{vehiculeId} {
+      function champsVehicule() { return ['name', 'ownerId', 'memberIds', 'members', 'createdAt']; }
+      function membreVehicule() {
+        return connecte() && request.auth.uid in get(/databases/$(database)/documents/vehicules/$(vehiculeId)).data.memberIds;
+      }
+      function dateOuNull(v) { return v == null || (v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')); }
+      function texteOuNull(v, n) { return v == null || (v is string && v.size() <= n); }
+      function kmOuNull(v) { return v == null || (v is int && v >= 0 && v <= 5000000); }
+      allow read: if lirePartage();
+      allow create: if creerPartage(champsVehicule());
+      allow update: if modifierPartage(champsVehicule());
+      allow delete: if supprimerPartage();
+
+      match /donnees/{docId} {
+        function ficheValide(d) {
+          return docId == 'fiche'
+            && d.keys().hasAll(['type', 'marque', 'modele', 'annee', 'immat', 'km', 'kmLe', 'pneusAv', 'pneusAr', 'capacites', 'modifieLe', 'modifiePar'])
+            && d.keys().hasOnly(['type', 'marque', 'modele', 'annee', 'immat', 'km', 'kmLe', 'pneusAv', 'pneusAr', 'capacites', 'modifieLe', 'modifiePar'])
+            && d.type in ['moto', 'voiture', 'scooter', 'velo', 'autre']
+            && d.marque is string && d.marque.size() <= 40
+            && d.modele is string && d.modele.size() <= 40
+            && (d.annee == null || (d.annee is int && d.annee >= 1900 && d.annee <= 2100))
+            && d.immat is string && d.immat.size() <= 20
+            && kmOuNull(d.km) && dateOuNull(d.kmLe)
+            && (d.pneusAv == null || (d.pneusAv is number && d.pneusAv >= 0 && d.pneusAv <= 20))
+            && (d.pneusAr == null || (d.pneusAr is number && d.pneusAr >= 0 && d.pneusAr <= 20))
+            && d.capacites is list && d.capacites.size() <= 40
+            && d.modifieLe is int
+            && d.modifiePar == request.auth.uid;
+        }
+        // photo du véhicule (facultative), réduite et stockée en data URL
+        function photoValide(d) {
+          return docId == 'photo'
+            && d.keys().hasOnly(['data', 'modifieLe', 'modifiePar'])
+            && d.data is string && d.data.size() < 600000 && d.data.matches('data:image/.*')
+            && d.modifieLe is int
+            && d.modifiePar == request.auth.uid;
+        }
+        allow read, delete: if membreVehicule();
+        allow create, update: if membreVehicule() && (ficheValide(request.resource.data) || photoValide(request.resource.data));
+      }
+
+      match /entretiens/{entretienId} {
+        function entretienValide(d) {
+          return d.keys().hasAll(['nom', 'intervalleKm', 'intervalleMois', 'dernierKm', 'derniereDate', 'valeur', 'note', 'modifiePar'])
+            && d.keys().hasOnly(['nom', 'intervalleKm', 'intervalleMois', 'dernierKm', 'derniereDate', 'valeur', 'note', 'source', 'rappelLe', 'ordre', 'creeLe', 'modifiePar'])
+            && d.nom is string && d.nom.size() > 0 && d.nom.size() <= 60
+            && (d.intervalleKm == null || (d.intervalleKm is int && d.intervalleKm > 0 && d.intervalleKm <= 500000))
+            && (d.intervalleMois == null || (d.intervalleMois is int && d.intervalleMois > 0 && d.intervalleMois <= 240))
+            && kmOuNull(d.dernierKm) && dateOuNull(d.derniereDate)
+            && texteOuNull(d.valeur, 80) && texteOuNull(d.note, 200) && texteOuNull(d.get('source', null), 120) && texteOuNull(d.get('rappelLe', null), 20)
+            && d.modifiePar == request.auth.uid;
+        }
+        allow read, delete: if membreVehicule();
+        allow create: if membreVehicule() && entretienValide(request.resource.data)
+          && request.resource.data.creeLe is int && request.resource.data.ordre is int;
+        allow update: if membreVehicule() && entretienValide(request.resource.data)
+          && request.resource.data.get('creeLe', 0) == resource.data.get('creeLe', 0);
+      }
+
+      match /historique/{interventionId} {
+        function interventionValide(d) {
+          return d.keys().hasAll(['date', 'km', 'titre', 'details', 'cout', 'lieu', 'entretienId', 'creeLe', 'creePar'])
+            && d.keys().hasOnly(['date', 'km', 'titre', 'details', 'cout', 'lieu', 'entretienId', 'creeLe', 'creePar'])
+            && d.date is string && dateOuNull(d.date)
+            && kmOuNull(d.km)
+            && d.titre is string && d.titre.size() > 0 && d.titre.size() <= 80
+            && texteOuNull(d.details, 300) && texteOuNull(d.lieu, 60) && texteOuNull(d.entretienId, 40)
+            && (d.cout == null || (d.cout is number && d.cout >= 0 && d.cout <= 1000000))
+            && d.creeLe is int;
+        }
+        allow read, delete: if membreVehicule();
+        allow create: if membreVehicule() && interventionValide(request.resource.data)
+          && request.resource.data.creePar == request.auth.uid;
+        allow update: if membreVehicule() && interventionValide(request.resource.data)
+          && request.resource.data.creePar == resource.data.creePar
+          && request.resource.data.creeLe == resource.data.creeLe;
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Menus de la semaine (partagés comme les listes)
+    //   menus/{menu}/repas/{repas}   un plat prévu (date, midi / soir)
+    // ------------------------------------------------------------------
+    match /menus/{menuId} {
+      function champsMenu() { return ['name', 'ownerId', 'memberIds', 'members', 'createdAt']; }
+      function membreMenu() {
+        return connecte() && request.auth.uid in get(/databases/$(database)/documents/menus/$(menuId)).data.memberIds;
+      }
+      allow read: if lirePartage();
+      allow create: if creerPartage(champsMenu());
+      allow update: if modifierPartage(champsMenu());
+      allow delete: if supprimerPartage();
+
+      match /repas/{repasId} {
+        function texteOuNullMenu(v, n) { return v == null || (v is string && v.size() <= n); }
+        function repasValide(d) {
+          return d.keys().hasAll(['date', 'moment', 'titre', 'modifieLe', 'modifiePar'])
+            && d.keys().hasOnly(['date', 'moment', 'titre', 'carnetId', 'recetteId', 'ingredients', 'note', 'ordre', 'creeLe', 'modifieLe', 'modifiePar'])
+            && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+            && d.moment in ['matin', 'midi', 'gouter', 'soir']
+            && d.titre is string && d.titre.size() > 0 && d.titre.size() <= 120
+            && texteOuNullMenu(d.get('carnetId', null), 40) && texteOuNullMenu(d.get('recetteId', null), 40)
+            && (d.get('ingredients', null) == null || (d.ingredients is list && d.ingredients.size() <= 200))
+            && texteOuNullMenu(d.get('note', null), 300)
+            && d.modifieLe is int
+            && d.modifiePar == request.auth.uid;
+        }
+        allow read, delete: if membreMenu();
+        allow create, update: if membreMenu() && repasValide(request.resource.data);
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // Meubles (partagés comme les listes)
+    //   meubles/{liste}/articles/{meuble}/photos/{photo}
+    // ------------------------------------------------------------------
+    match /meubles/{listeMeublesId} {
+      function champsMeubles() { return ['name', 'ownerId', 'memberIds', 'members', 'createdAt']; }
+      function membreMeubles() {
+        return connecte() && request.auth.uid in get(/databases/$(database)/documents/meubles/$(listeMeublesId)).data.memberIds;
+      }
+      allow read: if lirePartage();
+      allow create: if creerPartage(champsMeubles());
+      allow update: if modifierPartage(champsMeubles());
+      allow delete: if supprimerPartage();
+
+      match /articles/{meubleId} {
+        function texteMeuble(v, n) { return v == null || (v is string && v.size() <= n); }
+        function prixMeuble(v) { return v == null || (v is number && v >= 0 && v <= 10000000); }
+        function meubleValide(d) {
+          return d.keys().hasAll(['nom', 'statut', 'creeLe', 'modifieLe', 'modifiePar'])
+            && d.keys().hasOnly(['nom', 'reference', 'magasin', 'lien', 'piece', 'dimensions', 'couleur', 'note', 'statut',
+                                 'prix', 'historique', 'offres', 'photos', 'miniature', 'creeLe', 'modifieLe', 'modifiePar'])
+            && d.nom is string && d.nom.size() > 0 && d.nom.size() <= 120
+            && d.statut in ['hesite', 'acheter', 'achete']
+            && texteMeuble(d.get('reference', null), 80) && texteMeuble(d.get('magasin', null), 60)
+            && texteMeuble(d.get('piece', null), 40) && texteMeuble(d.get('dimensions', null), 80)
+            && texteMeuble(d.get('couleur', null), 80) && texteMeuble(d.get('note', null), 2000)
+            && (d.get('lien', null) == null || (d.lien is string && d.lien.size() <= 2000 && d.lien.matches('https?://.*')))
+            && prixMeuble(d.get('prix', null))
+            && (d.get('historique', null) == null || (d.historique is list && d.historique.size() <= 60))
+            && (d.get('offres', null) == null || (d.offres is list && d.offres.size() <= 30))
+            && (d.get('photos', null) == null || (d.photos is list && d.photos.size() <= 6))
+            && (d.get('miniature', null) == null || (d.miniature is string && d.miniature.size() <= 400000 && d.miniature.matches('data:image/.*')))
+            && d.creeLe is int && d.modifieLe is int
+            && d.modifiePar == request.auth.uid;
+        }
+        allow read, delete: if membreMeubles();
+        allow create: if membreMeubles() && meubleValide(request.resource.data);
+        allow update: if membreMeubles() && meubleValide(request.resource.data)
+          && request.resource.data.creeLe == resource.data.creeLe;
+
+        match /photos/{photoId} {
+          allow read, delete: if membreMeubles();
+          allow create: if membreMeubles()
+            && request.resource.data.keys().hasOnly(['data'])
+            && request.resource.data.data is string
+            && request.resource.data.data.size() < 1000000
+            && request.resource.data.data.matches('data:image/.*');
+          allow update: if false;
+        }
+      }
+    }
+
+    // ------------------------------------------------------------------
+    // COMPTES DE POTES
+    // Chacun se connecte avec un compte email (Firebase Auth) : son uid
+    // l'identifie, et il choisit un prénom différent dans chaque groupe.
+    // Un groupe s'ouvre avec son lien (identifiant aléatoire),
+    // personne ne peut lister tous les groupes.
+    //   - chacun crée et renomme uniquement son propre profil dans le groupe
+    //   - chacun ajoute, modifie et supprime uniquement ses propres dépenses
+    //   - le journal ne peut être ni modifié ni falsifié (auteur et heure vérifiés)
+    //   - seul le créateur du groupe peut supprimer le groupe, ou le transmettre
+    //   - en supprimant son compte, on est anonymisé (« Compte supprimé »)
+    // ------------------------------------------------------------------
+    // « Mes groupes » : la liste personnelle de chaque compte, visible par lui seul
+    match /comptesDePotesUsers/{userId}/groups/{groupId} {
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
+      allow create, update: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['name', 'addedAt', 'hidden'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() <= 60
+        && request.resource.data.addedAt is int
+        && (!('hidden' in request.resource.data) || request.resource.data.hidden is bool);
+    }
+
+    match /comptesDePotes/{groupId} {
+
+      function uid() { return request.auth.uid; }
+      function signedIn() { return request.auth != null; }
+      function groupPath() { return /databases/$(database)/documents/comptesDePotes/$(groupId); }
+      function memberPath(id) { return /databases/$(database)/documents/comptesDePotes/$(groupId)/members/$(id); }
+      function isOwner() { return signedIn() && get(groupPath()).data.createdBy == uid(); }
+      function isMemberAfter() { return signedIn() && existsAfter(memberPath(uid())); }
+      function nowish(t) {
+        return t is int && t > request.time.toMillis() - 300000 && t < request.time.toMillis() + 300000;
+      }
+
+      function validGroup(d) {
+        return d.keys().hasOnly(['name', 'currency', 'total', 'createdAt', 'createdBy'])
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 60
+          && d.currency in ['€', '$', '£', 'CHF']
+          && d.total is int && d.total >= 0
+          && d.createdAt is int
+          && d.createdBy is string;
+      }
+      function validMember(d) {
+        return d.keys().hasOnly(['name', 'joinedAt', 'deleted'])
+          && d.name is string && d.name.size() > 0 && d.name.size() <= 30
+          && d.joinedAt is int
+          && (!('deleted' in d) || d.deleted is bool);
+      }
+      function validExpense(d) {
+        return d.keys().hasOnly(['title', 'amount', 'payer', 'participants', 'date', 'createdAt', 'createdBy', 'kind'])
+          && d.title is string && d.title.size() > 0 && d.title.size() <= 80
+          && d.amount is int && d.amount > 0 && d.amount <= 100000000
+          && d.participants is list && d.participants.size() >= 1 && d.participants.size() <= 50
+          && d.date is string && d.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && d.createdAt is int
+          && d.createdBy == uid() && d.payer == uid();
+      }
+      function validLog(d) {
+        return d.keys().hasOnly(['action', 'by', 'at', 'text', 'expenseId'])
+          && d.action in ['join', 'add', 'edit', 'delete', 'rename', 'settle', 'leave']
+          && d.by == uid()
+          && nowish(d.at)
+          && d.text is string && d.text.size() <= 200
+          && (!('expenseId' in d) || d.expenseId is string);
+      }
+
+      // Le groupe
+      allow get: if true;
+      allow list: if false;
+      allow create: if signedIn()
+        && validGroup(request.resource.data)
+        && request.resource.data.createdBy == uid()
+        && existsAfter(memberPath(uid()));
+      allow update: if isMemberAfter()
+        && validGroup(request.resource.data)
+        && (
+          // n'importe quel membre met à jour le total ; le créateur peut renommer
+          (request.resource.data.createdBy == resource.data.createdBy
+            && (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['total'])
+                || (resource.data.createdBy == uid()
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'total']))))
+          // le créateur transmet le groupe à un autre membre (suppression de son compte)
+          || (resource.data.createdBy == uid()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['createdBy'])
+            && request.resource.data.createdBy != uid()
+            && exists(memberPath(request.resource.data.createdBy)))
+        );
+      allow delete: if signedIn() && resource.data.createdBy == uid();
+
+      // Les profils
+      match /members/{memberId} {
+        allow read: if true;
+        allow create: if signedIn() && memberId == uid()
+          && validMember(request.resource.data)
+          && existsAfter(groupPath());
+        allow update: if signedIn() && memberId == uid()
+          && validMember(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'deleted']);
+        allow delete: if signedIn() && (memberId == uid() || isOwner());
+      }
+
+      // Les dépenses : chacun gère les siennes
+      match /expenses/{expenseId} {
+        allow read: if true;
+        allow create: if isMemberAfter() && validExpense(request.resource.data);
+        allow update: if isMemberAfter()
+          && resource.data.createdBy == uid()
+          && validExpense(request.resource.data)
+          && request.resource.data.createdAt == resource.data.createdAt;
+        allow delete: if signedIn() && (resource.data.createdBy == uid() || isOwner());
+      }
+
+      // Le journal : on ajoute, on ne modifie jamais
+      match /log/{logId} {
+        allow read: if true;
+        allow create: if isMemberAfter() && validLog(request.resource.data);
+        allow update: if false;
+        // le créateur (suppression du groupe), ou l'auteur de ses propres changements
+        // de prénom (suppression de son compte)
+        allow delete: if isOwner()
+          || (signedIn() && resource.data.by == uid() && resource.data.action == 'rename');
+      }
+    }
+  }
+}

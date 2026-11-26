@@ -24,6 +24,7 @@ import { esc, toast, ouvrirFeuille } from "../commun/ui.js";
 import {
     collection, doc, onSnapshot, addDoc, updateDoc, deleteDoc, getDoc, getDocs, writeBatch, query, where, orderBy
 } from "../commun/firestore.js";
+import { additionner, lireIngredient } from "./quantites.js";
 
 let racine, outils, zone, sel;
 const S = {
@@ -244,20 +245,18 @@ async function ajouterRepas({ date, moment, titre, carnetId = null, recetteId = 
 // ==========================================
 const PLACARD = /^(?:du\s+|de\s+l['’]\s*|de\s+la\s+)?(?:sel|poivre|sel\s*(?:,|et)\s*poivre|eau|huile(?:\s+d['’]olive)?|sucre|farine|vinaigre|épices?)\b(?!\s+\d)/i;
 
-// les ingrédients de la semaine : [{ texte, plats: [titres], nb }]
+// les ingrédients de la semaine, un même ingrédient une seule fois avec les quantités additionnées
+// (voir quantites.js) : [{ texte, cle, plats: [titres], nb, detail }]
 function ingredientsDeLaSemaine(source = S.repas) {
-    const parTexte = new Map();
+    const entrees = [];
     for (const r of source) {
         for (const brut of r.ingredients || []) {
             const texte = String(brut).trim();
             if (!texte || estSousTitre(texte)) continue;
-            const k = sansAccents(texte).replace(/\s+/g, " ");
-            const e = parTexte.get(k) || { texte, plats: [], nb: 0 };
-            e.nb++; if (!e.plats.includes(r.titre)) e.plats.push(r.titre);
-            parTexte.set(k, e);
+            entrees.push({ texte, plat: r.titre });
         }
     }
-    return [...parTexte.values()];
+    return additionner(entrees);
 }
 
 async function ficheCourses() {
@@ -279,30 +278,32 @@ async function ficheCourses() {
     }));
     const items = ingredientsDeLaSemaine(repas);
     let listeId = (() => { try { const m = localStorage.getItem("liste-courses"); return courses.some(c => c.id === m) ? m : courses[0].id; } catch { return courses[0].id; } })();
-    let deja = new Set();
-    const choix = new Map();   // texte normalisé -> coché ?
-    const cle = (t) => sansAccents(t).replace(/\s+/g, " ");
-    const texteFinal = (it) => (it.nb > 1 ? `${it.texte} (×${it.nb})` : it.texte).slice(0, 200);
+    let deja = new Map();      // ingrédient déjà dans la liste (pas coché) -> texte de l'article
+    const choix = new Map();   // ingrédient -> coché ?
 
     async function chargerDeja() {
         try {
             const snap = await getDocs(collection(db, "listes", listeId, "articles"));
-            deja = new Set(snap.docs.filter(d => !d.data().coche).map(d => cle(d.data().texte.replace(/\s*\(×\d+\)$/, ""))));
-        } catch { deja = new Set(); }
+            deja = new Map(snap.docs.filter(d => !d.data().coche).map(d => {
+                const t = d.data().texte.replace(/\s*\(×\d+\)$/, "");
+                return [lireIngredient(t)?.cle, t];
+            }));
+        } catch { deja = new Map(); }
     }
-    const coche = (it) => choix.has(cle(it.texte)) ? choix.get(cle(it.texte)) : !deja.has(cle(it.texte)) && !PLACARD.test(it.texte);
+    const coche = (it) => choix.has(it.cle) ? choix.get(it.cle) : !deja.has(it.cle) && !PLACARD.test(it.texte);
 
     function dessiner() {
         const n = items.filter(coche).length;
         f.corps.innerHTML = `<div class="me-form">
             ${courses.length > 1 ? `<label class="champ"><span>Dans la liste</span><select name="liste">
                 ${courses.map(c => `<option value="${esc(c.id)}" ${c.id === listeId ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label>` : `<p class="muet petit">Dans la liste « ${esc(courses[0].name)} ».</p>`}
-            <p class="muet petit">Décoche ce que tu as déjà. Le sel, le poivre, l'huile… et ce qui est déjà dans la liste sont décochés d'office.</p>
+            <p class="muet petit">Un ingrédient présent dans plusieurs plats n'apparaît qu'une fois, quantités additionnées. Décoche ce que tu as déjà. Le sel, le poivre, l'huile… et ce qui est déjà dans la liste sont décochés d'office.</p>
             <ul class="me-ingredients">
                 ${items.map((it, i) => `<li><label class="me-case">
                     <input type="checkbox" data-i="${i}" ${coche(it) ? "checked" : ""}>
-                    <span><b>${esc(it.texte)}${it.nb > 1 ? ` <em>×${it.nb}</em>` : ""}</b>
-                    <small>${esc(it.plats.join(" · "))}${deja.has(cle(it.texte)) ? " · déjà dans la liste" : ""}</small></span>
+                    <span><b>${esc(it.texte)}</b>
+                    ${it.detail ? `<small class="me-detail">= ${esc(it.detail.join(" + "))}</small>` : ""}
+                    <small>${esc(it.plats.join(" · "))}${deja.has(it.cle) ? ` · déjà dans la liste : « ${esc(deja.get(it.cle))} »` : ""}</small></span>
                 </label></li>`).join("")}
             </ul>
             <button type="button" class="bouton principal large" data-ajouter ${n ? "" : "disabled"}>Ajouter ${n} article${n > 1 ? "s" : ""} à la liste</button>
@@ -314,7 +315,7 @@ async function ficheCourses() {
             try { localStorage.setItem("liste-courses", listeId); } catch { }
             await chargerDeja(); dessiner(); return;
         }
-        if (e.target.dataset.i != null) { choix.set(cle(items[+e.target.dataset.i].texte), e.target.checked); dessiner(); }
+        if (e.target.dataset.i != null) { choix.set(items[+e.target.dataset.i].cle, e.target.checked); dessiner(); }
     });
     f.corps.addEventListener("click", async (e) => {
         if (!e.target.closest("[data-ajouter]")) return;
@@ -326,7 +327,7 @@ async function ficheCourses() {
             for (let i = 0; i < aAjouter.length; i += 400) {
                 const lot = writeBatch(db);
                 aAjouter.slice(i, i + 400).forEach((it, k) => lot.set(doc(collection(db, "listes", listeId, "articles")), {
-                    texte: texteFinal(it), coche: false, creeLe: t + i + k, creePar: compte.uid
+                    texte: it.texte.slice(0, 200), coche: false, creeLe: t + i + k, creePar: compte.uid
                 }));
                 await lot.commit();
             }

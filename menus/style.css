@@ -102,6 +102,7 @@
 .feuille .me-case span{ display: flex; flex-direction: column; min-width: 0; }
 .feuille .me-case b{ font-weight: 600; overflow-wrap: anywhere; }
 .feuille .me-case em{ font-style: normal; font-weight: 800; color: var(--accent); }
+.feuille .me-case .me-detail{ color: var(--accent); font-weight: 600; }
 .feuille .me-case small{ color: var(--text-muted); font-size: 0.8rem; overflow-wrap: anywhere; }
 .feuille .me-case input:not(:checked) + span b{ color: var(--text-muted); text-decoration: line-through; }
 
