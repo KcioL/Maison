@@ -110,3 +110,19 @@
     .vue-menus .me-jour{ padding: 0.9rem; }
     .vue-menus .me-moment{ width: 3.9rem; }
 }
+
+/* Recette vue depuis le menu */
+.feuille .me-recette-zone{ display: flex; flex-direction: column; }
+.feuille .me-recette-vue{ display: flex; flex-direction: column; gap: 0.5rem; }
+.feuille .me-recette-vue h3{ margin: 0.4rem 0 0; font-size: 1rem; font-weight: 800; }
+.feuille .me-recette-photo{ width: 100%; max-height: 240px; object-fit: cover; border-radius: 14px; }
+.feuille .me-recette-ing{ list-style: none; margin: 0; padding: 0; }
+.feuille .me-recette-ing li{ padding: 0.4rem 0; border-bottom: 1px dashed var(--line); overflow-wrap: anywhere; }
+.feuille .me-recette-ing li.groupe{ font-weight: 800; color: var(--accent); border-bottom: none; padding-top: 0.7rem; }
+.feuille .me-recette-etapes{ margin: 0; padding-left: 1.4rem; display: flex; flex-direction: column; gap: 0.5rem; line-height: 1.5; }
+.feuille .me-recette-etapes li{ overflow-wrap: anywhere; }
+.feuille .me-recette-notes{ white-space: pre-line; background: var(--hover-bg); border-radius: 12px; padding: 0.6rem 0.8rem; overflow-wrap: anywhere; }
+.feuille .me-recette-source{ color: var(--accent); font-weight: 700; }
+.feuille .me-dans-menu{ border-top: 2px dashed var(--line); padding-top: 0.6rem; }
+.feuille .me-dans-menu summary{ cursor: pointer; font-weight: 700; color: var(--text-muted); padding: 0.4rem 0; }
+.feuille .me-dans-menu[open] summary{ margin-bottom: 0.6rem; }

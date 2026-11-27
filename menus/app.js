@@ -11,6 +11,9 @@
 //   menus/{id}/repas/{id}      date (AAAA-MM-JJ), moment (midi | soir),
 //                              titre, carnetId + recetteId (si c'est une recette du carnet),
 //                              ingredients [] (copie, ou ce qu'il faut acheter pour un repas sans recette),
+//                              etapes [], source, notesRecette, miniature : copie de la recette, pour que
+//                              les personnes qui partagent les menus la voient sans avoir accès au carnet
+//                              (remise à jour quand quelqu'un qui a accès au carnet ouvre le plat),
 //                              note, ordre, creeLe, modifieLe, modifiePar
 //
 // « Ajouter à la liste de courses » : regroupe les ingrédients des repas de la
@@ -115,7 +118,7 @@ async function chargerRecettes(forcer = false) {
             const snap = await getDocs(query(collection(db, "carnets", c.id, "recettes"), orderBy("creeLe", "desc")));
             snap.forEach(d => {
                 const r = d.data();
-                toutes.push({ carnetId: c.id, carnet: c.name, id: d.id, titre: r.titre || "Sans titre", ingredients: r.ingredients || [], miniature: r.miniature || null, categories: r.categories || [] });
+                toutes.push({ carnetId: c.id, carnet: c.name, id: d.id, titre: r.titre || "Sans titre", ingredients: r.ingredients || [], etapes: r.etapes || [], source: r.source || null, notes: r.notes || null, miniature: r.miniature || null, categories: r.categories || [] });
             });
         } catch (e) { console.warn("carnet", c.id, e); }
     }
@@ -183,17 +186,36 @@ function ficheAjout(date, moment) {
             const [carnetId, recetteId] = b.dataset.recette.split("|");
             const r = recettesCache?.find(x => x.carnetId === carnetId && x.id === recetteId); if (!r) return;
             f.fermer();
-            ajouterRepas({ date, moment, titre: r.titre, carnetId, recetteId, ingredients: r.ingredients });
+            ajouterRepas({ date, moment, titre: r.titre, carnetId, recetteId, ingredients: r.ingredients, recette: r });
         }
     });
     dessiner();
 }
 
+// La recette, telle que gardée dans le menu
+function htmlRecette(r) {
+    const ing = r.ingredients || [], et = r.etapes || [];
+    let domaine = "";
+    try { domaine = r.source ? new URL(r.source).hostname.replace(/^www\./, "") : ""; } catch { }
+    return `<article class="me-recette-vue">
+        ${r.miniature ? `<img class="me-recette-photo" src="${esc(r.miniature)}" alt="">` : ""}
+        ${ing.length ? `<h3>Ingrédients</h3><ul class="me-recette-ing">${ing.map(x => estSousTitre(x)
+            ? `<li class="groupe">${esc(String(x).replace(/^—\s*|\s*—$/g, ""))}</li>` : `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+        ${et.length ? `<h3>Préparation</h3><ol class="me-recette-etapes">${et.map(x => `<li>${esc(x)}</li>`).join("")}</ol>` : ""}
+        ${r.notesRecette ? `<h3>Notes</h3><p class="me-recette-notes">${esc(r.notesRecette)}</p>` : ""}
+        ${r.source ? `<p><a class="me-recette-source" href="${esc(r.source)}" target="_blank" rel="noopener">🔗 ${esc(domaine || "Lien d'inspiration")}</a></p>` : ""}
+        ${!ing.length && !et.length ? `<p class="muet petit">La recette n'a pas encore été copiée dans le menu : elle le sera dès que quelqu'un qui a accès au carnet ouvrira ce plat.</p>` : ""}
+    </article>`;
+}
+
 function ficheRepas(r) {
     const f = ouvrirFeuille({ titre: r.titre });
     const jours = joursSemaine();
-    f.corps.innerHTML = `<form class="me-form" autocomplete="off">
-        ${r.recetteId ? `<p class="me-info">📖 Recette du carnet${S.carnets.find(c => c.id === r.carnetId) ? ` « ${esc(S.carnets.find(c => c.id === r.carnetId).name)} »` : ""}. Les ingrédients sont repris de la recette au moment des courses.</p>` : ""}
+    const carnet = S.carnets.find(c => c.id === r.carnetId);
+    f.corps.innerHTML = `${r.recetteId ? `<div class="me-recette-zone">${htmlRecette(r)}</div>
+        <details class="me-dans-menu"><summary>📅 Changer le jour, ajouter une note, retirer du menu</summary>` : ""}
+        <form class="me-form" autocomplete="off">
+        ${r.recetteId ? `<p class="me-info">📖 Recette ${carnet ? `du carnet « ${esc(carnet.name)} »` : "partagée avec les menus"}. Les ingrédients sont repris de la recette au moment des courses.</p>` : ""}
         <label class="champ"><span>Au menu</span><input name="titre" maxlength="120" required value="${esc(r.titre)}"></label>
         <div class="me-form2">
             <label class="champ"><span>Jour</span><select name="date">
@@ -207,8 +229,13 @@ function ficheRepas(r) {
         <label class="champ"><span>Note (facultatif)</span><input name="note" maxlength="300" value="${esc(r.note || "")}" placeholder="Ex. doubler les quantités"></label>
         <button class="bouton principal large" type="submit">Enregistrer</button>
         <button class="bouton danger large" type="button" data-retirer>Retirer du menu</button>
-    </form>`;
+    </form>${r.recetteId ? "</details>" : ""}`;
     const form = f.corps.querySelector("form");
+    // recette à jour si j'ai accès au carnet (et copie remise à jour pour les autres)
+    if (r.recetteId) rafraichirCopie(r, true).then(maj => {
+        const zone = f.corps.querySelector(".me-recette-zone");
+        if (zone && maj !== r) zone.innerHTML = htmlRecette(maj);
+    });
     form.addEventListener("submit", async (e) => {
         e.preventDefault();
         const d = { titre: form.titre.value.trim() || r.titre, date: form.date.value, moment: form.moment.value, note: form.note.value.trim() || null, modifieLe: Date.now(), modifiePar: compte.uid };
@@ -228,12 +255,41 @@ function lignes(t) {
     return String(t || "").split("\n").map(l => l.trim().replace(/^[-•*–·]\s+/, "")).filter(Boolean).slice(0, 200).map(l => l.slice(0, 200));
 }
 
-async function ajouterRepas({ date, moment, titre, carnetId = null, recetteId = null, ingredients = [] }) {
+// La copie de la recette gardée dans le menu (visible par tous ceux qui partagent les menus)
+function copieRecette(r) {
+    return {
+        ingredients: (r.ingredients || []).slice(0, 200).map(x => String(x).slice(0, 200)),
+        etapes: (r.etapes || []).slice(0, 300).map(x => String(x).slice(0, 2000)),
+        source: r.source && /^https?:\/\//.test(r.source) ? String(r.source).slice(0, 2000) : null,
+        notesRecette: r.notes ? String(r.notes).slice(0, 5000) : null,
+        miniature: r.miniature && r.miniature.length < 200000 ? r.miniature : null
+    };
+}
+const memeCopie = (a, b) => JSON.stringify([a.ingredients, a.etapes || [], a.source || null, a.notesRecette || null, a.miniature || null])
+    === JSON.stringify([b.ingredients, b.etapes || [], b.source || null, b.notesRecette || null, b.miniature || null]);
+
+// Si j'ai accès au carnet, je remets à jour la copie de la recette dans le menu
+const synchronises = new Set();
+async function rafraichirCopie(r, forcer = false) {
+    if (!r.recetteId || !r.carnetId || !S.carnets.some(c => c.id === r.carnetId)) return r;
+    if (synchronises.has(r.id) && !forcer) return r;
+    synchronises.add(r.id);
+    try {
+        const snap = await getDoc(doc(db, "carnets", r.carnetId, "recettes", r.recetteId));
+        if (!snap.exists()) return r;
+        const c = copieRecette(snap.data());
+        if (!memeCopie(c, r)) await updateDoc(doc(refRepas(), r.id), { ...c, modifieLe: Date.now(), modifiePar: compte.uid });
+        return { ...r, ...c };
+    } catch (e) { console.warn("copie recette", e); return r; }
+}
+
+async function ajouterRepas({ date, moment, titre, carnetId = null, recetteId = null, ingredients = [], recette = null }) {
     const t = Date.now();
     try {
         await addDoc(refRepas(), {
             date, moment, titre: titre.slice(0, 120), carnetId, recetteId,
             ingredients: (ingredients || []).slice(0, 200).map(x => String(x).slice(0, 200)), note: null,
+            ...(recette ? copieRecette(recette) : {}),
             ordre: t, creeLe: t, modifieLe: t, modifiePar: compte.uid
         });
         toast(`« ${titre} » ajouté au menu.`);
@@ -354,7 +410,13 @@ function ecouterSemaine() {
     const mid = S.mid, lundi = S.lundi, valable = () => mid === S.mid && lundi === S.lundi;
     S.arret = ecouterAvecReessai((ko) => onSnapshot(
         query(refRepas(mid), where("date", ">=", lundi), where("date", "<=", plusJours(lundi, 6))),
-        snap => { if (!valable()) return; S.repas = snap.docs.map(d => ({ id: d.id, ...d.data() })); S.repasCharges = true; rendre(); },
+        snap => {
+            if (!valable()) return;
+            S.repas = snap.docs.map(d => ({ id: d.id, ...d.data() })); S.repasCharges = true; rendre();
+            // copie des recettes à jour pour ceux qui n'ont pas accès au carnet (une fois par plat et par visite,
+            // seulement si j'ai accès au carnet)
+            S.repas.filter(r => r.recetteId).forEach(r => rafraichirCopie(r));
+        },
         ko), valable);
 }
 
