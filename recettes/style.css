@@ -142,7 +142,8 @@
 .vue-recettes .barre-actions .btn{ padding-inline: 1rem; }
 @media (max-width: 479px) {
   /* téléphone : la poubelle seule, pour que tout tienne sur une ligne */
-  .vue-recettes .barre-actions .btn-supprimer{ width: 46px; padding: 0; }
+  .vue-recettes .barre-actions .btn-supprimer, .vue-recettes .barre-actions #copier-recette{ width: 46px; padding: 0; }
+  .vue-recettes .barre-actions #copier-recette .texte-bouton,
   .vue-recettes .barre-actions .btn-supprimer .texte-bouton{ position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 }
 @media (max-width: 359px) {
@@ -666,6 +667,18 @@ body:has(.barre-bas:not([hidden])) .vue-recettes .toast{ bottom: calc(5.5rem + e
 }
 .feuille .import-feuille textarea:focus-visible{ outline: none; border-color: var(--accent); }
 .feuille .import-feuille .erreur{ margin: 0; color: #b3261e; font-weight: 700; }
+
+/* ---------- Copier dans un autre carnet ---------- */
+.feuille .copier-feuille{ display: flex; flex-direction: column; gap: .8rem; }
+.feuille .copier-carnets{ display: flex; flex-direction: column; gap: .45rem; }
+.feuille .copier-carnet{
+  display: flex; align-items: center; gap: .5rem; width: 100%; min-height: 50px; padding: .6rem .9rem; text-align: left;
+  border-radius: 14px; border: 1.5px solid var(--line); background: var(--field-bg); color: var(--text-main);
+  font: inherit; font-weight: 700; cursor: pointer;
+}
+.feuille .copier-carnet small{ font-weight: 500; color: var(--text-muted); }
+.feuille .copier-carnet:hover{ border-color: var(--accent); }
+.feuille .copier-carnet:disabled{ opacity: .55; cursor: default; }
 
 /* =========================================================
    MODE SOMBRE (activé par commun/theme.js)

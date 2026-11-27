@@ -97,6 +97,7 @@ const icones = {
   coche: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
   poubelle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
   crayon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>',
+  copier: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
   lien: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>',
 };
 
@@ -275,6 +276,68 @@ async function supprimerRecettes(liste, progression = () => {}) {
     (r.photos || []).forEach((pid) => photosCache.delete(pid));
     if (recettesCache) recettesCache = recettesCache.filter((x) => x.id !== r.id);
   }
+}
+
+// Copie des recettes (avec leurs photos) dans un autre carnet ; l'original ne bouge pas
+async function copierRecettes(liste, cibleId, progression = () => {}) {
+  if (!navigator.onLine) throw new Error("Pas de connexion internet : impossible de copier pour l'instant");
+  let i = 0;
+  for (const r of liste) {
+    progression(++i, liste.length);
+    const source = doc(recettesCol(), r.id);
+    const snap = await getDocs(collection(source, "photos"));
+    const donneesPhotos = new Map(snap.docs.map((d) => [d.id, d.data().data]));
+    const cible = doc(collection(db, "carnets", cibleId, "recettes"));
+    const ids = [];
+    for (const pid of r.photos || []) {
+      const data = donneesPhotos.get(pid) || photosCache.get(pid);
+      if (!data) continue;
+      const nouvelle = doc(collection(cible, "photos"));
+      await setDoc(nouvelle, { data });
+      ids.push(nouvelle.id);
+    }
+    await setDoc(cible, {
+      titre: r.titre, ingredients: r.ingredients || [], etapes: r.etapes || [],
+      source: r.source ?? null, notes: r.notes ?? null, categories: categoriesDe(r),
+      photos: ids, miniature: ids.length ? (r.miniature ?? null) : null,
+      creeLe: serverTimestamp(), modifieLe: serverTimestamp(),
+    });
+  }
+}
+
+// Fenêtre « Copier dans un autre carnet »
+function ficheCopier(liste, quandFini = () => {}) {
+  const autres = carnets.filter((c) => c.id !== carnetId);
+  const f = ouvrirFeuille({ titre: liste.length === 1 ? `Copier « ${liste[0].titre} »` : `Copier ${liste.length} recettes` });
+  f.corps.innerHTML = `<div class="copier-feuille">
+      <p class="muet petit">Dans quel carnet ? La recette est copiée avec ses photos et ses intercalaires ; l'originale reste ici.</p>
+      <div class="copier-carnets">${autres.map((c) => `<button type="button" class="copier-carnet" data-cible="${esc(c.id)}">📒 ${esc(c.name)}${c.ownerId !== compte.uid ? " <small>(partagé)</small>" : ""}</button>`).join("")}</div>
+      <p class="copier-etat muet petit" aria-live="polite"></p>
+    </div>`;
+  const etat = f.corps.querySelector(".copier-etat");
+  f.corps.addEventListener("click", async (e) => {
+    const b = e.target.closest("[data-cible]");
+    if (!b || b.disabled) return;
+    const cible = carnets.find((c) => c.id === b.dataset.cible);
+    f.corps.querySelectorAll("[data-cible]").forEach((x) => (x.disabled = true));
+    try {
+      await copierRecettes(liste, cible.id, (i, n) => { etat.textContent = n > 1 ? `Copie ${i}/${n}…` : "Copie…"; });
+      const n = liste.length;
+      f.corps.innerHTML = `<div class="copier-feuille">
+          <p>✔ ${n > 1 ? `${n} recettes copiées` : "Recette copiée"} dans « ${esc(cible.name)} ».</p>
+          <button type="button" class="bouton principal large" data-ouvrir>Ouvrir « ${esc(cible.name)} »</button>
+          <button type="button" class="bouton large" data-fermer>Rester ici</button>
+        </div>`;
+      f.corps.querySelector("[data-ouvrir]").addEventListener("click", () => { f.fermer(); changerCarnet(cible.id); });
+      f.corps.querySelector("[data-fermer]").addEventListener("click", () => f.fermer());
+      quandFini();
+    } catch (err) {
+      console.error(err);
+      etat.textContent = err.message?.startsWith("Pas de connexion") ? err.message
+        : err.code === "permission-denied" ? "Copie refusée : tu n'as peut-être plus accès à ce carnet." : "La copie n'a pas pu aller jusqu'au bout. Réessaie.";
+      f.corps.querySelectorAll("[data-cible]").forEach((x) => (x.disabled = false));
+    }
+  });
 }
 
 
@@ -676,6 +739,7 @@ async function pageAccueil() {
             <button type="submit" class="bouton">Ajouter</button>
           </form>
           <button type="button" class="bouton principal large" data-fini>Terminé</button>
+          ${carnets.length > 1 ? `<button type="button" class="bouton large" data-copier>📋 Copier dans un autre carnet</button>` : ""}
         </div>`;
     };
     const ranger = (nom, mettre) => {
@@ -696,6 +760,7 @@ async function pageAccueil() {
       const b = e.target.closest("[data-ranger]");
       if (b) ranger(b.dataset.ranger, !b.classList.contains("tout"));
       if (e.target.closest("[data-fini]")) f.fermer();
+      if (e.target.closest("[data-copier]")) { f.fermer(); setTimeout(() => ficheCopier(choisies), 200); }
     });
     f.corps.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -755,6 +820,7 @@ async function pageRecette(id) {
       <a class="retour" href="${lien("")}">${icones.retour}<span>Recettes</span></a>
       <div class="barre-actions">
         <button type="button" class="btn btn-supprimer" id="supprimer-recette">${icones.poubelle}<span class="texte-bouton">Supprimer</span></button>
+        ${carnets.length > 1 ? `<button type="button" class="btn btn-clair" id="copier-recette" aria-label="Copier dans un autre carnet">${icones.copier}<span class="texte-bouton">Copier</span></button>` : ""}
         <a class="btn btn-clair" href="${lien(`modifier/${r.id}`)}">${icones.crayon}<span class="texte-bouton">Modifier</span></a>
       </div>
     </nav>
@@ -827,6 +893,8 @@ async function pageRecette(id) {
         ${r.notes ? `<aside class="notes"><h3>Notes</h3>${esc(r.notes)}</aside>` : ""}
       </section>
     </main>`;
+
+  $id("copier-recette")?.addEventListener("click", () => ficheCopier([r]));
 
   $id("supprimer-recette").addEventListener("click", async (e) => {
     if (!confirm(`Supprimer « ${r.titre} » ? Cette action est définitive.`)) return;
