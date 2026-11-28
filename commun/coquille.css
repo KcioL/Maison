@@ -289,3 +289,12 @@ body.non-connecte .dock, body.non-connecte .puce-compte { display: none; }
 .rappel-autre > * { min-width: 0; }
 .rappel-quand { font-size: 0.95rem; }
 .rappel-feuille a.bouton { text-decoration: none; text-align: center; justify-content: center; display: flex; align-items: center; }
+
+/* ---------- Supprimer son compte (commun/suppression-compte.js) ---------- */
+.compte-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.6rem; }
+.suppr-lien { color: #d1495b; font-size: 0.85rem; }
+.suppr-compte { display: flex; flex-direction: column; gap: 0.8rem; }
+.suppr-liste { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.suppr-liste small { color: var(--text-muted); }
+.suppr-case { display: flex; align-items: center; gap: 0.6rem; font-weight: 600; cursor: pointer; min-height: 44px; }
+.suppr-case input { width: 22px; height: 22px; accent-color: #d1495b; }

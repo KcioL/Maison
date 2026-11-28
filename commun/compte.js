@@ -167,3 +167,4 @@ export function nomDe(uid, email, quandConnu) {
     }
     return secours;
 }
+export { auth };

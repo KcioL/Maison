@@ -63,7 +63,8 @@ function ouvrirMonCompte() {
                 <span class="boutons"><button type="button" class="bouton petit" data-action="envoyer">Envoyer l'e-mail</button>
                 <button type="button" class="bouton petit" data-action="verifie">J'ai cliqué sur le lien</button></span></div>`}
             <hr class="separation">
-            <div><button type="button" class="bouton danger petit" data-action="deconnexion">Se déconnecter</button></div>`;
+            <div class="compte-actions"><button type="button" class="bouton danger petit" data-action="deconnexion">Se déconnecter</button>
+            <button type="button" class="lien-bouton suppr-lien" data-action="supprimer-compte">Supprimer mon compte…</button></div>`;
         f.corps.querySelector("form")?.addEventListener("submit", async e => {
             e.preventDefault();
             try { if (await changerNom(e.target.nom.value)) { toast("Prénom enregistré."); dessiner(); } }
@@ -82,6 +83,11 @@ function ouvrirMonCompte() {
             dessiner();
         });
         f.corps.querySelector('[data-action="deconnexion"]').addEventListener("click", deconnecter);
+        f.corps.querySelector('[data-action="supprimer-compte"]').addEventListener("click", async () => {
+            f.fermer();
+            const { ficheSupprimerCompte } = await import("./suppression-compte.js");
+            ficheSupprimerCompte();
+        });
     };
     dessiner();
 }
