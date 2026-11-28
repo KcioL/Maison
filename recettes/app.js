@@ -13,7 +13,7 @@
    Le compte et le partage sont communs au site (commun/compte.js, commun/partage.js).
    ========================================================= */
 
-const TITRE = "Les recettes de Jenigger";
+const TITRE = "Carnet de recettes";   // nom par défaut (chacun renomme son carnet avec ✏️)
 
 /* ========================================================= */
 
@@ -458,7 +458,7 @@ function pageSansCarnet() {
         <p class="muet petit-texte">Si quelqu'un t'a partagé son carnet, il apparaîtra ici tout seul.</p>
       </div>
     </main>`;
-  $id("creer-carnet").addEventListener("click", (e) => { e.currentTarget.disabled = true; creerCarnet("Les recettes de Jenigger"); });
+  $id("creer-carnet").addEventListener("click", (e) => { e.currentTarget.disabled = true; creerCarnet("Carnet de recettes"); });
 }
 
 /* =========================================================
